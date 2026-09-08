@@ -1,0 +1,53 @@
+const fieldStyle = {
+  width: "100%",
+  border: "1px solid var(--border)",
+  borderRadius: 14,
+  padding: 12,
+  fontSize: 14,
+  background: "var(--violet-25)",
+  color: "var(--ink)",
+  minHeight: 48,
+};
+
+const labelStyle = {
+  display: "block",
+  fontSize: 11,
+  letterSpacing: ".08em",
+  textTransform: "uppercase",
+  color: "var(--muted)",
+  fontWeight: 600,
+  marginBottom: 5,
+};
+
+export default function PasoGenerales() {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))", gap: 13 }}>
+      <label>
+        <span style={labelStyle}>Cliente</span>
+        <select defaultValue="" style={fieldStyle}>
+          <option value="" disabled>
+            Seleccioná un cliente
+          </option>
+          <option>YPF — Yacimiento Sur</option>
+          <option>Vialidad Provincial</option>
+        </select>
+      </label>
+      <label>
+        <span style={labelStyle}>Ubicación / Zona</span>
+        <input placeholder="Batería 12 — sector bombas" style={fieldStyle} />
+      </label>
+      <label>
+        <span style={labelStyle}>Grupo auditado</span>
+        <input placeholder="Cuadrilla mecánica 3" style={fieldStyle} />
+      </label>
+      <label>
+        <span style={labelStyle}>Fecha y hora</span>
+        <input type="datetime-local" defaultValue="2026-09-08T09:30" style={fieldStyle} />
+      </label>
+      <label style={{ gridColumn: "1/-1" }}>
+        <span style={labelStyle}>Tarea observada</span>
+        <textarea rows={3} placeholder="Descripción breve de la tarea…" style={{ ...fieldStyle, resize: "vertical" }} />
+      </label>
+    </div>
+  );
+}

@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#EDEAF5;font-family:"IBM Plex Sans",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  a{color:#6D28D9;text-decoration:none}
+  a:hover{color:#5B21B6}
+  button{font-family:inherit}
+  input,select,textarea{font-family:inherit}
+  @keyframes enterA{from{opacity:0}to{opacity:1}}
+  @keyframes enterB{from{opacity:0}to{opacity:1}}
+  @keyframes popA{from{opacity:0;transform:translateY(20px) scale(.965)}to{opacity:1;transform:none}}
+  @keyframes popB{from{opacity:0;transform:translateY(20px) scale(.965)}to{opacity:1;transform:none}}
+  @keyframes pulseRing{0%{box-shadow:0 0 0 0 rgba(167,139,250,.55)}70%{box-shadow:0 0 0 12px rgba(167,139,250,0)}100%{box-shadow:0 0 0 0 rgba(167,139,250,0)}}
+  ::-webkit-scrollbar{width:9px;height:9px}
+  ::-webkit-scrollbar-thumb{background:#CFC6E6;border-radius:8px}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:radial-gradient(120% 60% at 50% 0%,#EFEBFA 0%,#E7E3F2 55%,#E2DEEE 100%);display:flex;flex-direction:column;color:#1B1626">
+
+  <!-- LOGIN -->
+  <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:22px">
+      <div style="width:100%;max-width:430px;animation:popA .5s cubic-bezier(.2,.8,.2,1) both">
+        <div style="text-align:center;margin-bottom:22px">
+          <div style="width:66px;height:66px;margin:0 auto 14px;border-radius:21px;background:linear-gradient(160deg,#7C3AED,#4C1D95);display:flex;align-items:center;justify-content:center;box-shadow:0 16px 34px -16px rgba(76,29,149,.75);animation:pulseRing 2.6s ease-out infinite">
+            <svg viewBox="0 0 24 24" width="31" height="31" fill="none" stroke="#EDE9FE" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"></path><path d="M9 12l2 2 4-4"></path></svg>
+          </div>
+          <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:27px;letter-spacing:-.6px;line-height:1.15">Inspecciones CMASS</div>
+          <div style="font-size:13px;color:#6E6880;margin-top:4px">Calidad · Ambiente · Seguridad · Sistemas</div>
+        </div>
+
+        <div style="background:#fff;border-radius:24px;padding:18px;box-shadow:0 22px 50px -26px rgba(36,18,70,.45)">
+          <div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#665E7A;font-weight:600;margin-bottom:11px">Iniciar sesión</div>
+          <label style="display:block;margin-bottom:11px">
+            <span style="display:block;font-size:12px;font-weight:600;color:#4B4459;margin-bottom:6px">Correo electrónico</span>
+            <input type="email" value="{{ email }}" onChange="{{ onEmail }}" placeholder="tecnico@empresa.com" style="width:100%;border:1.5px solid #E9E4F4;border-radius:16px;padding:15px;font-size:16px;background:#FAF8FF;min-height:56px;outline:none;color:#1B1626" style-focus="border-color:#A78BFA;background:#fff" />
+          </label>
+          <label style="display:block;margin-bottom:9px">
+            <span style="display:block;font-size:12px;font-weight:600;color:#4B4459;margin-bottom:6px">Contraseña</span>
+            <input type="password" value="{{ pass }}" onChange="{{ onPass }}" placeholder="••••••••" style="width:100%;border:1.5px solid #E9E4F4;border-radius:16px;padding:15px;font-size:16px;background:#FAF8FF;min-height:56px;outline:none;color:#1B1626" style-focus="border-color:#A78BFA;background:#fff" />
+          </label>
+          <div style="display:flex;justify-content:flex-end;margin-bottom:14px">
+            <button onClick="{{ olvide }}" style="flex:0 0 auto;white-space:nowrap;border:0;background:transparent;color:#6D28D9;font-size:12.5px;font-weight:700;padding:8px 4px;cursor:pointer;min-height:40px" style-hover="color:#5B21B6">Olvidé mi contraseña</button>
+          </div>
+          <sc-if value="{{ resetEnviado }}" hint-placeholder-val="{{ true }}">
+            <div style="background:#F5F3FF;border:1px solid #E5DDFA;border-radius:14px;padding:12px;font-size:12.5px;color:#4B4459;line-height:1.5;margin-bottom:14px">Te enviamos un enlace para restablecer la contraseña al correo indicado.</div>
+          </sc-if>
+          <button onClick="{{ entrar }}" style="width:100%;border:0;border-radius:16px;background:linear-gradient(160deg,#7C3AED,#5B21B6);color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:15px;padding:15px;cursor:pointer;min-height:54px;box-shadow:0 14px 26px -14px rgba(91,33,182,.8);transition:transform .16s" style-hover="transform:translateY(-1px)" style-active="transform:scale(.99)">Ingresar</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- APP -->
+  <sc-if value="{{ isApp }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:1;display:flex;flex-direction:column;min-height:100vh">
+
+      <header style="position:sticky;top:0;z-index:20;background:rgba(255,255,255,.86);backdrop-filter:blur(14px);border-bottom:1px solid #E1DCEF;padding:11px 14px;display:flex;align-items:center;gap:11px">
+        <sc-if value="{{ showBack }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ goBack }}" style="width:42px;height:42px;flex:0 0 42px;border-radius:14px;border:0;background:#EDE9FE;color:#5B21B6;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .16s,background .16s" style-hover="background:#DDD6FE" style-active="transform:scale(.93)">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg>
+          </button>
+        </sc-if>
+        <sc-if value="{{ showAvatarBrand }}" hint-placeholder-val="{{ true }}">
+          <div style="width:42px;height:42px;flex:0 0 42px;border-radius:14px;background:linear-gradient(160deg,#7C3AED,#4C1D95);display:flex;align-items:center;justify-content:center">
+            <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="#EDE9FE" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"></path></svg>
+          </div>
+        </sc-if>
+        <div style="flex:1;min-width:0">
+          <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:17.5px;letter-spacing:-.35px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ title }}</div>
+          <div style="font-size:11.5px;color:#665E7A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ subtitle }}</div>
+        </div>
+        <button onClick="{{ goPendientes }}" style="position:relative;width:42px;height:42px;flex:0 0 42px;border-radius:14px;border:1px solid #E3DEEE;background:#fff;color:#4B4459;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .16s" style-active="transform:scale(.93)">
+          <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 10-2.3 5.6"></path><path d="M20 5v6h-6"></path></svg>
+          <span style="position:absolute;top:-5px;right:-5px;background:#E11D48;color:#fff;font-size:10px;font-weight:700;border-radius:20px;padding:1.5px 6px;box-shadow:0 3px 8px -2px rgba(225,29,72,.7)">{{ pendientesTotal }}</span>
+        </button>
+      </header>
+
+      <div style="flex:1;width:100%;max-width:1020px;margin:0 auto;padding:16px 14px;padding-bottom:{{ padBottom }}">
+        <div style="animation-name:{{ enter }};animation-duration:.4s;animation-timing-function:cubic-bezier(.2,.8,.2,1);animation-fill-mode:both">
+
+          <!-- HOME: solo cards -->
+          <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+            <div style="display:grid;grid-template-columns:{{ gridCols }};gap:13px">
+              <sc-for list="{{ modulos }}" as="m" hint-placeholder-count="6">
+                <div onClick="{{ m.go }}" style="position:relative;overflow:hidden;text-align:left;border:0;border-radius:24px;background:{{ m.card }};color:#1B1626;padding:17px;cursor:pointer;display:flex;flex-direction:column;gap:12px;min-height:186px;box-shadow:0 14px 30px -20px rgba(36,18,70,.5);transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s;animation-name:{{ m.anim }};animation-duration:.55s;animation-timing-function:cubic-bezier(.2,.8,.2,1);animation-fill-mode:both;animation-delay:{{ m.delay }}" style-hover="transform:translateY(-5px);box-shadow:0 26px 44px -22px rgba(36,18,70,.55)" style-active="transform:scale(.975)">
+                  <span style="position:absolute;right:-34px;top:-34px;width:126px;height:126px;border-radius:50%;background:{{ m.blob }}"></span>
+                  <span style="position:relative;display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+                    <span style="width:54px;height:54px;border-radius:18px;display:flex;align-items:center;justify-content:center;background:{{ m.tint }};color:{{ m.ink }};box-shadow:0 8px 18px -10px rgba(36,18,70,.5)">
+                      <svg viewBox="0 0 24 24" width="27" height="27" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round"><path d="{{ m.icon }}"></path></svg>
+                    </span>
+                    <sc-if value="{{ m.badge }}" hint-placeholder-val="{{ true }}">
+                      <span style="background:{{ m.badgeBg }};color:{{ m.badgeFg }};font-size:11px;font-weight:700;border-radius:20px;padding:4px 10px;white-space:nowrap">{{ m.badge }}</span>
+                    </sc-if>
+                  </span>
+                  <span style="position:relative;flex:1;display:block">
+                    <span style="display:block;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:17px;line-height:1.2;letter-spacing:-.35px;text-wrap:pretty">{{ m.title }}</span>
+                    <span style="display:block;font-size:12.5px;color:#5C5570;line-height:1.45;margin-top:5px;text-wrap:pretty">{{ m.desc }}</span>
+                  </span>
+                  <span style="position:relative;display:flex;align-items:center;gap:9px;color:{{ m.ink }};font-size:12.5px;font-weight:700">
+                    <span style="display:flex;align-items:center;gap:7px;flex:1">
+                      {{ m.cta }}
+                      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13M13 6l6 6-6 6"></path></svg>
+                    </span>
+                    <sc-if value="{{ m.hasList }}" hint-placeholder-val="{{ true }}">
+                      <button onClick="{{ m.goList }}" style="border:0;background:{{ m.tint }};color:{{ m.ink }};font-size:11.5px;font-weight:700;padding:9px 13px;border-radius:12px;cursor:pointer;min-height:40px;transition:transform .15s" style-active="transform:scale(.94)">Registros</button>
+                    </sc-if>
+                  </span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <!-- SUBMENÚ -->
+          <sc-if value="{{ isModulo }}" hint-placeholder-val="{{ true }}">
+            <div style="display:grid;grid-template-columns:{{ gridCols }};gap:12px">
+              <sc-for list="{{ subitems }}" as="s" hint-placeholder-count="6">
+                <div style="background:#fff;border-radius:22px;padding:15px;display:flex;flex-direction:column;gap:12px;box-shadow:0 12px 26px -20px rgba(36,18,70,.5);transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s;animation-name:{{ s.anim }};animation-duration:.5s;animation-timing-function:cubic-bezier(.2,.8,.2,1);animation-fill-mode:both;animation-delay:{{ s.delay }}" style-hover="transform:translateY(-4px);box-shadow:0 24px 40px -24px rgba(36,18,70,.5)">
+                  <div style="display:flex;align-items:center;gap:12px">
+                    <span style="width:46px;height:46px;flex:0 0 46px;border-radius:15px;display:flex;align-items:center;justify-content:center;background:{{ s.tint }};color:{{ s.ink }}">
+                      <svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="{{ s.icon }}"></path></svg>
+                    </span>
+                    <div style="min-width:0">
+                      <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:15px;line-height:1.25;letter-spacing:-.2px;text-wrap:pretty">{{ s.title }}</div>
+                      <div style="font-size:11.5px;color:#665E7A;margin-top:2px">{{ s.meta }}</div>
+                    </div>
+                  </div>
+                  <div style="display:flex;gap:8px;margin-top:auto">
+                    <button onClick="{{ s.goForm }}" style="flex:1;border:0;background:#6D28D9;color:#fff;font-size:13px;font-weight:700;padding:12px;border-radius:14px;cursor:pointer;min-height:48px;transition:transform .16s,background .16s" style-hover="background:#5B21B6" style-active="transform:scale(.97)">Nuevo</button>
+                    <button onClick="{{ s.goList }}" style="flex:1;border:0;background:#F1EDFC;color:#5B21B6;font-size:13px;font-weight:700;padding:12px;border-radius:14px;cursor:pointer;min-height:48px;transition:transform .16s,background .16s" style-hover="background:#E5DDFA" style-active="transform:scale(.97)">Registros</button>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <!-- LISTA -->
+          <sc-if value="{{ isLista }}" hint-placeholder-val="{{ true }}">
+            <div>
+              <div style="background:#fff;border-radius:22px;padding:13px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:13px;box-shadow:0 12px 26px -22px rgba(36,18,70,.5)">
+                <label style="flex:1 1 180px;min-width:0">
+                  <span style="display:block;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:#665E7A;font-weight:600;margin-bottom:5px">Área</span>
+                  <select style="width:100%;border:1px solid #E3DEEE;border-radius:14px;padding:12px;font-size:14px;background:#FAF8FF;color:#1B1626;min-height:48px">
+                    <option>Todas las áreas</option><option>Planta Norte</option><option>Yacimiento Sur</option><option>Obra Vial RN-40</option>
+                  </select>
+                </label>
+                <label style="flex:1 1 130px;min-width:0">
+                  <span style="display:block;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:#665E7A;font-weight:600;margin-bottom:5px">Desde</span>
+                  <input type="date" value="2026-08-31" style="width:100%;border:1px solid #E3DEEE;border-radius:14px;padding:12px;font-size:14px;background:#FAF8FF;min-height:48px" />
+                </label>
+                <label style="flex:1 1 130px;min-width:0">
+                  <span style="display:block;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:#665E7A;font-weight:600;margin-bottom:5px">Hasta</span>
+                  <input type="date" value="2026-09-08" style="width:100%;border:1px solid #E3DEEE;border-radius:14px;padding:12px;font-size:14px;background:#FAF8FF;min-height:48px" />
+                </label>
+                <button style="flex:1 1 120px;border:0;background:#6D28D9;color:#fff;font-weight:700;font-size:13.5px;padding:12px;border-radius:14px;cursor:pointer;min-height:48px;transition:transform .16s" style-active="transform:scale(.97)">Filtrar</button>
+              </div>
+
+              <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px">
+                <sc-for list="{{ estadoFiltros }}" as="f" hint-placeholder-count="5">
+                  <button onClick="{{ f.go }}" style="flex:0 0 auto;border:0;background:{{ f.bg }};color:{{ f.fg }};font-size:12.5px;font-weight:700;padding:10px 15px;border-radius:20px;cursor:pointer;min-height:42px;transition:transform .16s" style-active="transform:scale(.95)">{{ f.label }}</button>
+                </sc-for>
+              </div>
+
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <sc-for list="{{ registros }}" as="r" hint-placeholder-count="5">
+                  <button style="text-align:left;border:0;width:100%;background:#fff;border-radius:20px;padding:14px;display:flex;gap:13px;align-items:center;flex-wrap:wrap;cursor:pointer;box-shadow:0 12px 24px -22px rgba(36,18,70,.5);transition:transform .18s cubic-bezier(.2,.8,.2,1);animation-name:{{ r.anim }};animation-duration:.45s;animation-timing-function:cubic-bezier(.2,.8,.2,1);animation-fill-mode:both;animation-delay:{{ r.delay }}" style-hover="transform:translateY(-3px)" style-active="transform:scale(.985)">
+                    <span style="width:50px;height:50px;flex:0 0 50px;border-radius:16px;background:#F5F3FF;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1">
+                      <span style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:16px;color:#6D28D9">{{ r.dia }}</span>
+                      <span style="font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:#665E7A;margin-top:2px">{{ r.mes }}</span>
+                    </span>
+                    <span style="flex:1 1 200px;min-width:0">
+                      <span style="display:block;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:14.5px;letter-spacing:-.15px;text-wrap:pretty">{{ r.titulo }}</span>
+                      <span style="display:block;font-size:12px;color:#6E6880;margin-top:2px">{{ r.detalle }}</span>
+                    </span>
+                    <span style="flex:0 0 auto;text-align:center">
+                      <span style="display:block;font-size:10.5px;color:#665E7A">Hallazgos</span>
+                      <span style="display:block;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:17px;color:{{ r.hallazgosColor }}">{{ r.hallazgos }}</span>
+                    </span>
+                    <span style="flex:0 0 auto;background:{{ r.estadoBg }};color:{{ r.estadoFg }};font-size:11.5px;font-weight:700;padding:6px 12px;border-radius:20px;white-space:nowrap">{{ r.estado }}</span>
+                  </button>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- FORMULARIO -->
+          <sc-if value="{{ isForm }}" hint-placeholder-val="{{ true }}">
+            <div>
+              <div style="background:#fff;border-radius:22px;padding:14px;margin-bottom:12px;box-shadow:0 12px 26px -22px rgba(36,18,70,.5)">
+                <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px">
+                  <span style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:14px">{{ avanceTexto }}</span>
+                  <span style="font-size:12.5px;color:#665E7A">{{ avance }}</span>
+                </div>
+                <div style="height:9px;background:#EDEAF5;border-radius:20px;overflow:hidden;margin-bottom:11px">
+                  <div style="height:100%;border-radius:20px;background:linear-gradient(90deg,#8B5CF6,#6D28D9);transition:width .45s cubic-bezier(.2,.8,.2,1);width:{{ avance }}"></div>
+                </div>
+                <div style="display:flex;gap:7px;overflow-x:auto;padding-bottom:2px">
+                  <sc-for list="{{ pasos }}" as="p" hint-placeholder-count="4">
+                    <button onClick="{{ p.go }}" style="flex:0 0 auto;border:0;background:{{ p.bg }};color:{{ p.fg }};border-radius:20px;padding:10px 15px;cursor:pointer;min-height:44px;font-size:12.5px;font-weight:700;transition:transform .16s,background .2s" style-active="transform:scale(.95)">{{ p.n }}. {{ p.label }}</button>
+                  </sc-for>
+                </div>
+              </div>
+
+              <div style="background:#fff;border-radius:22px;padding:16px;box-shadow:0 12px 30px -24px rgba(36,18,70,.5);animation-name:{{ enter }};animation-duration:.35s;animation-timing-function:cubic-bezier(.2,.8,.2,1);animation-fill-mode:both">
+                <sc-if value="{{ paso1 }}" hint-placeholder-val="{{ true }}">
+                  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:13px">
+                    <label>
+                      <span style="display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#665E7A;font-weight:600;margin-bottom:5px">Cliente</span>
+                      <select style="width:100%;border:1px solid #E3DEEE;border-radius:14px;padding:12px;font-size:14px;background:#FAF8FF;min-height:48px"><option>YPF — Yacimiento Sur</option><option>Vialidad Provincial</option></select>
+                    </label>
+                    <label>
+                      <span style="display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#665E7A;font-weight:600;margin-bottom:5px">Ubicación / Zona</span>
+                      <input placeholder="Batería 12 — sector bombas" style="width:100%;border:1px solid #E3DEEE;border-radius:14px;padding:12px;font-size:14px;background:#FAF8FF;min-height:48px" />
+                    </label>
+                    <label>
+                      <span style="display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#665E7A;font-weight:600;margin-bottom:5px">Grupo auditado</span>
+                      <input placeholder="Cuadrilla mecánica 3" style="width:100%;border:1px solid #E3DEEE;border-radius:14px;padding:12px;font-size:14px;background:#FAF8FF;min-height:48px" />
+                    </label>
+                    <label>
+                      <span style="display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#665E7A;font-weight:600;margin-bottom:5px">Fecha y hora</span>
+                      <input type="datetime-local" value="2026-09-08T09:30" style="width:100%;border:1px solid #E3DEEE;border-radius:14px;padding:12px;font-size:14px;background:#FAF8FF;min-height:48px" />
+                    </label>
+                    <label style="grid-column:1/-1">
+                      <span style="display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#665E7A;font-weight:600;margin-bottom:5px">Tarea observada</span>
+                      <textarea rows="3" placeholder="Descripción breve de la tarea…" style="width:100%;border:1px solid #E3DEEE;border-radius:14px;padding:12px;font-size:14px;background:#FAF8FF;resize:vertical"></textarea>
+                    </label>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ paso2 }}" hint-placeholder-val="{{ true }}">
+                  <div style="display:flex;flex-direction:column;gap:11px">
+                    <sc-for list="{{ checklist }}" as="c" hint-placeholder-count="6">
+                      <div style="border-radius:18px;background:#FBFAFE;border:1px solid #EDEAF5;padding:13px;animation-name:{{ c.anim }};animation-duration:.45s;animation-timing-function:cubic-bezier(.2,.8,.2,1);animation-fill-mode:both;animation-delay:{{ c.delay }}">
+                        <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:11px">
+                          <span style="font-size:11px;font-weight:700;color:#5B21B6;background:#EDE9FE;border-radius:8px;padding:4px 8px;flex:0 0 auto">{{ c.codigo }}</span>
+                          <span style="font-size:14px;line-height:1.45;font-weight:500;text-wrap:pretty">{{ c.texto }}</span>
+                        </div>
+                        <div style="display:flex;gap:7px;flex-wrap:wrap">
+                          <sc-for list="{{ c.opciones }}" as="o" hint-placeholder-count="3">
+                            <button onClick="{{ o.go }}" style="border:1.5px solid {{ o.border }};background:{{ o.bg }};color:{{ o.fg }};font-size:12.5px;font-weight:700;padding:10px 16px;border-radius:14px;cursor:pointer;min-height:46px;white-space:nowrap;transition:transform .15s,background .2s,border-color .2s" style-active="transform:scale(.95)">{{ o.label }}</button>
+                          </sc-for>
+                          <button style="margin-left:auto;border:1.5px dashed #D9D0EE;background:#fff;color:#5B21B6;font-size:12.5px;font-weight:700;padding:10px 14px;border-radius:14px;cursor:pointer;min-height:46px;display:flex;align-items:center;gap:6px;transition:transform .15s" style-active="transform:scale(.95)">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V6a2 2 0 012-2h2M20 8V6a2 2 0 00-2-2h-2M4 16v2a2 2 0 002 2h2M20 16v2a2 2 0 01-2 2h-2M12 9a3 3 0 100 6 3 3 0 000-6z"></path></svg>
+                            Foto
+                          </button>
+                        </div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ paso3 }}" hint-placeholder-val="{{ true }}">
+                  <div style="display:flex;flex-direction:column;gap:11px">
+                    <sc-for list="{{ hallazgos }}" as="h" hint-placeholder-count="2">
+                      <div style="border-radius:18px;background:#FFF8FB;border:1px solid #F7DCE7;padding:14px;animation-name:{{ h.anim }};animation-duration:.45s;animation-timing-function:cubic-bezier(.2,.8,.2,1);animation-fill-mode:both;animation-delay:{{ h.delay }}">
+                        <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+                          <span style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:14.5px">{{ h.titulo }}</span>
+                          <span style="background:{{ h.sevBg }};color:{{ h.sevFg }};font-size:11px;font-weight:700;padding:4px 11px;border-radius:20px">{{ h.severidad }}</span>
+                        </div>
+                        <div style="font-size:13px;color:#635B72;line-height:1.5;margin-bottom:10px;text-wrap:pretty">{{ h.detalle }}</div>
+                        <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:#665E7A">
+                          <span>Responsable: <strong style="color:#1B1626">{{ h.responsable }}</strong></span>
+                          <span>Vence: <strong style="color:#1B1626">{{ h.vence }}</strong></span>
+                        </div>
+                      </div>
+                    </sc-for>
+                    <button style="border:1.5px dashed #A78BFA;background:#FAF8FF;color:#5B21B6;font-weight:700;font-size:13.5px;padding:15px;border-radius:18px;cursor:pointer;min-height:52px;transition:transform .16s,background .16s" style-hover="background:#F1EDFC" style-active="transform:scale(.985)">+ Agregar hallazgo</button>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ paso4 }}" hint-placeholder-val="{{ true }}">
+                  <div>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:14px">
+                      <sc-for list="{{ firmas }}" as="f" hint-placeholder-count="2">
+                        <div style="border-radius:18px;border:1px solid #EDEAF5;background:#FBFAFE;padding:14px">
+                          <div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#665E7A;font-weight:600;margin-bottom:9px">{{ f.rol }}</div>
+                          <div style="height:100px;border:1.5px dashed #D9D0EE;border-radius:14px;background:#fff;display:flex;align-items:center;justify-content:center;color:#A49BB4;font-size:12.5px">Firmar acá</div>
+                          <div style="font-size:13.5px;font-weight:600;margin-top:9px">{{ f.nombre }}</div>
+                        </div>
+                      </sc-for>
+                    </div>
+                    <div style="border-radius:18px;background:#F5F3FF;border:1px solid #E5DDFA;padding:14px">
+                      <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#665E7A;font-weight:600;margin-bottom:9px">Resumen</div>
+                      <sc-for list="{{ resumen }}" as="r" hint-placeholder-count="4">
+                        <div style="display:flex;justify-content:space-between;gap:10px;font-size:13.5px;padding:5px 0">
+                          <span style="color:#4B4459">{{ r.label }}</span>
+                          <strong style="color:{{ r.color }};font-family:'Plus Jakarta Sans',sans-serif">{{ r.value }}</strong>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+
+            </div>
+          </sc-if>
+
+          <!-- PENDIENTES -->
+          <sc-if value="{{ isPendientes }}" hint-placeholder-val="{{ true }}">
+            <div>
+              <div style="border-radius:24px;padding:17px;background:linear-gradient(160deg,#3B1E75,#241246);color:#DDD3F2;display:flex;gap:13px;align-items:center;flex-wrap:wrap;margin-bottom:15px;box-shadow:0 20px 40px -24px rgba(36,18,70,.8)">
+                <div style="flex:1;min-width:190px">
+                  <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:17px;color:#fff;letter-spacing:-.3px">{{ pendientesTotal }} registros sin sincronizar</div>
+                  <div style="font-size:12.5px;color:#B3A6D6;margin-top:3px">Última sincronización: hoy 08:41 · 34 enviados</div>
+                </div>
+                <button style="border:0;background:#A78BFA;color:#2E1065;font-weight:800;font-size:13.5px;padding:14px 20px;border-radius:16px;cursor:pointer;min-height:50px;transition:transform .16s,background .16s" style-hover="background:#C4B5FD" style-active="transform:scale(.97)">Sincronizar ahora</button>
+              </div>
+              <sc-for list="{{ gruposPendientes }}" as="g" hint-placeholder-count="3">
+                <div style="margin-bottom:18px">
+                  <h3 style="margin:0 0 9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:12.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#665E7A">{{ g.titulo }}</h3>
+                  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px">
+                    <sc-for list="{{ g.items }}" as="i" hint-placeholder-count="4">
+                      <div style="background:#fff;border-radius:18px;padding:13px 15px;display:flex;align-items:center;gap:12px;box-shadow:0 10px 22px -20px rgba(36,18,70,.5)">
+                        <div style="flex:1;min-width:0">
+                          <div style="font-weight:600;font-size:13.5px">{{ i.label }}</div>
+                          <div style="font-size:11.5px;color:#665E7A;margin-top:2px">{{ i.meta }}</div>
+                        </div>
+                        <span style="width:36px;height:36px;flex:0 0 36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:14px;background:{{ i.bg }};color:{{ i.fg }}">{{ i.count }}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+        </div>
+      </div>
+
+      <sc-if value="{{ isForm }}" hint-placeholder-val="{{ true }}">
+        <div style="position:fixed;left:0;right:0;bottom:78px;padding:0 14px;z-index:25;pointer-events:none">
+          <div style="max-width:1020px;margin:0 auto;display:flex;gap:9px;pointer-events:auto">
+            <button style="border:0;background:#fff;color:#5B21B6;font-weight:700;font-size:13.5px;padding:15px 18px;border-radius:18px;cursor:pointer;min-height:52px;box-shadow:0 14px 30px -18px rgba(36,18,70,.6);transition:transform .16s" style-active="transform:scale(.97)">Borrador</button>
+            <button onClick="{{ nextPaso }}" style="flex:1;border:0;background:linear-gradient(160deg,#7C3AED,#5B21B6);color:#fff;font-weight:700;font-size:14.5px;padding:15px 18px;border-radius:18px;cursor:pointer;min-height:52px;box-shadow:0 16px 30px -16px rgba(91,33,182,.85);transition:transform .16s" style-hover="transform:translateY(-1px)" style-active="transform:scale(.985)">{{ ctaPaso }}</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <nav style="position:fixed;bottom:0;left:0;right:0;z-index:30;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);border-top:1px solid #E1DCEF;display:flex;padding:8px 8px 12px">
+        <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4">
+          <button onClick="{{ t.go }}" style="flex:1;border:0;background:transparent;display:flex;flex-direction:column;align-items:center;gap:4px;padding:5px 2px;cursor:pointer;color:{{ t.color }};min-height:50px;transition:transform .16s" style-active="transform:scale(.9)">
+            <span style="display:flex;align-items:center;justify-content:center;width:46px;height:29px;border-radius:14px;background:{{ t.chip }};transition:background .22s">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><path d="{{ t.icon }}"></path></svg>
+            </span>
+            <span style="font-size:10.5px;font-weight:700">{{ t.label }}</span>
+          </button>
+        </sc-for>
+      </nav>
+    </div>
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:900,&quot;height&quot;:1000},&quot;columnas&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;auto&quot;,&quot;2&quot;,&quot;3&quot;],&quot;default&quot;:&quot;auto&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Menú&quot;}}">
+const I={
+ home:"M3 11l9-7 9 7v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z",
+ clipboard:"M9 4h6v3H9zM7 4h10a1 1 0 011 1v15a1 1 0 01-1 1H7a1 1 0 01-1-1V5a1 1 0 011-1zM9 12h6M9 16h4",
+ shield:"M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z M9 12l2 2 4-4",
+ eye:"M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z M12 9a3 3 0 100 6 3 3 0 000-6z",
+ leaf:"M20 4C10 4 4 9 4 16v4M4 16c0-6 6-9 16-12 0 8-5 13-11 13H4z",
+ alert:"M12 3l9 16H3zM12 9v5M12 17h.01",
+ wrench:"M14 3a5 5 0 00-5 7l-6 6 3 3 6-6a5 5 0 007-5l-3 3-3-1-1-3z",
+ users:"M16 20v-1a4 4 0 00-4-4H7a4 4 0 00-4 4v1M9.5 4a3.5 3.5 0 100 7 3.5 3.5 0 000-7M20 20v-1a4 4 0 00-3-3.9M16 4.2a3.5 3.5 0 010 6.6",
+ doc:"M14 3H7a1 1 0 00-1 1v16a1 1 0 001 1h10a1 1 0 001-1V7zM14 3v4h4M9 13h6M9 17h4",
+ layers:"M12 3l9 5-9 5-9-5zM3 13l9 5 9-5",
+ truck:"M3 7h11v9H3zM14 11h4l3 3v2h-7M6.5 19a1.5 1.5 0 100-3 1.5 1.5 0 000 3M17.5 19a1.5 1.5 0 100-3 1.5 1.5 0 000 3",
+ hardhat:"M4 16a8 8 0 0116 0zM8 16V9a4 4 0 018 0v7M2 19h20",
+ box:"M3 8l9-5 9 5v8l-9 5-9-5zM3 8l9 5 9-5M12 13v8",
+ bolt:"M13 2L4 14h6l-1 8 9-12h-6z",
+ drop:"M12 3s6 6.5 6 11a6 6 0 01-12 0c0-4.5 6-11 6-11z",
+ pin:"M12 21s7-6.2 7-11a7 7 0 10-14 0c0 4.8 7 11 7 11zM12 8a3 3 0 100 6 3 3 0 000-6",
+ road:"M12 3v4M12 11v3M12 18v3M5 21l2-18M19 21l-2-18",
+ cert:"M12 3l2.6 1.7 3.1-.3 1 3 2.3 2.1-1.3 2.9.3 3.1-3 1L15.4 20 12 18.7 8.6 20l-2.6-2.5-3-1 .3-3.1L2 10.5l2.3-2.1 1-3 3.1.3z",
+ refresh:"M20 11a8 8 0 10-2.3 5.6M20 5v6h-6",
+ chart:"M4 20V10M10 20V4M16 20v-7M22 20H2",
+ book:"M4 5a2 2 0 012-2h13v18H6a2 2 0 01-2-2zM19 17H6a2 2 0 00-2 2"
+};
+const T={
+ violeta:["#EDE9FE","#5B21B6"], indigo:["#E4E7FD","#4338CA"], ambar:["#FFF2DC","#B45309"],
+ rosa:["#FCE7F1","#BE185D"], verde:["#E3F6EA","#15803D"], cielo:["#E2F1FB","#0369A1"],
+ gris:["#EEEAF4","#4E4762"], fucsia:["#FBE9F7","#A21CAF"]
+};
+const CARD={ violeta:["#FFFFFF","rgba(139,92,246,.10)"], indigo:["#FFFFFF","rgba(67,56,202,.09)"],
+ ambar:["#FFFFFF","rgba(180,83,9,.09)"], verde:["#FFFFFF","rgba(21,128,61,.09)"],
+ rosa:["#FFFFFF","rgba(190,24,93,.09)"], cielo:["#FFFFFF","rgba(3,105,161,.09)"], gris:["#FFFFFF","rgba(78,71,98,.08)"], fucsia:["#FFFFFF","rgba(162,28,175,.09)"]};
+
+const MODULOS=[
+ {id:"obra",title:"Inspecciones de Obra Pública",desc:"Checklist de obra, hallazgos y firma en el lugar.",icon:I.hardhat,t:"ambar",badge:"4 abiertas",cta:"Nueva inspección",form:true},
+ {id:"servicio",title:"Inspecciones para Servicio",desc:"Talleres, transporte y servicios contratados.",icon:I.truck,t:"indigo",badge:"2 abiertas",cta:"Nueva inspección",form:true},
+ {id:"simulacro",title:"Informe de Simulacro",desc:"Evaluación por roles, tiempos y observaciones.",icon:I.alert,t:"rosa",badge:"1 programado",cta:"Nuevo informe",form:true},
+ {id:"visita",title:"Visita Gerencial",desc:"Recorrida de liderazgo con compromisos asumidos.",icon:I.users,t:"cielo",badge:"",cta:"Nueva visita",form:true},
+ {id:"top",title:"Tarjetas TOP",desc:"Observación conductual: actos seguros y desvíos.",icon:I.eye,t:"fucsia",badge:"12 nuevas",cta:"Nueva tarjeta",form:true},
+ {id:"reglas",title:"Reglas de Oro",desc:"Los 10 controles críticos de la industria petrolera.",icon:I.shield,t:"ambar",badge:"3 vencidas",cta:"Abrir",
+  subs:[{title:"Permisos de trabajo",meta:"18 este mes",icon:I.doc,t:"violeta"},
+        {title:"Gestión del cambio",meta:"4 este mes",icon:I.refresh,t:"indigo"},
+        {title:"Excavaciones",meta:"7 este mes",icon:I.pin,t:"ambar"},
+        {title:"Espacios confinados",meta:"5 este mes",icon:I.box,t:"fucsia"},
+        {title:"Área de proyección y contactos",meta:"9 este mes",icon:I.alert,t:"rosa"},
+        {title:"Aislamiento de energías",meta:"11 este mes",icon:I.bolt,t:"cielo"},
+        {title:"Izaje y cargas suspendidas",meta:"6 este mes",icon:I.wrench,t:"gris"},
+        {title:"Trabajos en altura",meta:"8 este mes",icon:I.layers,t:"verde"},
+        {title:"Seguridad vial",meta:"14 este mes",icon:I.road,t:"indigo"},
+        {title:"Compromiso compartido",meta:"3 este mes",icon:I.users,t:"violeta"}]},
+ {id:"ambiente",title:"Gestión Ambiental",desc:"Residuos, derrames, consumos y monitoreos.",icon:I.leaf,t:"verde",badge:"",cta:"Abrir",
+  subs:[{title:"Chequeo de gestión ambiental",meta:"Checklist 24 ítems",icon:I.leaf,t:"verde"},
+        {title:"Manifiesto de residuos",meta:"Trazabilidad y transporte",icon:I.truck,t:"gris"},
+        {title:"Derrames y contingencias",meta:"Registro y remediación",icon:I.drop,t:"cielo"},
+        {title:"Consumos de agua y energía",meta:"Carga mensual",icon:I.bolt,t:"ambar"},
+        {title:"Monitoreos y mediciones",meta:"Efluentes, aire, ruido",icon:I.chart,t:"indigo"}]},
+ {id:"registros",title:"Mis Registros",desc:"Todo lo cargado, con filtros por área y fecha.",icon:I.book,t:"gris",badge:"",cta:"Ver todos",nav:"lista"},
+ {id:"pendientes",title:"Pendientes de sincronizar",desc:"Lo cargado sin señal, listo para enviar.",icon:I.refresh,t:"rosa",badge:"7 en cola",cta:"Revisar",nav:"pendientes"}
+];
+const PASOS=["Generales","Checklist","Hallazgos","Cierre"];
+
+
+class Component extends DCLogic {
+  state={screen:"login",modulo:null,sub:null,paso:0,filtro:"Todos",respuestas:{},email:"",pass:"",reset:false,tick:0};
+  go(screen,extra){ this.setState(Object.assign({screen,tick:this.state.tick+1},extra||{})); if(typeof window!=="undefined") window.scrollTo(0,0); }
+  anim(base,i){ return {anim:(this.state.tick%2?base+"B":base+"A"), delay:(i*0.045).toFixed(3)+"s"}; }
+
+  renderVals(){
+    const s=this.state.screen, mod=MODULOS.find(m=>m.id===this.state.modulo);
+    const cols=this.props.columnas||"auto";
+    const gridCols = cols==="2" ? "repeat(2,minmax(0,1fr))" : cols==="3" ? "repeat(3,minmax(0,1fr))" : "repeat(auto-fill,minmax(240px,1fr))";
+    const local=(this.state.email||"tecnico").split("@")[0];
+    const nombre=local.split(/[._-]+/).filter(Boolean).map(p=>p.charAt(0).toUpperCase()+p.slice(1)).join(" ")||"Técnico";
+    const titles={home:"¡Bienvenido, "+nombre+"!",lista:"Registros",form:this.state.sub||"Nuevo registro",pendientes:"Pendientes"};
+    const subs={home:"Inspecciones CMASS · "+(this.state.email||"sesión activa"),lista:"Filtrá por área, fecha y estado",form:"Formulario en 4 pasos",pendientes:"Se envían solos al recuperar señal"};
+
+    const modulos=MODULOS.map((m,i)=>Object.assign({
+      title:m.title,desc:m.desc,icon:m.icon,badge:m.badge,cta:m.cta,
+      tint:T[m.t][0],ink:T[m.t][1],card:CARD[m.t][0],blob:CARD[m.t][1],
+      badgeBg:T[m.t][0],badgeFg:T[m.t][1],
+      hasList:m.form?"1":null,
+      goList:e=>{ if(e&&e.stopPropagation) e.stopPropagation(); this.go("lista",{sub:m.title,modulo:null}); },
+      go:()=> m.nav?this.go(m.nav):m.form?this.go("form",{sub:m.title,paso:0,modulo:null}):this.go("modulo",{modulo:m.id})
+    },this.anim("pop",i)));
+
+    const subitems=(mod?mod.subs:[]).map((sb,i)=>Object.assign({
+      title:sb.title,meta:sb.meta,icon:sb.icon,tint:T[sb.t][0],ink:T[sb.t][1],
+      goForm:()=>this.go("form",{sub:sb.title,paso:0}),
+      goList:()=>this.go("lista",{sub:sb.title})
+    },this.anim("pop",i)));
+
+    const mkOpt=(cid,label,val)=>{
+      const on=this.state.respuestas[cid]===val;
+      const map={Cumple:["#E3F6EA","#15803D","#A9E2BB"],"No cumple":["#FCE7F1","#BE185D","#F5C3D9"],"N/A":["#EEEAF4","#4E4762","#DED8EC"]};
+      const c=map[label];
+      return {label,bg:on?c[0]:"#fff",fg:on?c[1]:"#635B72",border:on?c[2]:"#E3DEEE",
+        go:()=>this.setState(st=>({respuestas:Object.assign({},st.respuestas,{[cid]:val})}))};
+    };
+    const CHK=[["1.1","El permiso de trabajo está vigente, firmado y en el lugar de la tarea."],
+      ["1.2","El personal usa el EPP requerido y está en buen estado."],
+      ["2.1","Las energías peligrosas están aisladas y bloqueadas (LOTO)."],
+      ["2.4","El área de proyección está delimitada y libre de personal ajeno."],
+      ["3.2","Los equipos tienen la verificación de preuso del día."],
+      ["4.1","Los residuos se segregan en los contenedores correspondientes."]];
+    const checklist=CHK.map((c,i)=>Object.assign({codigo:c[0],texto:c[1],
+      opciones:[mkOpt(c[0],"Cumple","ok"),mkOpt(c[0],"No cumple","no"),mkOpt(c[0],"N/A","na")]},this.anim("enter",i)));
+    const noCumple=Object.values(this.state.respuestas).filter(v=>v==="no").length;
+    const contestadas=Object.keys(this.state.respuestas).length;
+
+    const est={Cerrada:["#E3F6EA","#15803D"],"En proceso":["#FFF2DC","#B45309"],Borrador:["#EEEAF4","#4E4762"],Vencida:["#FCE7F1","#BE185D"]};
+    const registros=[["08","SEP","Inspección de Obra — RN-40 km 212","Vialidad Provincial · J. Alcaraz",3,"En proceso"],
+      ["07","SEP","Tarjeta TOP — Batería 12","YPF Yacimiento Sur · M. Giménez",0,"Cerrada"],
+      ["05","SEP","Permiso de trabajo en caliente","Planta Norte · L. Ferreyra",1,"Cerrada"],
+      ["04","SEP","Chequeo de gestión ambiental","Planta Norte · S. Duarte",5,"Vencida"],
+      ["03","SEP","Inspección de servicios — Taller","Ribeiro Servicios · C. Ortiz",2,"En proceso"],
+      ["02","SEP","Visita gerencial — Yacimiento Sur","Dirección · R. Bustos",0,"Borrador"]]
+      .filter(r=>this.state.filtro==="Todos"||r[5]===this.state.filtro)
+      .map((r,i)=>Object.assign({dia:r[0],mes:r[1],titulo:r[2],detalle:r[3],hallazgos:r[4],
+        hallazgosColor:r[4]>2?"#BE185D":r[4]>0?"#B45309":"#15803D",
+        estado:r[5],estadoBg:est[r[5]][0],estadoFg:est[r[5]][1]},this.anim("pop",i)));
+
+    const estadoFiltros=["Todos","En proceso","Cerrada","Vencida","Borrador"].map(f=>{
+      const on=this.state.filtro===f;
+      return {label:f,bg:on?"#6D28D9":"#fff",fg:on?"#fff":"#4B4459",go:()=>this.setState({filtro:f})};
+    });
+
+    const pasos=PASOS.map((p,i)=>{
+      const on=this.state.paso===i,done=i<this.state.paso;
+      return {n:i+1,label:p,bg:on?"#6D28D9":done?"#EDE9FE":"#F4F1FB",fg:on?"#fff":done?"#5B21B6":"#665E7A",
+        go:()=>this.setState({paso:i,tick:this.state.tick+1})};
+    });
+
+    const tab=(id,label,icon)=>{const on=(id==="home"&&(s==="home"||s==="modulo"))||s===id;
+      return {label,icon,color:on?"#6D28D9":"#6E6685",chip:on?"#EDE9FE":"transparent",go:()=>this.go(id)};};
+
+    return {
+      isLogin:s==="login", isApp:s!=="login",
+      email:this.state.email, pass:this.state.pass, resetEnviado:this.state.reset?"1":null,
+      onEmail:e=>this.setState({email:e.target.value,reset:false}),
+      onPass:e=>this.setState({pass:e.target.value}),
+      olvide:()=>this.setState({reset:true}),
+      entrar:()=>this.go("home"),
+      pendientesTotal:7,
+      showBack:s!=="home", showAvatarBrand:s==="home",
+      title:s==="modulo"?(mod?mod.title:"Módulo"):titles[s],
+      subtitle:s==="modulo"?(mod?mod.desc:""):subs[s],
+      goBack:()=>this.go(s==="modulo"?"home":(s==="lista"||s==="form")?(this.state.modulo?"modulo":"home"):"home"),
+      goPendientes:()=>this.go("pendientes"),
+      enter:this.state.tick%2?"enterB":"enterA",
+      gridCols, padBottom: s==="form" ? "200px" : "108px",
+      isHome:s==="home",isModulo:s==="modulo",isLista:s==="lista",isForm:s==="form",isPendientes:s==="pendientes",
+      modulos,subitems,registros,estadoFiltros,checklist,pasos,
+      paso1:this.state.paso===0,paso2:this.state.paso===1,paso3:this.state.paso===2,paso4:this.state.paso===3,
+      ctaPaso:this.state.paso===3?"Cerrar y enviar":"Siguiente",
+      nextPaso:()=>this.setState(st=>({paso:Math.min(3,st.paso+1),tick:st.tick+1})),
+      avance:Math.round((this.state.paso/3)*100)+"%",
+      avanceTexto:"Paso "+(this.state.paso+1)+" de 4 · "+PASOS[this.state.paso],
+      resumen:[{label:"Ítems respondidos",value:contestadas+" / "+CHK.length,color:"#6D28D9"},
+        {label:"No cumple",value:String(noCumple),color:noCumple?"#BE185D":"#15803D"},
+        {label:"Fotos adjuntas",value:"4",color:"#1B1626"},
+        {label:"Guardado",value:"hace 1 min",color:"#635B72"}],
+      hallazgos:[{titulo:"Falta bloqueo en bomba B-12",severidad:"Crítico",sevBg:"#FCE7F1",sevFg:"#BE185D",detalle:"El equipo quedó sin tarjeta de bloqueo durante la intervención mecánica.",responsable:"J. Alcaraz",vence:"11/09/2026"},
+        {titulo:"Contenedor de residuos sin rótulo",severidad:"Medio",sevBg:"#FFF2DC",sevFg:"#B45309",detalle:"Contenedor de trapos contaminados sin identificación de corriente.",responsable:"S. Duarte",vence:"18/09/2026"}]
+        .map((h,i)=>Object.assign(h,this.anim("pop",i))),
+      firmas:[{rol:"Inspector CMASS",nombre:"M. Giménez"},{rol:"Responsable del área",nombre:"J. Alcaraz"}],
+      gruposPendientes:[
+        {titulo:"Auditorías",items:[{label:"Obras",meta:"2 formularios · 6 fotos",count:2,bg:"#FFF2DC",fg:"#B45309"},{label:"Servicios",meta:"1 formulario",count:1,bg:"#FFF2DC",fg:"#B45309"},{label:"Contratistas",meta:"sin pendientes",count:0,bg:"#EEEAF4",fg:"#6E6685"}]},
+        {titulo:"Reglas de Oro",items:[{label:"Permisos de trabajo",meta:"2 formularios",count:2,bg:"#FFF2DC",fg:"#B45309"},{label:"Aislamiento de energías",meta:"1 formulario",count:1,bg:"#FFF2DC",fg:"#B45309"},{label:"Excavaciones",meta:"sin pendientes",count:0,bg:"#EEEAF4",fg:"#6E6685"}]},
+        {titulo:"Observación de conducta",items:[{label:"Tarjetas TOP",meta:"1 formulario · 2 fotos",count:1,bg:"#FFF2DC",fg:"#B45309"},{label:"Visitas gerenciales",meta:"sin pendientes",count:0,bg:"#EEEAF4",fg:"#6E6685"}]}
+      ],
+      tabs:[tab("home","Inicio",I.home),tab("lista","Registros",I.clipboard),tab("pendientes","Pendientes",I.refresh),
+        {label:"Salir",icon:I.users,color:"#6E6685",chip:"transparent",go:()=>this.go("login")}]
+    };
+  }
+}
+</script>
+</body>
+</html>
