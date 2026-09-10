@@ -19,12 +19,12 @@ const labelStyle = {
   marginBottom: 5,
 };
 
-export default function PasoGenerales() {
+export default function PasoGenerales({ valores, onCambiar }) {
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))", gap: 13 }}>
       <label>
         <span style={labelStyle}>Cliente</span>
-        <select defaultValue="" style={fieldStyle}>
+        <select value={valores.cliente} onChange={(e) => onCambiar("cliente", e.target.value)} style={fieldStyle}>
           <option value="" disabled>
             Seleccioná un cliente
           </option>
@@ -34,19 +34,40 @@ export default function PasoGenerales() {
       </label>
       <label>
         <span style={labelStyle}>Ubicación / Zona</span>
-        <input placeholder="Batería 12 — sector bombas" style={fieldStyle} />
+        <input
+          placeholder="Batería 12 — sector bombas"
+          value={valores.ubicacion}
+          onChange={(e) => onCambiar("ubicacion", e.target.value)}
+          style={fieldStyle}
+        />
       </label>
       <label>
         <span style={labelStyle}>Grupo auditado</span>
-        <input placeholder="Cuadrilla mecánica 3" style={fieldStyle} />
+        <input
+          placeholder="Cuadrilla mecánica 3"
+          value={valores.grupoAuditado}
+          onChange={(e) => onCambiar("grupoAuditado", e.target.value)}
+          style={fieldStyle}
+        />
       </label>
       <label>
         <span style={labelStyle}>Fecha y hora</span>
-        <input type="datetime-local" defaultValue="2026-09-08T09:30" style={fieldStyle} />
+        <input
+          type="datetime-local"
+          value={valores.fechaHora}
+          onChange={(e) => onCambiar("fechaHora", e.target.value)}
+          style={fieldStyle}
+        />
       </label>
       <label style={{ gridColumn: "1/-1" }}>
         <span style={labelStyle}>Tarea observada</span>
-        <textarea rows={3} placeholder="Descripción breve de la tarea…" style={{ ...fieldStyle, resize: "vertical" }} />
+        <textarea
+          rows={3}
+          placeholder="Descripción breve de la tarea…"
+          value={valores.tareaObservada}
+          onChange={(e) => onCambiar("tareaObservada", e.target.value)}
+          style={{ ...fieldStyle, resize: "vertical" }}
+        />
       </label>
     </div>
   );

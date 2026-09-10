@@ -19,7 +19,7 @@ export const MODULOS = [
   },
   {
     id: "servicio",
-    title: "Inspecciones para Servicio",
+    title: "Inspecciones de Servicios Petroleros",
     desc: "Talleres, transporte y servicios contratados.",
     icon: "truck",
     badge: "2 abiertas",

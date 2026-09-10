@@ -3,7 +3,7 @@ import Icon from "./Icon.jsx";
 export default function SubItemCard({ sub, index = 0, onNuevo, onRegistros }) {
   return (
     <div
-      className="pop-in"
+      className="pop-in card-lift"
       style={{
         background: "#fff",
         borderRadius: 22,
