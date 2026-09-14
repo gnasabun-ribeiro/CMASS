@@ -21,6 +21,9 @@ yarn-error.log*
 !.vscode/extensions.json
 .idea/
 
+# supabase cli local state
+supabase/.temp/
+
 # os
 .DS_Store
 Thumbs.db
