@@ -24,27 +24,6 @@ function formatoGuardado(fecha, error) {
   return `hace ${Math.round(minutos / 60)} h`;
 }
 
-const HALLAZGOS_INICIALES = [
-  {
-    titulo: "Falta bloqueo en bomba B-12",
-    severidad: "Crítico",
-    sevBg: "var(--danger-bg)",
-    sevFg: "var(--danger-fg)",
-    detalle: "El equipo quedó sin tarjeta de bloqueo durante la intervención mecánica.",
-    responsable: "J. Alcaraz",
-    vence: "11/09/2026",
-  },
-  {
-    titulo: "Contenedor de residuos sin rótulo",
-    severidad: "Medio",
-    sevBg: "var(--warn-bg)",
-    sevFg: "var(--warn-fg)",
-    detalle: "Contenedor de trapos contaminados sin identificación de corriente.",
-    responsable: "S. Duarte",
-    vence: "18/09/2026",
-  },
-];
-
 export default function Formulario() {
   const { moduloId, subId } = useParams();
   const location = useLocation();
@@ -60,7 +39,7 @@ export default function Formulario() {
   const [paso, setPaso] = useState(0);
   const [generales, setGenerales] = useState(GENERALES_INICIALES);
   const [respuestas, setRespuestas] = useState({});
-  const [hallazgos, setHallazgos] = useState(HALLAZGOS_INICIALES);
+  const [hallazgos, setHallazgos] = useState([]);
   const [inspeccionId, setInspeccionId] = useState(null);
   const [guardadoEn, setGuardadoEn] = useState(null);
   const [errorGuardado, setErrorGuardado] = useState(null);
