@@ -28,36 +28,6 @@ export default function PasoChecklist({ items, respuestas, onResponder }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      <div style={{ display: "flex", gap: 7, overflowX: "auto", paddingBottom: 2 }}>
-        {bloques.map((b, i) => {
-          const respondidas = b.items.filter((it) => respuestas[it.codigo] != null).length;
-          const completo = respondidas === b.items.length;
-          const on = i === indice;
-          return (
-            <button
-              key={b.categoria}
-              onClick={() => setBloqueActual(i)}
-              aria-label={`${b.categoria} (${respondidas}/${b.items.length})`}
-              title={b.categoria}
-              style={{
-                flex: "0 0 auto",
-                width: 40,
-                height: 40,
-                border: 0,
-                background: on ? "var(--violet-700)" : completo ? "var(--violet-150)" : "var(--violet-50)",
-                color: on ? "#fff" : completo ? "var(--violet-800)" : "var(--muted)",
-                borderRadius: 14,
-                cursor: "pointer",
-                fontSize: 13.5,
-                fontWeight: 700,
-              }}
-            >
-              {i + 1}
-            </button>
-          );
-        })}
-      </div>
-
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <button
           onClick={() => setBloqueActual((b) => Math.max(0, b - 1))}
@@ -187,6 +157,36 @@ export default function PasoChecklist({ items, respuestas, onResponder }) {
             </div>
           </div>
         ))}
+      </div>
+
+      <div style={{ display: "flex", gap: 7, overflowX: "auto", justifyContent: "center", paddingBottom: 2 }}>
+        {bloques.map((b, i) => {
+          const respondidas = b.items.filter((it) => respuestas[it.codigo] != null).length;
+          const completo = respondidas === b.items.length;
+          const on = i === indice;
+          return (
+            <button
+              key={b.categoria}
+              onClick={() => setBloqueActual(i)}
+              aria-label={`${b.categoria} (${respondidas}/${b.items.length})`}
+              title={b.categoria}
+              style={{
+                flex: "0 0 auto",
+                width: 40,
+                height: 40,
+                border: 0,
+                background: on ? "var(--violet-700)" : completo ? "var(--violet-150)" : "var(--violet-50)",
+                color: on ? "#fff" : completo ? "var(--violet-800)" : "var(--muted)",
+                borderRadius: 14,
+                cursor: "pointer",
+                fontSize: 13.5,
+                fontWeight: 700,
+              }}
+            >
+              {i + 1}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
