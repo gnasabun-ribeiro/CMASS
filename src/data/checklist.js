@@ -151,6 +151,30 @@ const CATEGORIAS_SERVICIO = [
 
 export const CHECKLIST_SERVICIO = buildChecklist(CATEGORIAS_SERVICIO);
 
+// Checklist de "Reglas de Oro" → sub "Seguridad vial".
+// Fuente: planilla de verificación de vehículos (no tiene subcategorías).
+const CATEGORIAS_SEGURIDAD_VIAL = [
+  {
+    nombre: "Seguridad Vial",
+    items: [
+      "¿Se cuenta con la documentación reglamentaria del vehículo y conductor? (Constancia de Manejo Defensivo, Licencia de conducir acorde a la categoría del vehículo, VTV y Seguro vigentes)",
+      "¿El vehículo cuenta con Sistema de Control de Manejo en funcionamiento y el conductor cuenta con dispositivo de identificación de manejo individual? (PIN, tarjeta, etc.)",
+      "¿El estado y equipamiento del vehículo se encuentra en buenas condiciones para circular? (Luces, cinturones, extintor, auxilios, tipo y estado de las cubiertas)",
+      "¿El vehículo cuenta con identificación de la Empresa y N° de contrato?",
+      "¿El conductor conoce las velocidades precautorias establecidas en la zona y las establecidas por YPF SA?",
+      "¿Al momento de la inspección, el conductor y los pasajeros usan el cinturón de seguridad?",
+      "¿Acorde al estado y tipo de camino, usa la doble tracción?",
+      "¿Cuenta el vehículo con los elementos de seguridad necesarios? (Chalecos reflectivos, botiquín, lanza de remolque, balizas refractantes triangulares, etc.)",
+      "¿Se dispone de medios de comunicación para el área donde se encuentra y/o transita? (Teléfono, celular, radio)",
+      "¿El vehículo se encuentra estacionado en condición segura?",
+      "¿Se registran elementos sueltos en el habitáculo y/o otros compartimentos del vehículo?",
+      "¿El vehículo transporta herramientas o materiales dentro de la caja de carga y estos se encuentran sujetos con red de contención y/o fajas de sujeción acorde a la herramienta o material transportado?",
+    ],
+  },
+];
+
+export const CHECKLIST_SEGURIDAD_VIAL = buildChecklist(CATEGORIAS_SEGURIDAD_VIAL);
+
 // Checklist de referencia para módulos que todavía no tienen su propia
 // lista definitiva (simulacro, visita, top).
 export const CHECKLIST_GENERICO = buildChecklist([
@@ -172,7 +196,17 @@ const CHECKLISTS_POR_MODULO = {
   servicio: CHECKLIST_SERVICIO,
 };
 
-export function getChecklist(moduloId) {
+// Checklists que varían por sub-módulo (ej. cada una de las Reglas de Oro
+// tiene su propia lista, a diferencia de obra/servicio que son un módulo único).
+const CHECKLISTS_POR_SUBMODULO = {
+  reglas: {
+    "seguridad-vial": CHECKLIST_SEGURIDAD_VIAL,
+  },
+};
+
+export function getChecklist(moduloId, subId) {
+  const porSub = CHECKLISTS_POR_SUBMODULO[moduloId]?.[subId];
+  if (porSub) return porSub;
   return CHECKLISTS_POR_MODULO[moduloId] || CHECKLIST_GENERICO;
 }
 

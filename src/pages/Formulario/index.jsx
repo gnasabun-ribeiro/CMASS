@@ -33,7 +33,7 @@ export default function Formulario() {
 
   const modulo = findModulo(moduloId);
   const sub = isNested ? findSub(moduloId, subId) : null;
-  const checklist = useMemo(() => getChecklist(moduloId), [moduloId]);
+  const checklist = useMemo(() => getChecklist(moduloId, subId), [moduloId, subId]);
   const persisteEnSupabase = moduloId === "obra" && !isNested && supabaseConfigured;
 
   const [paso, setPaso] = useState(0);

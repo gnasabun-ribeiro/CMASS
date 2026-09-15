@@ -13,6 +13,8 @@ App de inspecciones de seguridad e higiene (React + Vite, backend en Supabase).
 
 Por ahora solo se está construyendo el módulo **Inspecciones de Obra Pública** (`moduloId: "obra"`) a nivel de persistencia/Supabase. Los demás módulos con formulario de 4 pasos (`servicio`, `simulacro`, `visita`, `top`) todavía no tienen guardado conectado; `servicio` ya tiene su propio checklist real (ver abajo), el resto sigue con `CHECKLIST_GENERICO` (placeholder) hasta que se definan.
 
+`reglas` (Reglas de Oro) es distinto: no es `form: true`, tiene `subs` (una por cada una de las 10 reglas) que abren el mismo formulario de 4 pasos vía `/modulos/reglas/form/:subId`. Cada sub puede tener su propio checklist — por ahora solo **Seguridad vial** (`subId: "seguridad-vial"`) tiene uno real, el resto de las reglas sigue con `CHECKLIST_GENERICO` hasta que se definan. Tampoco tiene persistencia en Supabase conectada (mismo estado que `servicio`).
+
 ## Checklist de Obra Pública
 
 - Fuente: `Checklist_Seguridad_Higiene_Obra_Publica.xlsx` (35 ítems en 7 categorías: Documentación y Gestión, Condiciones Generales, Equipos y Herramientas, Emergencias, Higiene y Medio Ambiente, Personal y Conducta Segura, Capacitación y Comunicación).
@@ -25,6 +27,14 @@ Por ahora solo se está construyendo el módulo **Inspecciones de Obra Pública*
 - Fuente: `Checklist_Seguridad_Higiene_Servicios_Petroleros.xlsx` (29 ítems en 6 categorías: Documentación y Permisos, Condiciones del Área, Vehículos y Equipos, Emergencias, Medio Ambiente, Personal).
 - Está cargado en `src/data/checklist.js` como `CHECKLIST_SERVICIO` y registrado en `CHECKLISTS_POR_MODULO` bajo `servicio`, con el mismo formato que el de obra (misma función `buildChecklist`, mismo código `"<categoría>.<ítem>"`).
 - A diferencia de `obra`, este módulo todavía **no tiene persistencia en Supabase**: las respuestas del Paso 2 quedan solo en memoria (`respuestas` en `Formulario/index.jsx`) porque `persisteEnSupabase` solo se activa para `moduloId === "obra"`. Si se pide conectar el guardado, hay que generalizar `inspeccionesObra.js`/las tablas SQL o crear su equivalente para servicio.
+
+## Checklist de Reglas de Oro → Seguridad Vial
+
+- Fuente: planilla de verificación de vehículos (no viene de un xlsx como los otros dos, se cargó a partir de una captura de pantalla). 12 preguntas, una sola categoría ("Seguridad Vial", sin subcategorías).
+- Está cargado en `src/data/checklist.js` como `CHECKLIST_SEGURIDAD_VIAL`.
+- A diferencia de `obra`/`servicio` (un checklist fijo por módulo), acá el checklist depende del **sub-módulo**, no solo del módulo: `getChecklist(moduloId, subId)` primero busca en `CHECKLISTS_POR_SUBMODULO[moduloId]?.[subId]` y si no hay nada cae a `CHECKLISTS_POR_MODULO[moduloId] || CHECKLIST_GENERICO`. Está registrado bajo `CHECKLISTS_POR_SUBMODULO.reglas["seguridad-vial"]`. `Formulario/index.jsx` ya pasa `subId` a `getChecklist`.
+- La planilla original también tenía datos de identificación del vehículo (tipo de vehículo, dominio/patente, liviano/pesado/otros, si el viaje es rutinario) que **no se cargaron** como ítems del checklist porque no son preguntas de sí/no/n-a — no encajan en el modelo `OPCIONES` (ok/no/na) que usa `PasoChecklist`. Quedan pendientes de definir dónde van (¿campos propios en Generales para este sub-módulo? ¿otro paso?) si se piden.
+- Sin persistencia en Supabase, igual que el resto de `reglas` (ver arriba).
 
 ## Persistencia (Supabase)
 
