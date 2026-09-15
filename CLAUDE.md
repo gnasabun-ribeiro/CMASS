@@ -11,7 +11,7 @@ App de inspecciones de seguridad e higiene (React + Vite, backend en Supabase).
 
 ## Alcance actual
 
-Por ahora solo se está construyendo el módulo **Inspecciones de Obra Pública** (`moduloId: "obra"`). Los demás módulos con formulario de 4 pasos (`servicio`, `simulacro`, `visita`, `top`) siguen usando datos de placeholder hasta que se definan sus propios checklists.
+Por ahora solo se está construyendo el módulo **Inspecciones de Obra Pública** (`moduloId: "obra"`) a nivel de persistencia/Supabase. Los demás módulos con formulario de 4 pasos (`servicio`, `simulacro`, `visita`, `top`) todavía no tienen guardado conectado; `servicio` ya tiene su propio checklist real (ver abajo), el resto sigue con `CHECKLIST_GENERICO` (placeholder) hasta que se definan.
 
 ## Checklist de Obra Pública
 
@@ -19,6 +19,12 @@ Por ahora solo se está construyendo el módulo **Inspecciones de Obra Pública*
 - Está cargado en `src/data/checklist.js` como `CHECKLIST_OBRA`, agrupado por categoría con código `"<categoría>.<ítem>"` (ej. `"2.3"`).
 - `getChecklist(moduloId)` devuelve el checklist correcto según el módulo; si el módulo no tiene uno propio, cae a `CHECKLIST_GENERICO` (placeholder).
 - Si se necesita agregar/editar/quitar ítems del checklist de obra, se edita esa lista en el código — no hay tabla de "ítems maestros" en la base, por decisión explícita: los ítems son fijos, lo que varía (y se persiste) son las respuestas de cada inspección.
+
+## Checklist de Servicios Petroleros
+
+- Fuente: `Checklist_Seguridad_Higiene_Servicios_Petroleros.xlsx` (29 ítems en 6 categorías: Documentación y Permisos, Condiciones del Área, Vehículos y Equipos, Emergencias, Medio Ambiente, Personal).
+- Está cargado en `src/data/checklist.js` como `CHECKLIST_SERVICIO` y registrado en `CHECKLISTS_POR_MODULO` bajo `servicio`, con el mismo formato que el de obra (misma función `buildChecklist`, mismo código `"<categoría>.<ítem>"`).
+- A diferencia de `obra`, este módulo todavía **no tiene persistencia en Supabase**: las respuestas del Paso 2 quedan solo en memoria (`respuestas` en `Formulario/index.jsx`) porque `persisteEnSupabase` solo se activa para `moduloId === "obra"`. Si se pide conectar el guardado, hay que generalizar `inspeccionesObra.js`/las tablas SQL o crear su equivalente para servicio.
 
 ## Persistencia (Supabase)
 
