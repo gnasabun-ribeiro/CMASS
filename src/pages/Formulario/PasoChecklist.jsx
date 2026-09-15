@@ -37,21 +37,22 @@ export default function PasoChecklist({ items, respuestas, onResponder }) {
             <button
               key={b.categoria}
               onClick={() => setBloqueActual(i)}
+              aria-label={`${b.categoria} (${respondidas}/${b.items.length})`}
+              title={b.categoria}
               style={{
                 flex: "0 0 auto",
+                width: 40,
+                height: 40,
                 border: 0,
                 background: on ? "var(--violet-700)" : completo ? "var(--violet-150)" : "var(--violet-50)",
                 color: on ? "#fff" : completo ? "var(--violet-800)" : "var(--muted)",
-                borderRadius: 20,
-                padding: "10px 15px",
+                borderRadius: 14,
                 cursor: "pointer",
-                minHeight: 44,
-                fontSize: 12.5,
+                fontSize: 13.5,
                 fontWeight: 700,
-                whiteSpace: "nowrap",
               }}
             >
-              {i + 1}. {b.categoria} ({respondidas}/{b.items.length})
+              {i + 1}
             </button>
           );
         })}
@@ -81,7 +82,7 @@ export default function PasoChecklist({ items, respuestas, onResponder }) {
 
         <div style={{ flex: 1, textAlign: "center" }}>
           <div style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600 }}>
-            Bloque {indice + 1} de {bloques.length}
+            Página {indice + 1} de {bloques.length}
           </div>
           <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--violet-800)" }}>{bloque.categoria}</div>
         </div>
