@@ -12,7 +12,7 @@ export default function Pendientes() {
           borderRadius: 24,
           padding: 17,
           background: "var(--brand-gradient)",
-          color: "#faf0fd",
+          color: "var(--violet-150)",
           display: "flex",
           gap: 13,
           alignItems: "center",
@@ -25,13 +25,13 @@ export default function Pendientes() {
           <div className="heading" style={{ fontWeight: 800, fontSize: 17, color: "#fff", letterSpacing: "-.3px" }}>
             {PENDIENTES_TOTAL} registros sin sincronizar
           </div>
-          <div style={{ fontSize: 12.5, color: "#f0dcf9", marginTop: 3 }}>Última sincronización: hoy 08:41 · 34 enviados</div>
+          <div style={{ fontSize: 12.5, color: "var(--violet-150)", marginTop: 3 }}>Última sincronización: hoy 08:41 · 34 enviados</div>
         </div>
         <button
           style={{
             border: 0,
             background: "var(--violet-400)",
-            color: "#3b0a4e",
+            color: "var(--ink)",
             fontWeight: 800,
             fontSize: 13.5,
             padding: "14px 20px",
@@ -48,7 +48,7 @@ export default function Pendientes() {
         <div key={g.titulo} style={{ marginBottom: 18 }}>
           <h3
             className="heading"
-            style={{ margin: "0 0 9px", fontSize: 12.5, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: "#f8ecfc" }}
+            style={{ margin: "0 0 9px", fontSize: 12.5, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--violet-150)" }}
           >
             {g.titulo}
           </h3>

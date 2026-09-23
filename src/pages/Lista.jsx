@@ -65,8 +65,8 @@ export default function Lista() {
           style={{
             flex: "1 1 120px",
             border: 0,
-            background: "var(--violet-700)",
-            color: "#fff",
+            background: "var(--active-bg)",
+            color: "var(--on-active)",
             fontWeight: 700,
             fontSize: 13.5,
             padding: 12,
@@ -89,8 +89,8 @@ export default function Lista() {
               style={{
                 flex: "0 0 auto",
                 border: 0,
-                background: on ? "var(--violet-700)" : "#fff",
-                color: on ? "#fff" : "var(--muted-3)",
+                background: on ? "var(--active-bg)" : "#fff",
+                color: on ? "var(--on-active)" : "var(--muted-3)",
                 fontSize: 12.5,
                 fontWeight: 700,
                 padding: "10px 15px",
@@ -179,7 +179,7 @@ export default function Lista() {
           );
         })}
         {registros.length === 0 ? (
-          <div style={{ textAlign: "center", color: "#F0E8FD", padding: "24px 0", fontSize: 13.5 }}>
+          <div style={{ textAlign: "center", color: "var(--violet-150)", padding: "24px 0", fontSize: 13.5 }}>
             No hay registros con este filtro.
           </div>
         ) : null}

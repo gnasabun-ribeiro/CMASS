@@ -148,7 +148,7 @@ export default function Formulario() {
           </span>
           <span style={{ fontSize: 12.5, color: "var(--muted)" }}>{avance}%</span>
         </div>
-        <div style={{ height: 9, background: "#f0e0f7", borderRadius: 20, overflow: "hidden", marginBottom: 11 }}>
+        <div style={{ height: 9, background: "var(--border)", borderRadius: 20, overflow: "hidden", marginBottom: 11 }}>
           <div
             style={{
               height: "100%",
@@ -167,8 +167,8 @@ export default function Formulario() {
               style={{
                 flex: "0 0 auto",
                 border: 0,
-                background: p.on ? "var(--violet-700)" : p.done ? "var(--violet-150)" : "var(--violet-50)",
-                color: p.on ? "#fff" : p.done ? "var(--violet-800)" : "var(--muted)",
+                background: p.on ? "var(--active-bg)" : p.done ? "var(--violet-150)" : "var(--violet-50)",
+                color: p.on ? "var(--on-active)" : p.done ? "var(--violet-800)" : "var(--muted)",
                 borderRadius: 20,
                 padding: "10px 15px",
                 cursor: "pointer",
@@ -216,8 +216,8 @@ export default function Formulario() {
             style={{
               flex: 1,
               border: 0,
-              background: "var(--brand-gradient)",
-              color: "#fff",
+              background: "var(--cta-gradient)",
+              color: "var(--on-cta)",
               fontWeight: 700,
               fontSize: 14.5,
               padding: "15px 18px",

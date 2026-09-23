@@ -34,10 +34,10 @@ export default function ModuleCard({ modulo, index = 0, onOpen, onRegistros }) {
         position: "relative",
         overflow: "hidden",
         textAlign: "left",
-        border: "3px solid transparent",
+        border: "3px solid var(--card-border)",
         borderRadius: 26,
-        background: "#fff",
-        color: "var(--ink)",
+        background: "var(--card-bg)",
+        color: "var(--card-title)",
         padding: 22,
         cursor: "pointer",
         display: "flex",
@@ -56,7 +56,7 @@ export default function ModuleCard({ modulo, index = 0, onOpen, onRegistros }) {
           width: 148,
           height: 148,
           borderRadius: "50%",
-          background: "rgba(112,28,147,.09)",
+          background: "var(--card-decor)",
         }}
       />
       {ripple ? (
@@ -81,7 +81,7 @@ export default function ModuleCard({ modulo, index = 0, onOpen, onRegistros }) {
         }}
       >
         <span
-          className={pressed ? "icon-pulse" : undefined}
+          className={`card-icon${pressed ? " icon-pulse" : ""}`}
           style={{
             width: 64,
             height: 64,
@@ -89,9 +89,10 @@ export default function ModuleCard({ modulo, index = 0, onOpen, onRegistros }) {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            background: "var(--violet-50)",
-            color: "var(--violet-800)",
+            background: "var(--card-accent-bg)",
+            color: "var(--card-accent)",
             boxShadow: "0 8px 18px -10px rgba(36,18,70,.5)",
+            transition: "background .2s, color .2s",
           }}
         >
           <Icon name={modulo.icon} size={32} strokeWidth={1.5} />
@@ -115,13 +116,14 @@ export default function ModuleCard({ modulo, index = 0, onOpen, onRegistros }) {
 
       <span style={{ position: "relative", flex: 1, display: "block" }}>
         <span
-          className="heading"
+          className="heading card-title"
           style={{
             display: "block",
             fontWeight: 800,
             fontSize: 19.5,
             lineHeight: 1.2,
             letterSpacing: "-.35px",
+            transition: "color .2s",
           }}
         >
           {modulo.title}
@@ -130,7 +132,7 @@ export default function ModuleCard({ modulo, index = 0, onOpen, onRegistros }) {
           style={{
             display: "block",
             fontSize: 13.5,
-            color: "#5c5570",
+            color: "var(--card-desc)",
             lineHeight: 1.5,
             marginTop: 6,
           }}
@@ -146,7 +148,7 @@ export default function ModuleCard({ modulo, index = 0, onOpen, onRegistros }) {
           flexWrap: "wrap",
           alignItems: "center",
           gap: 9,
-          color: "var(--violet-800)",
+          color: "var(--card-accent)",
           fontSize: 13.5,
           fontWeight: 700,
         }}

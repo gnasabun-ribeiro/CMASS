@@ -89,7 +89,7 @@ export default function PasoChecklist({ items, respuestas, onResponder }) {
             style={{
               borderRadius: 18,
               background: "var(--violet-tint-2)",
-              border: "1px solid #f0e0f7",
+              border: "1px solid var(--border)",
               padding: 13,
               animationDelay: `${i * 0.045}s`,
             }}
@@ -175,8 +175,8 @@ export default function PasoChecklist({ items, respuestas, onResponder }) {
                 width: 40,
                 height: 40,
                 border: 0,
-                background: on ? "var(--violet-700)" : completo ? "var(--violet-150)" : "var(--violet-50)",
-                color: on ? "#fff" : completo ? "var(--violet-800)" : "var(--muted)",
+                background: on ? "var(--active-bg)" : completo ? "var(--violet-150)" : "var(--violet-50)",
+                color: on ? "var(--on-active)" : completo ? "var(--violet-800)" : "var(--muted)",
                 borderRadius: 14,
                 cursor: "pointer",
                 fontSize: 13.5,

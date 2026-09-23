@@ -8,7 +8,7 @@ export default function PasoCierre({ resumen }) {
     <div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 12, marginBottom: 14 }}>
         {FIRMAS.map((f) => (
-          <div key={f.rol} style={{ borderRadius: 18, border: "1px solid #f0e0f7", background: "var(--violet-tint-2)", padding: 14 }}>
+          <div key={f.rol} style={{ borderRadius: 18, border: "1px solid var(--border)", background: "var(--violet-tint-2)", padding: 14 }}>
             <div style={{ fontSize: 11, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--muted)", fontWeight: 600, marginBottom: 9 }}>
               {f.rol}
             </div>
@@ -21,7 +21,7 @@ export default function PasoCierre({ resumen }) {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "#a49bb4",
+                color: "var(--muted-2)",
                 fontSize: 12.5,
               }}
             >

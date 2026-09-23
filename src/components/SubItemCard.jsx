@@ -5,7 +5,9 @@ export default function SubItemCard({ sub, index = 0, onNuevo, onRegistros }) {
     <div
       className="pop-in card-lift"
       style={{
-        background: "#fff",
+        border: "1px solid var(--card-border)",
+        background: "var(--card-bg)",
+        color: "var(--card-title)",
         borderRadius: 22,
         padding: 15,
         display: "flex",
@@ -17,6 +19,7 @@ export default function SubItemCard({ sub, index = 0, onNuevo, onRegistros }) {
     >
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <span
+          className="card-icon"
           style={{
             width: 46,
             height: 46,
@@ -25,17 +28,18 @@ export default function SubItemCard({ sub, index = 0, onNuevo, onRegistros }) {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            background: "var(--violet-50)",
-            color: "var(--violet-800)",
+            background: "var(--card-accent-bg)",
+            color: "var(--card-accent)",
+            transition: "background .2s, color .2s",
           }}
         >
           <Icon name={sub.icon} size={23} strokeWidth={1.6} />
         </span>
         <div style={{ minWidth: 0 }}>
-          <div className="heading" style={{ fontWeight: 700, fontSize: 15, lineHeight: 1.25, letterSpacing: "-.2px" }}>
+          <div className="heading card-title" style={{ fontWeight: 700, fontSize: 15, lineHeight: 1.25, letterSpacing: "-.2px", transition: "color .2s" }}>
             {sub.title}
           </div>
-          <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 2 }}>{sub.meta}</div>
+          <div style={{ fontSize: 11.5, color: "var(--card-desc)", marginTop: 2 }}>{sub.meta}</div>
         </div>
       </div>
       <div style={{ display: "flex", gap: 8, marginTop: "auto" }}>
@@ -44,8 +48,8 @@ export default function SubItemCard({ sub, index = 0, onNuevo, onRegistros }) {
           style={{
             flex: 1,
             border: 0,
-            background: "var(--violet-700)",
-            color: "#fff",
+            background: "var(--active-bg)",
+            color: "var(--on-active)",
             fontSize: 13,
             fontWeight: 700,
             padding: 12,

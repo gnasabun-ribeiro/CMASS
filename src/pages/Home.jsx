@@ -4,6 +4,7 @@ import AppShell from "../components/AppShell.jsx";
 import ModuleCard from "../components/ModuleCard.jsx";
 import { MODULOS } from "../data/modulos.js";
 import { useAuth } from "../context/AuthContext.jsx";
+import { TEMAS, useTheme } from "../context/ThemeContext.jsx";
 
 const COLUMNAS_KEY = "cmass:home:columnas";
 
@@ -24,6 +25,7 @@ function gridColumnas(valor) {
 export default function Home() {
   const navigate = useNavigate();
   const { nombre, email } = useAuth();
+  const { tema, setTema } = useTheme();
   const [columnas, setColumnas] = useState(
     () => localStorage.getItem(COLUMNAS_KEY) || "auto"
   );
@@ -40,6 +42,37 @@ export default function Home() {
 
   return (
     <AppShell title={`¡Bienvenido, ${nombre}!`} subtitle={`Inspecciones CMASS · ${email}`}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "flex-end",
+          gap: 6,
+          marginBottom: 12,
+          flexWrap: "wrap",
+        }}
+      >
+        <span style={{ fontSize: 13, fontWeight: 600, color: "var(--muted)", marginRight: 2 }}>Tema</span>
+        {TEMAS.map((t) => (
+          <button
+            key={t.value}
+            onClick={() => setTema(t.value)}
+            style={{
+              border: 0,
+              background: tema === t.value ? "var(--active-bg)" : "var(--violet-50)",
+              color: tema === t.value ? "var(--on-active)" : "var(--violet-800)",
+              fontSize: 12.5,
+              fontWeight: 700,
+              padding: "8px 14px",
+              borderRadius: 20,
+              cursor: "pointer",
+              minHeight: 38,
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
       <div
         className="columnas-selector"
         style={{ alignItems: "center", justifyContent: "flex-end", gap: 8, marginBottom: 14 }}

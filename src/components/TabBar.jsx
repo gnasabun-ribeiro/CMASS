@@ -56,7 +56,7 @@ export default function TabBar() {
             gap: 4,
             padding: "5px 2px",
             cursor: "pointer",
-            color: t.active ? "var(--violet-700)" : "#6e6685",
+            color: t.active ? "var(--violet-700)" : "var(--muted-2)",
             minHeight: 50,
           }}
         >

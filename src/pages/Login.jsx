@@ -61,11 +61,11 @@ export default function Login() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: "0 16px 34px -16px rgba(76,29,149,.75)",
+                boxShadow: "var(--shadow-logo)",
                 animation: "pulseRing 2.6s ease-out infinite",
               }}
             >
-              <Icon name="logo" size={31} strokeWidth={1.6} color="#F1DDF9" />
+              <Icon name="logo" size={31} strokeWidth={1.6} color="var(--violet-150)" />
             </div>
             <div
               className="heading"
@@ -79,7 +79,7 @@ export default function Login() {
             >
               Inspecciones CMASS
             </div>
-            <div style={{ fontSize: 13, color: "#F8ECFC", marginTop: 4 }}>
+            <div style={{ fontSize: 13, color: "var(--violet-150)", marginTop: 4 }}>
               Calidad · Ambiente · Seguridad · Sistemas
             </div>
           </div>
@@ -199,8 +199,8 @@ export default function Login() {
                 width: "100%",
                 border: 0,
                 borderRadius: 16,
-                background: "var(--brand-gradient)",
-                color: "#fff",
+                background: "var(--cta-gradient)",
+                color: "var(--on-cta)",
                 fontFamily: "'Plus Jakarta Sans', sans-serif",
                 fontWeight: 700,
                 fontSize: 15,
@@ -208,7 +208,7 @@ export default function Login() {
                 cursor: enviando ? "default" : "pointer",
                 opacity: enviando ? 0.7 : 1,
                 minHeight: 54,
-                boxShadow: "0 14px 26px -14px rgba(91,33,182,.8)",
+                boxShadow: "var(--shadow-cta)",
               }}
             >
               {enviando ? "Ingresando…" : "Ingresar"}

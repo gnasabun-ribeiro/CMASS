@@ -129,7 +129,7 @@ export default function PasoHallazgos({ hallazgos, onAgregar }) {
             </button>
             <button
               onClick={guardar}
-              style={{ flex: 1, border: 0, background: "var(--violet-700)", color: "#fff", fontWeight: 700, fontSize: 13, padding: 11, borderRadius: 12, cursor: "pointer" }}
+              style={{ flex: 1, border: 0, background: "var(--active-bg)", color: "var(--on-active)", fontWeight: 700, fontSize: 13, padding: 11, borderRadius: 12, cursor: "pointer" }}
             >
               Guardar hallazgo
             </button>
