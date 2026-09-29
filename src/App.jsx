@@ -1,4 +1,6 @@
+import { useEffect } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
+import { iniciarSync } from "./lib/sync.js";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import Login from "./pages/Login.jsx";
@@ -9,6 +11,11 @@ import Formulario from "./pages/Formulario/index.jsx";
 import Pendientes from "./pages/Pendientes.jsx";
 
 export default function App() {
+  // Arranca el envío automático de lo guardado en el dispositivo.
+  useEffect(() => {
+    iniciarSync();
+  }, []);
+
   return (
     <AuthProvider>
       <Routes>

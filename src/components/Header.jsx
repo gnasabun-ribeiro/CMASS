@@ -1,9 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import Icon from "./Icon.jsx";
-import { PENDIENTES_TOTAL } from "../data/mockRegistros.js";
+import { useSync } from "../lib/useSync.js";
+import logoRibeiro from "../assets/logo-ribeiro.png";
 
 export default function Header({ title, subtitle, onBack }) {
   const navigate = useNavigate();
+  const { pendientes } = useSync();
 
   return (
     <header
@@ -47,13 +49,19 @@ export default function Header({ title, subtitle, onBack }) {
             height: 42,
             flex: "0 0 42px",
             borderRadius: 14,
-            background: "var(--brand-gradient)",
+            background: "#000",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
           }}
         >
-          <Icon name="logo" size={21} strokeWidth={1.7} color="var(--violet-150)" />
+          <img
+            src={logoRibeiro}
+            alt="Ribeiro"
+            width={42}
+            height={42}
+            style={{ objectFit: "contain", display: "block" }}
+          />
         </div>
       )}
 
@@ -103,22 +111,24 @@ export default function Header({ title, subtitle, onBack }) {
         }}
       >
         <Icon name="refresh" size={19} strokeWidth={1.8} />
-        <span
-          style={{
-            position: "absolute",
-            top: -5,
-            right: -5,
-            background: "#E11D48",
-            color: "#fff",
-            fontSize: 10,
-            fontWeight: 700,
-            borderRadius: 20,
-            padding: "1.5px 6px",
-            boxShadow: "0 3px 8px -2px rgba(225,29,72,.7)",
-          }}
-        >
-          {PENDIENTES_TOTAL}
-        </span>
+        {pendientes > 0 ? (
+          <span
+            style={{
+              position: "absolute",
+              top: -5,
+              right: -5,
+              background: "#E11D48",
+              color: "#fff",
+              fontSize: 10,
+              fontWeight: 700,
+              borderRadius: 20,
+              padding: "1.5px 6px",
+              boxShadow: "0 3px 8px -2px rgba(225,29,72,.7)",
+            }}
+          >
+            {pendientes}
+          </span>
+        ) : null}
       </button>
     </header>
   );

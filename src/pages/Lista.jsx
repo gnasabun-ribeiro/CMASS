@@ -1,8 +1,26 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import AppShell from "../components/AppShell.jsx";
-import { ESTADOS, ESTADO_COLORS, REGISTROS, hallazgosColor } from "../data/mockRegistros.js";
+import { ESTADOS, ESTADO_COLORS, hallazgosColor } from "../data/mockRegistros.js";
 import { findModulo, findSub } from "../data/modulos.js";
+import { supabaseConfigured } from "../lib/supabaseClient.js";
+import { listarInspeccionesObra } from "../lib/inspeccionesObra.js";
+
+const MESES = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
+
+function aRegistro(r) {
+  const f = new Date(r.fecha_hora || r.created_at);
+  return {
+    id: r.id,
+    fecha: f,
+    dia: String(f.getDate()).padStart(2, "0"),
+    mes: MESES[f.getMonth()],
+    titulo: `Inspección de Obra — ${r.cliente || "Sin cliente"}`,
+    detalle: [r.ubicacion, r.grupo_auditado].filter(Boolean).join(" · ") || "Sin datos generales",
+    hallazgos: r.hallazgos,
+    estado: r.estado === "enviado" ? "Enviado" : "Borrador",
+  };
+}
 
 export default function Lista() {
   const { moduloId, subId } = useParams();
@@ -13,70 +31,68 @@ export default function Lista() {
   const sub = moduloId && subId ? findSub(moduloId, subId) : null;
 
   let title = "Mis Registros";
-  let subtitle = "Filtrá por área, fecha y estado";
+  let subtitle = "Registros cargados";
   let backTo = "/";
   if (sub) {
     title = sub.title;
-    subtitle = sub.meta;
+    subtitle = "Registros cargados";
     backTo = `/modulos/${moduloId}`;
   } else if (modulo) {
     title = `${modulo.title} — Registros`;
-    subtitle = "Filtrá por área, fecha y estado";
+    subtitle = "Registros cargados";
   }
 
-  const registros = useMemo(
-    () => (filtro === "Todos" ? REGISTROS : REGISTROS.filter((r) => r.estado === filtro)),
-    [filtro]
-  );
+  // Solo Obra Pública guarda en Supabase por ahora; el listado general ("Mis Registros") también la muestra.
+  const listaObra = !sub && (!moduloId || moduloId === "obra") && supabaseConfigured;
+  const [todos, setTodos] = useState([]);
+  const [estadoCarga, setEstadoCarga] = useState(listaObra ? "cargando" : "ok");
+  const [busqueda, setBusqueda] = useState("");
+  const [desde, setDesde] = useState("");
+  const [hasta, setHasta] = useState("");
+
+  useEffect(() => {
+    if (!listaObra) return;
+    let cancelado = false;
+    listarInspeccionesObra()
+      .then((rows) => {
+        if (cancelado) return;
+        // Descarta borradores vacíos (se crean al entrar al formulario y nunca se completaron).
+        const utiles = rows.filter(
+          (r) => r.estado === "enviado" || r.cliente || r.ubicacion || r.grupo_auditado || r.tarea_observada || r.hallazgos || r.respuestas
+        );
+        setTodos(utiles.map(aRegistro));
+        setEstadoCarga("ok");
+      })
+      .catch(() => !cancelado && setEstadoCarga("error"));
+    return () => {
+      cancelado = true;
+    };
+  }, [listaObra]);
+
+  const registros = useMemo(() => {
+    const q = busqueda.trim().toLowerCase();
+    const d = desde ? new Date(`${desde}T00:00:00`) : null;
+    const h = hasta ? new Date(`${hasta}T23:59:59`) : null;
+    return todos.filter(
+      (r) =>
+        (filtro === "Todos" || r.estado === filtro) &&
+        (!q || `${r.titulo} ${r.detalle}`.toLowerCase().includes(q)) &&
+        (!d || r.fecha >= d) &&
+        (!h || r.fecha <= h)
+    );
+  }, [todos, filtro, busqueda, desde, hasta]);
 
   return (
     <AppShell title={title} subtitle={subtitle} onBack={() => navigate(backTo)}>
-      <div
-        style={{
-          background: "#fff",
-          borderRadius: 22,
-          padding: 13,
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 10,
-          alignItems: "flex-end",
-          marginBottom: 13,
-          boxShadow: "var(--shadow-panel)",
-        }}
-      >
-        <label style={{ flex: "1 1 180px", minWidth: 0 }}>
-          <FieldLabel>Área</FieldLabel>
-          <select defaultValue="" style={fieldStyle}>
-            <option value="">Todas las áreas</option>
-            <option>Planta Norte</option>
-            <option>Yacimiento Sur</option>
-            <option>Obra Vial RN-40</option>
-          </select>
-        </label>
-        <label style={{ flex: "1 1 130px", minWidth: 0 }}>
-          <FieldLabel>Desde</FieldLabel>
-          <input type="date" defaultValue="2026-08-31" style={fieldStyle} />
-        </label>
-        <label style={{ flex: "1 1 130px", minWidth: 0 }}>
-          <FieldLabel>Hasta</FieldLabel>
-          <input type="date" defaultValue="2026-09-08" style={fieldStyle} />
-        </label>
-        <button
-          style={{
-            flex: "1 1 120px",
-            border: 0,
-            background: "var(--active-bg)",
-            color: "var(--on-active)",
-            fontWeight: 700,
-            fontSize: 13.5,
-            padding: 12,
-            borderRadius: 14,
-            cursor: "pointer",
-            minHeight: 48,
-          }}
-        >
-          Filtrar
-        </button>
+      <div style={{ background: "#fff", borderRadius: 22, padding: 13, display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 13, boxShadow: "var(--shadow-panel)" }}>
+        <input
+          placeholder="Buscar por cliente, ubicación o grupo…"
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          style={{ ...fieldStyle, flex: "2 1 220px" }}
+        />
+        <input type="date" aria-label="Desde" value={desde} onChange={(e) => setDesde(e.target.value)} style={{ ...fieldStyle, flex: "1 1 140px" }} />
+        <input type="date" aria-label="Hasta" value={hasta} onChange={(e) => setHasta(e.target.value)} style={{ ...fieldStyle, flex: "1 1 140px" }} />
       </div>
 
       <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, marginBottom: 12 }}>
@@ -110,7 +126,8 @@ export default function Lista() {
           const estadoColor = ESTADO_COLORS[r.estado];
           return (
             <button
-              key={`${r.dia}-${r.titulo}`}
+              key={r.id}
+              onClick={() => navigate(`/form/obra?id=${r.id}`)}
               className="pop-in"
               style={{
                 textAlign: "left",
@@ -180,7 +197,7 @@ export default function Lista() {
         })}
         {registros.length === 0 ? (
           <div style={{ textAlign: "center", color: "var(--violet-150)", padding: "24px 0", fontSize: 13.5 }}>
-            No hay registros con este filtro.
+            {estadoCarga === "cargando" ? "Cargando…" : estadoCarga === "error" ? "No se pudieron cargar los registros." : "Todavía no hay registros para mostrar."}
           </div>
         ) : null}
       </div>
@@ -188,26 +205,7 @@ export default function Lista() {
   );
 }
 
-function FieldLabel({ children }) {
-  return (
-    <span
-      style={{
-        display: "block",
-        fontSize: 10.5,
-        letterSpacing: ".1em",
-        textTransform: "uppercase",
-        color: "var(--muted)",
-        fontWeight: 600,
-        marginBottom: 5,
-      }}
-    >
-      {children}
-    </span>
-  );
-}
-
 const fieldStyle = {
-  width: "100%",
   border: "1px solid var(--border)",
   borderRadius: 14,
   padding: 12,
@@ -215,4 +213,5 @@ const fieldStyle = {
   background: "var(--violet-25)",
   color: "var(--ink)",
   minHeight: 48,
+  minWidth: 0,
 };

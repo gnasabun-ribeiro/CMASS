@@ -1,3 +1,6 @@
+import { useEffect, useState } from "react";
+import { listarCentrosDeCostos } from "../../lib/centrosDeCostos.js";
+
 const fieldStyle = {
   width: "100%",
   border: "1px solid var(--border)",
@@ -20,16 +23,44 @@ const labelStyle = {
 };
 
 export default function PasoGenerales({ valores, onCambiar }) {
+  const [centros, setCentros] = useState([]);
+  const [estado, setEstado] = useState("cargando"); // cargando | ok | error
+
+  useEffect(() => {
+    let cancelado = false;
+    listarCentrosDeCostos()
+      .then((lista) => {
+        if (cancelado) return;
+        setCentros(lista);
+        setEstado("ok");
+      })
+      .catch(() => !cancelado && setEstado("error"));
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
+  // Si el valor guardado ya no está en la lista (centro dado de baja), se sigue mostrando.
+  const valorFueraDeLista = valores.cliente && !centros.some((c) => c.etiqueta === valores.cliente);
+
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))", gap: 13 }}>
       <label>
         <span style={labelStyle}>Cliente</span>
         <select value={valores.cliente} onChange={(e) => onCambiar("cliente", e.target.value)} style={fieldStyle}>
           <option value="" disabled>
-            Seleccioná un cliente
+            {estado === "cargando"
+              ? "Cargando centros de costo…"
+              : estado === "error"
+                ? "No se pudieron cargar los centros de costo"
+                : "Seleccioná un cliente"}
           </option>
-          <option>YPF — Yacimiento Sur</option>
-          <option>Vialidad Provincial</option>
+          {valorFueraDeLista && <option value={valores.cliente}>{valores.cliente}</option>}
+          {centros.map((c) => (
+            <option key={c.id ?? c.codigo} value={c.etiqueta}>
+              {c.etiqueta}
+            </option>
+          ))}
         </select>
       </label>
       <label>

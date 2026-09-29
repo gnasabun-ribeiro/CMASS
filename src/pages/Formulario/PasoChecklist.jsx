@@ -1,21 +1,8 @@
 import { useMemo, useState } from "react";
 import Icon from "../../components/Icon.jsx";
-import { OPCIONES } from "../../data/checklist.js";
+import { OPCIONES, agruparPorCategoria } from "../../data/checklist.js";
 
-function agruparPorCategoria(items) {
-  const bloques = [];
-  for (const item of items) {
-    const ultimo = bloques[bloques.length - 1];
-    if (ultimo && ultimo.categoria === item.categoria) {
-      ultimo.items.push(item);
-    } else {
-      bloques.push({ categoria: item.categoria, items: [item] });
-    }
-  }
-  return bloques;
-}
-
-export default function PasoChecklist({ items, respuestas, onResponder }) {
+export default function PasoChecklist({ items, respuestas, onResponder, fotos = {}, subiendo = {}, puedeFotos = false, onFoto, onQuitarFoto }) {
   const bloques = useMemo(() => agruparPorCategoria(items), [items]);
   const [bloqueActual, setBloqueActual] = useState(0);
   const indice = Math.min(bloqueActual, bloques.length - 1);
@@ -134,27 +121,28 @@ export default function PasoChecklist({ items, respuestas, onResponder }) {
                   </button>
                 );
               })}
-              <button
-                style={{
-                  marginLeft: "auto",
-                  border: "1.5px dashed var(--violet-300)",
-                  background: "#fff",
-                  color: "var(--violet-800)",
-                  fontSize: 12.5,
-                  fontWeight: 700,
-                  padding: "10px 14px",
-                  borderRadius: 14,
-                  cursor: "pointer",
-                  minHeight: 46,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}
-              >
-                <Icon name="camera" size={16} strokeWidth={1.8} />
-                Foto
-              </button>
+              <BotonFoto
+                habilitado={puedeFotos && respuestas[codigo] != null && !subiendo[codigo]}
+                motivo={!puedeFotos ? "Las fotos se guardan solo en Obra Pública" : respuestas[codigo] == null ? "Respondé el ítem para adjuntar una foto" : ""}
+                subiendo={Boolean(subiendo[codigo])}
+                tiene={Boolean(fotos[codigo])}
+                onArchivo={(file) => onFoto({ codigo, categoria, texto }, file)}
+              />
             </div>
+            {fotos[codigo] ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 11 }}>
+                <a href={fotos[codigo]} target="_blank" rel="noreferrer">
+                  <img src={fotos[codigo]} alt={`Foto del ítem ${codigo}`} style={{ width: 84, height: 84, objectFit: "cover", borderRadius: 12, border: "1px solid var(--border)", display: "block" }} />
+                </a>
+                <button
+                  onClick={() => onQuitarFoto({ codigo })}
+                  disabled={Boolean(subiendo[codigo])}
+                  style={{ border: 0, background: "var(--danger-bg)", color: "var(--danger-fg)", fontWeight: 700, fontSize: 12, padding: "8px 13px", borderRadius: 10, cursor: "pointer" }}
+                >
+                  Quitar foto
+                </button>
+              </div>
+            ) : null}
           </div>
         ))}
       </div>
@@ -189,5 +177,52 @@ export default function PasoChecklist({ items, respuestas, onResponder }) {
         })}
       </div>
     </div>
+  );
+}
+
+function BotonFoto({ habilitado, motivo, subiendo, tiene, onArchivo }) {
+  const estilo = {
+    marginLeft: "auto",
+    border: "1.5px dashed var(--violet-300)",
+    background: "#fff",
+    color: "var(--violet-800)",
+    fontSize: 12.5,
+    fontWeight: 700,
+    padding: "10px 14px",
+    borderRadius: 14,
+    cursor: habilitado ? "pointer" : "not-allowed",
+    opacity: habilitado ? 1 : 0.5,
+    minHeight: 46,
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+  };
+  const contenido = (
+    <>
+      <Icon name="camera" size={16} strokeWidth={1.8} />
+      {subiendo ? "Subiendo…" : tiene ? "Cambiar foto" : "Foto"}
+    </>
+  );
+  if (!habilitado) {
+    return (
+      <button disabled title={motivo} style={estilo}>
+        {contenido}
+      </button>
+    );
+  }
+  return (
+    <label style={estilo}>
+      {contenido}
+      <input
+        type="file"
+        accept="image/*"
+        hidden
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          e.target.value = "";
+          if (file) onArchivo(file);
+        }}
+      />
+    </label>
   );
 }

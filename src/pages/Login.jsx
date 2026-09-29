@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import Icon from "../components/Icon.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
+import logoRibeiro from "../assets/logo-ribeiro.png";
 
 export default function Login() {
   const { login, resetPassword } = useAuth();
@@ -57,7 +57,7 @@ export default function Login() {
                 height: 66,
                 margin: "0 auto 14px",
                 borderRadius: 21,
-                background: "var(--brand-gradient)",
+                background: "#000",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -65,7 +65,13 @@ export default function Login() {
                 animation: "pulseRing 2.6s ease-out infinite",
               }}
             >
-              <Icon name="logo" size={31} strokeWidth={1.6} color="var(--violet-150)" />
+              <img
+                src={logoRibeiro}
+                alt="Ribeiro"
+                width={66}
+                height={66}
+                style={{ objectFit: "contain", display: "block" }}
+              />
             </div>
             <div
               className="heading"

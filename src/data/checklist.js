@@ -210,6 +210,19 @@ export function getChecklist(moduloId, subId) {
   return CHECKLISTS_POR_MODULO[moduloId] || CHECKLIST_GENERICO;
 }
 
+export function agruparPorCategoria(items) {
+  const bloques = [];
+  for (const item of items) {
+    const ultimo = bloques[bloques.length - 1];
+    if (ultimo && ultimo.categoria === item.categoria) {
+      ultimo.items.push(item);
+    } else {
+      bloques.push({ categoria: item.categoria, items: [item] });
+    }
+  }
+  return bloques;
+}
+
 export const OPCIONES = [
   { value: "ok", label: "Cumple", bg: "var(--success-bg)", fg: "var(--success-fg)", border: "var(--success-border)" },
   { value: "no", label: "No cumple", bg: "var(--danger-bg)", fg: "var(--danger-fg)", border: "var(--danger-border)" },

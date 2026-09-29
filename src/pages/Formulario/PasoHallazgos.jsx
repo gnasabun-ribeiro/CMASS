@@ -1,10 +1,5 @@
 import { useState } from "react";
-
-const SEVERIDADES = [
-  { value: "Crítico", bg: "var(--danger-bg)", fg: "var(--danger-fg)" },
-  { value: "Medio", bg: "var(--warn-bg)", fg: "var(--warn-fg)" },
-  { value: "Bajo", bg: "var(--neutral-bg)", fg: "var(--neutral-fg)" },
-];
+import { SEVERIDADES } from "../../data/severidades.js";
 
 const fieldStyle = {
   width: "100%",
@@ -17,31 +12,35 @@ const fieldStyle = {
   minHeight: 42,
 };
 
-export default function PasoHallazgos({ hallazgos, onAgregar }) {
+export default function PasoHallazgos({ hallazgos, onAgregar, onEliminar }) {
   const [abierto, setAbierto] = useState(false);
+  const [guardando, setGuardando] = useState(false);
   const [form, setForm] = useState({ titulo: "", severidad: "Medio", detalle: "", responsable: "", vence: "" });
 
-  const guardar = () => {
-    if (!form.titulo.trim()) return;
-    const sev = SEVERIDADES.find((s) => s.value === form.severidad);
-    onAgregar({
-      titulo: form.titulo,
-      severidad: form.severidad,
-      sevBg: sev.bg,
-      sevFg: sev.fg,
-      detalle: form.detalle,
-      responsable: form.responsable || "Sin asignar",
-      vence: form.vence || "—",
-    });
-    setForm({ titulo: "", severidad: "Medio", detalle: "", responsable: "", vence: "" });
-    setAbierto(false);
+  const guardar = async () => {
+    if (!form.titulo.trim() || guardando) return;
+    setGuardando(true);
+    try {
+      const ok = await onAgregar({
+        titulo: form.titulo.trim(),
+        severidad: form.severidad,
+        detalle: form.detalle,
+        responsable: form.responsable.trim(),
+        vence: form.vence,
+      });
+      if (ok === false) return; // falló el guardado: se conserva lo escrito
+      setForm({ titulo: "", severidad: "Medio", detalle: "", responsable: "", vence: "" });
+      setAbierto(false);
+    } finally {
+      setGuardando(false);
+    }
   };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
       {hallazgos.map((h, i) => (
         <div
-          key={`${h.titulo}-${i}`}
+          key={h.id ?? `${h.titulo}-${i}`}
           className="pop-in"
           style={{
             borderRadius: 18,
@@ -60,13 +59,19 @@ export default function PasoHallazgos({ hallazgos, onAgregar }) {
             </span>
           </div>
           <div style={{ fontSize: 13, color: "var(--muted-4)", lineHeight: 1.5, marginBottom: 10 }}>{h.detalle}</div>
-          <div style={{ display: "flex", gap: 14, flexWrap: "wrap", fontSize: 12, color: "var(--muted)" }}>
+          <div style={{ display: "flex", gap: 14, flexWrap: "wrap", fontSize: 12, color: "var(--muted)", alignItems: "center" }}>
             <span>
               Responsable: <strong style={{ color: "var(--ink)" }}>{h.responsable}</strong>
             </span>
             <span>
               Vence: <strong style={{ color: "var(--ink)" }}>{h.vence}</strong>
             </span>
+            <button
+              onClick={() => onEliminar(h)}
+              style={{ marginLeft: "auto", border: 0, background: "var(--danger-bg)", color: "var(--danger-fg)", fontWeight: 700, fontSize: 12, padding: "7px 12px", borderRadius: 10, cursor: "pointer" }}
+            >
+              Eliminar
+            </button>
           </div>
         </div>
       ))}
@@ -129,9 +134,10 @@ export default function PasoHallazgos({ hallazgos, onAgregar }) {
             </button>
             <button
               onClick={guardar}
+              disabled={guardando}
               style={{ flex: 1, border: 0, background: "var(--active-bg)", color: "var(--on-active)", fontWeight: 700, fontSize: 13, padding: 11, borderRadius: 12, cursor: "pointer" }}
             >
-              Guardar hallazgo
+              {guardando ? "Guardando…" : "Guardar hallazgo"}
             </button>
           </div>
         </div>
