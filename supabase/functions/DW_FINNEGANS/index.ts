@@ -31,13 +31,31 @@ Deno.serve(async (req) => {
     return new Response("unauthorized", { status: 401 });
   }
 
+  // El DW presenta un certificado que Deno no reconoce ("UnknownIssuer").
+  // - DW_CA_CERT (opcional): PEM de la CA que firmó ese certificado. Es la
+  //   opción correcta: sigue verificando la identidad del servidor.
+  // - DW_SSL_INSECURE=true (opcional): no verifica el certificado. La conexión
+  //   sigue cifrada pero no se comprueba quién está del otro lado; usar solo
+  //   hasta conseguir el certificado de la CA.
+  // - DW_TLS_SERVERNAME (opcional): nombre contra el que se valida el
+  //   certificado, si el host al que se conecta es un alias (acá el cert está
+  //   emitido para el endpoint de RDS, no para DW_HOST).
+  const caCert = Deno.env.get("DW_CA_CERT");
+  const tlsServername = Deno.env.get("DW_TLS_SERVERNAME");
+  const sslInseguro = Deno.env.get("DW_SSL_INSECURE") === "true";
+  const ssl = caCert
+    ? { ca: caCert, ...(tlsServername ? { servername: tlsServername } : {}) }
+    : sslInseguro
+    ? { rejectUnauthorized: false }
+    : "require";
+
   const sql = postgres({
     host: Deno.env.get("DW_HOST"),
     port: Number(Deno.env.get("DW_PORT") ?? "5432"),
     database: Deno.env.get("DW_DATABASE"),
     username: Deno.env.get("DW_USER"),
     password: Deno.env.get("DW_PASSWORD"),
-    ssl: "require",
+    ssl,
     // Si el DW no acepta conexiones desde acá (firewall/VPN), sin esto la
     // función se queda colgada sin responder hasta que la plataforma la mata.
     // Con esto, falla rápido y devuelve un error explícito.
@@ -48,7 +66,7 @@ Deno.serve(async (req) => {
 
   try {
     const filas = await sql`
-      select * from ${sql(esquema)}."RIBEIRO_BD_CENTROS_DE_COSTOS"
+      select * from ${sql(esquema)}.ribeiro_bd_centros_de_costos
     `;
 
     const supabase = createClient(
@@ -78,8 +96,26 @@ Deno.serve(async (req) => {
     );
   } catch (err) {
     console.error(err);
+
+    // Si la tabla no existe (42P01), ayuda a encontrarla: lista tablas/vistas
+    // del DW cuyo nombre se parezca, con su schema.
+    let candidatas: unknown = undefined;
+    if ((err as { code?: string })?.code === "42P01") {
+      try {
+        candidatas = await sql`
+          select table_schema, table_name
+          from information_schema.tables
+          where table_name ilike '%centro%' or table_name ilike '%costo%'
+          order by table_schema, table_name
+          limit 50
+        `;
+      } catch (_) {
+        // si tampoco se puede listar, se devuelve solo el error original
+      }
+    }
+
     return new Response(
-      JSON.stringify({ ok: false, error: String(err) }),
+      JSON.stringify({ ok: false, error: String(err), candidatas }),
       { status: 500, headers: { "content-type": "application/json" } },
     );
   } finally {
