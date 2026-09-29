@@ -1,7 +1,8 @@
 import { useEffect } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { iniciarSync } from "./lib/sync.js";
-import { AuthProvider } from "./context/AuthContext.jsx";
+import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
+import { listarCentrosDeCostos } from "./lib/centrosDeCostos.js";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import Login from "./pages/Login.jsx";
 import Home from "./pages/Home.jsx";
@@ -9,6 +10,15 @@ import Modulo from "./pages/Modulo.jsx";
 import Lista from "./pages/Lista.jsx";
 import Formulario from "./pages/Formulario/index.jsx";
 import Pendientes from "./pages/Pendientes.jsx";
+
+// Deja lista en el dispositivo la información que se necesita sin conexión.
+function PrecargaOffline() {
+  const { isAuthenticated } = useAuth();
+  useEffect(() => {
+    if (isAuthenticated && navigator.onLine) listarCentrosDeCostos().catch(() => {});
+  }, [isAuthenticated]);
+  return null;
+}
 
 export default function App() {
   // Arranca el envío automático de lo guardado en el dispositivo.
@@ -18,6 +28,7 @@ export default function App() {
 
   return (
     <AuthProvider>
+      <PrecargaOffline />
       <Routes>
         <Route path="/login" element={<Login />} />
 

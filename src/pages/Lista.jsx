@@ -5,6 +5,9 @@ import { ESTADOS, ESTADO_COLORS, hallazgosColor } from "../data/mockRegistros.js
 import { findModulo, findSub } from "../data/modulos.js";
 import { supabaseConfigured } from "../lib/supabaseClient.js";
 import { listarInspeccionesObra } from "../lib/inspeccionesObra.js";
+import { listarCola, listarInspeccionesLocales } from "../lib/localDb.js";
+import { useAuth } from "../context/AuthContext.jsx";
+import { useSync } from "../lib/useSync.js";
 
 const MESES = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
 
@@ -22,9 +25,40 @@ function aRegistro(r) {
   };
 }
 
+// Copia local (guardada en el dispositivo): puede estar más nueva que la del servidor.
+function localARegistro(rec, pendiente) {
+  const g = rec.generales;
+  const f = new Date(g.fechaHora || rec.actualizadoEn || Date.now());
+  return {
+    id: rec.id,
+    fecha: f,
+    dia: String(f.getDate()).padStart(2, "0"),
+    mes: MESES[f.getMonth()],
+    titulo: `Inspección de Obra — ${g.cliente || "Sin cliente"}`,
+    detalle: [g.ubicacion, g.grupoAuditado].filter(Boolean).join(" · ") || "Sin datos generales",
+    hallazgos: rec.hallazgos.length,
+    estado: rec.estado === "enviado" ? "Enviado" : "Borrador",
+    pendiente,
+  };
+}
+
+function tieneContenido(rec) {
+  const g = rec.generales;
+  return (
+    rec.estado === "enviado" ||
+    Object.values(g).some(Boolean) ||
+    Object.keys(rec.respuestas).length > 0 ||
+    rec.hallazgos.length > 0 ||
+    Object.keys(rec.fotos).length > 0 ||
+    Object.keys(rec.firmas).length > 0
+  );
+}
+
 export default function Lista() {
   const { moduloId, subId } = useParams();
   const navigate = useNavigate();
+  const { userId } = useAuth();
+  const sync = useSync();
   const [filtro, setFiltro] = useState("Todos");
 
   const modulo = moduloId ? findModulo(moduloId) : null;
@@ -50,24 +84,36 @@ export default function Lista() {
   const [desde, setDesde] = useState("");
   const [hasta, setHasta] = useState("");
 
+  // Junta lo del servidor con lo guardado en el dispositivo (sin conexión solo se ve lo local).
+  // Si una inspección está en los dos lados, gana la copia local, que es la más nueva.
   useEffect(() => {
     if (!listaObra) return;
     let cancelado = false;
-    listarInspeccionesObra()
-      .then((rows) => {
-        if (cancelado) return;
-        // Descarta borradores vacíos (se crean al entrar al formulario y nunca se completaron).
-        const utiles = rows.filter(
-          (r) => r.estado === "enviado" || r.cliente || r.ubicacion || r.grupo_auditado || r.tarea_observada || r.hallazgos || r.respuestas
-        );
-        setTodos(utiles.map(aRegistro));
-        setEstadoCarga("ok");
-      })
-      .catch(() => !cancelado && setEstadoCarga("error"));
+    (async () => {
+      const [remotos, locales, cola] = await Promise.all([
+        listarInspeccionesObra().catch(() => null),
+        listarInspeccionesLocales().catch(() => []),
+        listarCola().catch(() => []),
+      ]);
+      if (cancelado) return;
+      const pendientes = new Set(cola.map((op) => op.inspeccionId));
+      const porId = new Map();
+      (remotos || [])
+        // Descarta borradores vacíos del servidor (se crearon y nunca se completaron).
+        .filter((r) => r.estado === "enviado" || r.cliente || r.ubicacion || r.grupo_auditado || r.tarea_observada || r.hallazgos || r.respuestas)
+        .forEach((r) => porId.set(r.id, aRegistro(r)));
+      locales
+        .filter((rec) => rec.inspectorId === userId && tieneContenido(rec))
+        .forEach((rec) => porId.set(rec.id, localARegistro(rec, pendientes.has(rec.id))));
+      const lista = [...porId.values()].sort((x, y) => y.fecha - x.fecha);
+      setTodos(lista);
+      // Solo es un error si tampoco hay nada local para mostrar.
+      setEstadoCarga(remotos === null && lista.length === 0 ? "error" : "ok");
+    })();
     return () => {
       cancelado = true;
     };
-  }, [listaObra]);
+  }, [listaObra, userId, sync.pendientes]);
 
   const registros = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
@@ -191,6 +237,7 @@ export default function Lista() {
                 }}
               >
                 {r.estado}
+                {r.pendiente ? " · sin enviar" : ""}
               </span>
             </button>
           );
