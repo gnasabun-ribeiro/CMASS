@@ -27,6 +27,15 @@ export const MODULOS = [
     form: true,
   },
   {
+    id: "trailers",
+    title: "Inspección Trailers y Obradores",
+    desc: "Residuos, combustible, emergencias y efluentes del obrador.",
+    icon: "box",
+    badge: "",
+    cta: "Nueva inspección",
+    form: true,
+  },
+  {
     id: "simulacro",
     title: "Informe de Simulacro",
     desc: "Evaluación por roles, tiempos y observaciones.",
@@ -127,3 +136,9 @@ export function findSub(moduloId, subId) {
 }
 
 export const PASOS = ["Generales", "Checklist", "Hallazgos", "Cierre"];
+
+// Ruta del formulario de un módulo (nuevo, o retomando la inspección `id`).
+export function rutaFormulario(moduloId, subId, id) {
+  const base = subId ? `/modulos/${moduloId}/form/${subId}` : `/form/${moduloId}`;
+  return id ? `${base}?id=${id}` : base;
+}
