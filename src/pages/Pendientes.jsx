@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AppShell from "../components/AppShell.jsx";
+import { findModulo, findSub, rutaFormulario } from "../data/modulos.js";
 import { listarCola, obtenerInspeccion } from "../lib/localDb.js";
 import { sincronizar } from "../lib/sync.js";
 import { useSync } from "../lib/useSync.js";
@@ -42,9 +43,12 @@ export default function Pendientes() {
         ops.forEach((op) => {
           if (op.tipo !== "crear") conteo[op.tipo] = (conteo[op.tipo] || 0) + 1;
         });
+        const moduloId = rec?.moduloId ?? "obra";
+        const nombreModulo = findSub(moduloId, rec?.subId)?.title || findModulo(moduloId)?.title || "Inspección";
         lista.push({
           id,
-          titulo: `Inspección de Obra — ${rec?.generales?.cliente || "Sin cliente"}`,
+          ruta: rutaFormulario(moduloId, rec?.subId, id),
+          titulo: `${nombreModulo} — ${rec?.generales?.cliente || "Sin cliente"}`,
           detalle: Object.entries(conteo)
             .map(([tipo, n]) => `${n} ${ETIQUETA_TIPO[tipo] || tipo}`)
             .join(" · "),
@@ -114,7 +118,7 @@ export default function Pendientes() {
           {grupos.map((g) => (
             <button
               key={g.id}
-              onClick={() => navigate(`/form/obra?id=${g.id}`)}
+              onClick={() => navigate(g.ruta)}
               style={{
                 textAlign: "left",
                 border: 0,

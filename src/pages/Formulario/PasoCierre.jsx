@@ -168,6 +168,12 @@ export default function PasoCierre({
         </div>
       ) : null}
 
+      {ROLES_FIRMA.some(({ rol }) => !firmas[rol]) ? (
+        <div style={{ marginTop: 14, background: "var(--warn-bg)", color: "var(--warn-fg)", borderRadius: 14, padding: 11, fontSize: 12.5, fontWeight: 600 }}>
+          Falta guardar la firma de {ROLES_FIRMA.filter(({ rol }) => !firmas[rol]).map(({ titulo: t }) => t).join(" y ")}: el informe saldrá sin ella.
+        </div>
+      ) : null}
+
       <button
         onClick={descargarPDF}
         disabled={generandoPDF}

@@ -48,7 +48,8 @@ export default function Formulario() {
   const modulo = findModulo(moduloId);
   const sub = isNested ? findSub(moduloId, subId) : null;
   const checklist = useMemo(() => getChecklist(moduloId, subId), [moduloId, subId]);
-  const persisteEnSupabase = moduloId === "obra" && !isNested && supabaseConfigured;
+  // Todos los módulos guardan (en el dispositivo primero, y de ahí a Supabase); ver lib/sync.js.
+  const persisteEnSupabase = Boolean(modulo) && supabaseConfigured;
 
   const [paso, setPaso] = useState(0);
   const [generales, setGenerales] = useState(GENERALES_INICIALES);
@@ -124,8 +125,8 @@ export default function Formulario() {
     if (!persisteEnSupabase || !userId) return;
     let cancelado = false;
     let promesa;
-    if (idParam) promesa = cargarInspeccion(idParam);
-    else promesa = nuevaRef.current ??= nuevaInspeccion(userId);
+    if (idParam) promesa = cargarInspeccion(idParam, moduloId);
+    else promesa = nuevaRef.current ??= nuevaInspeccion(userId, moduloId, isNested ? subId : null);
     promesa
       .then((rec) => {
         if (cancelado) return;
@@ -138,7 +139,7 @@ export default function Formulario() {
       cancelado = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idParam, persisteEnSupabase, userId]);
+  }, [idParam, persisteEnSupabase, userId, moduloId, subId]);
 
   // Guarda Generales en el dispositivo (solo si el usuario los tocó). Devuelve true si salió bien.
   const volcarGenerales = async () => {
@@ -372,7 +373,7 @@ export default function Formulario() {
       ) : null}
       {!persisteEnSupabase ? (
         <div style={{ background: "var(--warn-bg)", color: "var(--warn-fg)", borderRadius: 16, padding: 12, marginBottom: 12, fontSize: 13, fontWeight: 600 }}>
-          Este módulo todavía no guarda datos: lo que cargues se pierde al salir.
+          Sin conexión con el servidor configurada: lo que cargues se pierde al salir.
         </div>
       ) : null}
       <div style={{ background: "#fff", borderRadius: 22, padding: 14, marginBottom: 12, boxShadow: "var(--shadow-panel)" }}>

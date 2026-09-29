@@ -2,23 +2,31 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import AppShell from "../components/AppShell.jsx";
 import { ESTADOS, ESTADO_COLORS, hallazgosColor } from "../data/mockRegistros.js";
-import { findModulo, findSub } from "../data/modulos.js";
+import { findModulo, findSub, rutaFormulario } from "../data/modulos.js";
 import { supabaseConfigured } from "../lib/supabaseClient.js";
-import { listarInspeccionesObra } from "../lib/inspeccionesObra.js";
+import { listarInspecciones } from "../lib/inspeccionesRemoto.js";
+import { TABLAS_GENERICAS, TABLAS_OBRA } from "../lib/tablas.js";
 import { listarCola, listarInspeccionesLocales } from "../lib/localDb.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useSync } from "../lib/useSync.js";
 
 const MESES = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
 
+function tituloDe(moduloId, subId, cliente) {
+  const nombre = findSub(moduloId, subId)?.title || findModulo(moduloId)?.title || "Inspección";
+  return `${nombre} — ${cliente || "Sin cliente"}`;
+}
+
 function aRegistro(r) {
   const f = new Date(r.fecha_hora || r.created_at);
   return {
     id: r.id,
+    moduloId: r.moduloId,
+    subId: r.subId,
     fecha: f,
     dia: String(f.getDate()).padStart(2, "0"),
     mes: MESES[f.getMonth()],
-    titulo: `Inspección de Obra — ${r.cliente || "Sin cliente"}`,
+    titulo: tituloDe(r.moduloId, r.subId, r.cliente),
     detalle: [r.ubicacion, r.grupo_auditado].filter(Boolean).join(" · ") || "Sin datos generales",
     hallazgos: r.hallazgos,
     estado: r.estado === "enviado" ? "Enviado" : "Borrador",
@@ -29,12 +37,15 @@ function aRegistro(r) {
 function localARegistro(rec, pendiente) {
   const g = rec.generales;
   const f = new Date(g.fechaHora || rec.actualizadoEn || Date.now());
+  const moduloId = rec.moduloId ?? "obra"; // las copias viejas no traen módulo: eran de obra
   return {
     id: rec.id,
+    moduloId,
+    subId: rec.subId ?? null,
     fecha: f,
     dia: String(f.getDate()).padStart(2, "0"),
     mes: MESES[f.getMonth()],
-    titulo: `Inspección de Obra — ${g.cliente || "Sin cliente"}`,
+    titulo: tituloDe(moduloId, rec.subId, g.cliente),
     detalle: [g.ubicacion, g.grupoAuditado].filter(Boolean).join(" · ") || "Sin datos generales",
     hallazgos: rec.hallazgos.length,
     estado: rec.estado === "enviado" ? "Enviado" : "Borrador",
@@ -54,6 +65,8 @@ function tieneContenido(rec) {
   );
 }
 
+const noVacio = (r) => r.estado === "enviado" || r.cliente || r.ubicacion || r.grupo_auditado || r.tarea_observada || r.hallazgos || r.respuestas;
+
 export default function Lista() {
   const { moduloId, subId } = useParams();
   const navigate = useNavigate();
@@ -69,17 +82,15 @@ export default function Lista() {
   let backTo = "/";
   if (sub) {
     title = sub.title;
-    subtitle = "Registros cargados";
     backTo = `/modulos/${moduloId}`;
   } else if (modulo) {
     title = `${modulo.title} — Registros`;
-    subtitle = "Registros cargados";
   }
 
-  // Solo Obra Pública guarda en Supabase por ahora; el listado general ("Mis Registros") también la muestra.
-  const listaObra = !sub && (!moduloId || moduloId === "obra") && supabaseConfigured;
+  // "Mis Registros" lista todos los módulos; los demás, el módulo (o la regla) indicado.
+  const hayLista = supabaseConfigured && (!moduloId || Boolean(modulo?.form || modulo?.subs));
   const [todos, setTodos] = useState([]);
-  const [estadoCarga, setEstadoCarga] = useState(listaObra ? "cargando" : "ok");
+  const [estadoCarga, setEstadoCarga] = useState(hayLista ? "cargando" : "ok");
   const [busqueda, setBusqueda] = useState("");
   const [desde, setDesde] = useState("");
   const [hasta, setHasta] = useState("");
@@ -87,33 +98,38 @@ export default function Lista() {
   // Junta lo del servidor con lo guardado en el dispositivo (sin conexión solo se ve lo local).
   // Si una inspección está en los dos lados, gana la copia local, que es la más nueva.
   useEffect(() => {
-    if (!listaObra) return;
+    if (!hayLista) return;
     let cancelado = false;
     (async () => {
-      const [remotos, locales, cola] = await Promise.all([
-        listarInspeccionesObra().catch(() => null),
+      const consultas = [];
+      if (!moduloId || moduloId === "obra") consultas.push(listarInspecciones(TABLAS_OBRA));
+      if (!moduloId || moduloId !== "obra") consultas.push(listarInspecciones(TABLAS_GENERICAS, { moduloId, subId: sub?.id }));
+      const [partes, locales, cola] = await Promise.all([
+        Promise.all(consultas.map((c) => c.catch(() => null))),
         listarInspeccionesLocales().catch(() => []),
         listarCola().catch(() => []),
       ]);
       if (cancelado) return;
+      const sinConexion = partes.every((p) => p === null);
+      const remotos = partes.filter(Boolean).flat();
       const pendientes = new Set(cola.map((op) => op.inspeccionId));
       const porId = new Map();
-      (remotos || [])
-        // Descarta borradores vacíos del servidor (se crearon y nunca se completaron).
-        .filter((r) => r.estado === "enviado" || r.cliente || r.ubicacion || r.grupo_auditado || r.tarea_observada || r.hallazgos || r.respuestas)
-        .forEach((r) => porId.set(r.id, aRegistro(r)));
+      // Descarta borradores vacíos del servidor (se crearon y nunca se completaron).
+      remotos.filter(noVacio).forEach((r) => porId.set(r.id, aRegistro(r)));
       locales
         .filter((rec) => rec.inspectorId === userId && tieneContenido(rec))
+        .filter((rec) => !moduloId || (rec.moduloId ?? "obra") === moduloId)
+        .filter((rec) => !sub || rec.subId === sub.id)
         .forEach((rec) => porId.set(rec.id, localARegistro(rec, pendientes.has(rec.id))));
       const lista = [...porId.values()].sort((x, y) => y.fecha - x.fecha);
       setTodos(lista);
       // Solo es un error si tampoco hay nada local para mostrar.
-      setEstadoCarga(remotos === null && lista.length === 0 ? "error" : "ok");
+      setEstadoCarga(sinConexion && lista.length === 0 ? "error" : "ok");
     })();
     return () => {
       cancelado = true;
     };
-  }, [listaObra, userId, sync.pendientes]);
+  }, [hayLista, moduloId, subId, userId, sync.pendientes]);
 
   const registros = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
@@ -173,7 +189,7 @@ export default function Lista() {
           return (
             <button
               key={r.id}
-              onClick={() => navigate(`/form/obra?id=${r.id}`)}
+              onClick={() => navigate(rutaFormulario(r.moduloId, r.subId, r.id))}
               className="pop-in"
               style={{
                 textAlign: "left",

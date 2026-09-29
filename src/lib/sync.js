@@ -9,13 +9,14 @@ import {
   obtenerInspeccion,
 } from "./localDb.js";
 import {
-  agregarHallazgoObra,
-  borrarHallazgoObra,
-  crearBorradorObra,
-  guardarGeneralesObra,
+  agregarHallazgo,
+  borrarHallazgo,
+  crearBorrador,
+  guardarGenerales,
   guardarRespuestaChecklist,
-  marcarEnviadaObra,
-} from "./inspeccionesObra.js";
+  marcarEnviada,
+} from "./inspeccionesRemoto.js";
+import { tablasDe } from "./tablas.js";
 import { quitarFotoChecklist, subirFotoChecklist } from "./fotosChecklist.js";
 import { guardarFirmaObra, guardarNombreFirmaObra } from "./firmasObra.js";
 
@@ -76,33 +77,34 @@ function actualizarLocal(id, fn) {
 
 async function ejecutar(op, rec) {
   const id = rec.id;
+  const t = tablasDe(rec.moduloId); // las copias viejas no traen moduloId: eran de obra
   switch (op.tipo) {
     case "crear":
-      await crearBorradorObra(rec.inspectorId, id);
+      await crearBorrador(t, { id, inspectorId: rec.inspectorId, moduloId: rec.moduloId, subId: rec.subId });
       await actualizarLocal(id, (r) => {
         r.enServidor = true;
       });
       return;
     case "generales":
-      return guardarGeneralesObra(id, rec.generales);
+      return guardarGenerales(t, id, rec.generales);
     case "respuesta": {
       const r = rec.respuestas[op.clave];
       if (!r) return;
-      return guardarRespuestaChecklist(id, { codigo: op.clave, categoria: r.categoria, texto: r.texto }, r.valor);
+      return guardarRespuestaChecklist(t, id, { codigo: op.clave, categoria: r.categoria, texto: r.texto }, r.valor);
     }
     case "hallazgo": {
       const h = rec.hallazgos.find((x) => x.id === op.clave);
       if (!h) return;
-      return agregarHallazgoObra(id, h);
+      return agregarHallazgo(t, id, h);
     }
     case "hallazgoDel":
-      return borrarHallazgoObra(op.clave);
+      return borrarHallazgo(t, op.clave);
     case "foto": {
-      if (op.payload.accion === "quitar") return quitarFotoChecklist(id, op.clave, op.payload.ruta);
+      if (op.payload.accion === "quitar") return quitarFotoChecklist(t, id, op.clave, op.payload.ruta);
       const f = rec.fotos[op.clave];
       if (!f?.blob) return;
       const anterior = f.rutaServidor && f.rutaServidor !== f.ruta ? f.rutaServidor : undefined;
-      await subirFotoChecklist(id, op.clave, f.blob, anterior, f.ruta);
+      await subirFotoChecklist(t, id, op.clave, f.blob, anterior, f.ruta);
       await actualizarLocal(id, (r) => {
         if (r.fotos[op.clave]?.ruta === f.ruta) r.fotos[op.clave].rutaServidor = f.ruta;
       });
@@ -112,17 +114,17 @@ async function ejecutar(op, rec) {
       const f = rec.firmas[op.clave];
       if (!f) return;
       if (f.blob && f.ruta !== f.rutaServidor) {
-        await guardarFirmaObra(id, op.clave, f.nombre, f.blob, f.rutaServidor, f.ruta);
+        await guardarFirmaObra(t, id, op.clave, f.nombre, f.blob, f.rutaServidor, f.ruta);
         await actualizarLocal(id, (r) => {
           if (r.firmas[op.clave]?.ruta === f.ruta) r.firmas[op.clave].rutaServidor = f.ruta;
         });
       } else {
-        await guardarNombreFirmaObra(id, op.clave, f.nombre);
+        await guardarNombreFirmaObra(t, id, op.clave, f.nombre);
       }
       return;
     }
     case "enviar":
-      return marcarEnviadaObra(id);
+      return marcarEnviada(t, id);
     default:
       throw new Error(`Operación desconocida: ${op.tipo}`);
   }

@@ -108,7 +108,13 @@ export default function FirmaPad({ firma, guardando, onGuardar }) {
           display: "block",
         }}
       />
-      {!hayTrazo ? <div style={{ fontSize: 11.5, color: "var(--muted-2)", marginTop: 6 }}>Firmá dentro del recuadro</div> : null}
+      {hayTrazo ? (
+        <div style={{ fontSize: 12, fontWeight: 700, color: "var(--warn-fg)", background: "var(--warn-bg)", borderRadius: 10, padding: "6px 10px", marginTop: 8 }}>
+          Todavía no está guardada: tocá "Guardar firma" para que quede en el informe.
+        </div>
+      ) : (
+        <div style={{ fontSize: 11.5, color: "var(--muted-2)", marginTop: 6 }}>Firmá dentro del recuadro y tocá "Guardar firma"</div>
+      )}
       <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
         <button onClick={limpiar} disabled={!hayTrazo || guardando} style={{ ...botonBase, background: "var(--neutral-bg)", color: "var(--neutral-fg)", opacity: hayTrazo ? 1 : 0.5 }}>
           Borrar

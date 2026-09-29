@@ -20,12 +20,12 @@ export async function comprimirImagen(file) {
 // Sube la foto (ya comprimida) a la ruta indicada y guarda esa ruta en la respuesta del ítem.
 // Repetible: si el archivo ya estaba subido de un intento anterior, sigue de largo.
 // Si había una foto anterior en el servidor, la borra.
-export async function subirFotoChecklist(inspeccionId, codigo, blob, rutaAnterior, ruta) {
+export async function subirFotoChecklist(t, inspeccionId, codigo, blob, rutaAnterior, ruta) {
   const { error: errSubida } = await supabase.storage.from(BUCKET).upload(ruta, blob, { contentType: "image/jpeg" });
   if (errSubida && !/already exists|duplicate/i.test(errSubida.message) && String(errSubida.statusCode) !== "409") throw errSubida;
 
   const { data, error } = await supabase
-    .from("inspecciones_obra_checklist")
+    .from(t.checklist)
     .update({ foto_url: ruta })
     .eq("inspeccion_id", inspeccionId)
     .eq("codigo", codigo)
@@ -36,9 +36,9 @@ export async function subirFotoChecklist(inspeccionId, codigo, blob, rutaAnterio
   return ruta;
 }
 
-export async function quitarFotoChecklist(inspeccionId, codigo, ruta) {
+export async function quitarFotoChecklist(t, inspeccionId, codigo, ruta) {
   const { error } = await supabase
-    .from("inspecciones_obra_checklist")
+    .from(t.checklist)
     .update({ foto_url: null })
     .eq("inspeccion_id", inspeccionId)
     .eq("codigo", codigo);

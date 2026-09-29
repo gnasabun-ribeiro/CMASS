@@ -1,6 +1,7 @@
 import { borrarOpsDe, encolar, enSerie, guardarInspeccion, obtenerInspeccion, obtenerOp } from "./localDb.js";
 import { agendarSync } from "./sync.js";
-import { cargarInspeccionObra } from "./inspeccionesObra.js";
+import { cargarInspeccionRemota } from "./inspeccionesRemoto.js";
+import { tablasDe } from "./tablas.js";
 import { listarFirmasObra } from "./firmasObra.js";
 
 // API que usa el formulario: todo se escribe primero en el dispositivo y se
@@ -28,10 +29,12 @@ function modificar(id, fn) {
   });
 }
 
-export async function nuevaInspeccion(inspectorId) {
+export async function nuevaInspeccion(inspectorId, moduloId, subId = null) {
   const rec = {
     id: crypto.randomUUID(),
     inspectorId,
+    moduloId,
+    subId,
     enServidor: false,
     estado: "borrador",
     generales: { ...GENERALES_VACIOS },
@@ -45,13 +48,16 @@ export async function nuevaInspeccion(inspectorId) {
 }
 
 // Devuelve la copia local; si no existe (ej. otro dispositivo) la baja del servidor.
-export async function cargarInspeccion(id) {
+export async function cargarInspeccion(id, moduloId) {
   const local = await obtenerInspeccion(id);
   if (local) return local;
-  const [d, firmas] = await Promise.all([cargarInspeccionObra(id), listarFirmasObra(id)]);
+  const t = tablasDe(moduloId);
+  const [d, firmas] = await Promise.all([cargarInspeccionRemota(t, id), listarFirmasObra(t, id)]);
   const rec = {
     id,
     inspectorId: d.inspectorId,
+    moduloId: d.moduloId,
+    subId: d.subId,
     enServidor: true,
     estado: d.estado,
     generales: d.generales,
