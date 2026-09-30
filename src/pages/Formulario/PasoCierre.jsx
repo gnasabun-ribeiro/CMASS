@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import Icon from "../../components/Icon.jsx";
 import { OPCIONES, agruparPorCategoria } from "../../data/checklist.js";
 import FirmaPad from "../../components/FirmaPad.jsx";
+import GaleriaFotos from "../../components/GaleriaFotos.jsx";
+import { useColaboradores } from "../../lib/colaboradores.js";
 
 const panelStyle = {
   borderRadius: 18,
@@ -32,7 +34,11 @@ export default function PasoCierre({
   checklist,
   respuestas,
   hallazgos,
-  fotos = {},
+  fotos = [],
+  subiendoFotos = 0,
+  onAgregarFotos,
+  onQuitarFoto,
+  maxFotos,
   firmas = {},
   nombreInspector,
   nombreResponsable,
@@ -41,6 +47,7 @@ export default function PasoCierre({
   onGuardarFirma,
   guardandoFirma = {},
 }) {
+  const colaboradores = useColaboradores();
   const bloques = useMemo(() => agruparPorCategoria(checklist), [checklist]);
   const [generandoPDF, setGenerandoPDF] = useState(false);
 
@@ -48,13 +55,8 @@ export default function PasoCierre({
     setGenerandoPDF(true);
     try {
       const { generarInformePDF } = await import("../../lib/informePdf.js");
-      const { urlADataUrl } = await import("../../lib/fotosChecklist.js");
-      const fotosPdf = {};
-      await Promise.all(
-        Object.entries(fotos).map(async ([codigo, url]) => {
-          if (url) fotosPdf[codigo] = await urlADataUrl(url).catch(() => null);
-        })
-      );
+      const { urlADataUrl } = await import("../../lib/fotos.js");
+      const fotosPdf = (await Promise.all(fotos.map((f) => (f.url ? urlADataUrl(f.url).catch(() => null) : null)))).filter(Boolean);
       const firmasPdf = {};
       await Promise.all(
         Object.entries(firmas).map(async ([rol, f]) => {
@@ -69,6 +71,8 @@ export default function PasoCierre({
 
   return (
     <div>
+      <GaleriaFotos fotos={fotos} subiendo={subiendoFotos} max={maxFotos} onAgregar={onAgregarFotos} onQuitar={onQuitarFoto} />
+
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 12, marginBottom: 14 }}>
         {ROLES_FIRMA.map(({ rol, titulo: tituloRol }) => (
           <div key={rol} style={{ borderRadius: 18, border: "1px solid var(--border)", background: "var(--violet-tint-2)", padding: 14 }}>
@@ -80,12 +84,20 @@ export default function PasoCierre({
               <div style={{ fontSize: 13.5, fontWeight: 600, marginTop: 9 }}>{nombreInspector}</div>
             ) : (
               <input
+                list="lista-colaboradores-cierre"
                 placeholder="Nombre y apellido del responsable"
                 value={nombreResponsable}
                 onChange={(e) => onNombreResponsable(e.target.value)}
                 onBlur={onNombreResponsableBlur}
                 style={{ width: "100%", marginTop: 9, border: "1px solid var(--border)", borderRadius: 12, padding: 10, fontSize: 13.5, background: "#fff", color: "var(--ink)", minHeight: 42 }}
               />
+            )}
+            {rol === "responsable" && (
+              <datalist id="lista-colaboradores-cierre">
+                {colaboradores.map((c, i) => (
+                  <option key={`${c.correo}-${i}`} value={c.etiqueta} label={c.correo || undefined} />
+                ))}
+              </datalist>
             )}
           </div>
         ))}

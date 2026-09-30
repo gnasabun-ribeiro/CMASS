@@ -60,7 +60,7 @@ function tieneContenido(rec) {
     Object.values(g).some(Boolean) ||
     Object.keys(rec.respuestas).length > 0 ||
     rec.hallazgos.length > 0 ||
-    Object.keys(rec.fotos).length > 0 ||
+    (rec.galeria?.length ?? 0) > 0 ||
     Object.keys(rec.firmas).length > 0
   );
 }

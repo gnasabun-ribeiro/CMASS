@@ -10,14 +10,14 @@ import { getChecklist } from "../../data/checklist.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { supabaseConfigured } from "../../lib/supabaseClient.js";
 import { armarHallazgo } from "../../data/severidades.js";
-import { comprimirImagen, urlsFirmadas } from "../../lib/fotosChecklist.js";
+import { BUCKET_FIRMAS, BUCKET_FOTOS, MAX_FOTOS, comprimirImagen, urlsFirmadas } from "../../lib/fotos.js";
 import {
   agregarHallazgo as agregarHallazgoLocal,
   borrarHallazgo as borrarHallazgoLocal,
   cambiarNombreFirma,
   cargarInspeccion,
   guardarFirma as guardarFirmaLocal,
-  guardarFoto as guardarFotoLocal,
+  agregarFoto as agregarFotoLocal,
   guardarGenerales,
   guardarRespuesta,
   marcarEnviada,
@@ -58,8 +58,8 @@ export default function Formulario() {
   const [inspeccionId, setInspeccionId] = useState(null);
   const [guardadoEn, setGuardadoEn] = useState(null);
   const [errorGuardado, setErrorGuardado] = useState(null);
-  const [fotos, setFotos] = useState({}); // codigo -> { url }
-  const [subiendoFoto, setSubiendoFoto] = useState({});
+  const [fotos, setFotos] = useState([]); // fotos generales: { id, url }
+  const [subiendoFotos, setSubiendoFotos] = useState(0);
   const [firmas, setFirmas] = useState({}); // rol -> { nombre, url }
   const [nombreResponsable, setNombreResponsable] = useState("");
   const [guardandoFirma, setGuardandoFirma] = useState({});
@@ -96,27 +96,30 @@ export default function Formulario() {
     setHallazgos(rec.hallazgos.map(armarHallazgo));
     setNombreResponsable(rec.firmas.responsable?.nombre || "");
 
-    const nuevasFotos = {};
+    const galeria = rec.galeria ?? [];
     const nuevasFirmas = {};
-    const remotas = [];
-    for (const [codigo, f] of Object.entries(rec.fotos)) {
-      if (f.blob) nuevasFotos[codigo] = { url: urlDeBlob(f.blob) };
-      else remotas.push({ tipo: "foto", clave: codigo, ruta: f.ruta });
-    }
+    const firmasRemotas = [];
     for (const [rol, f] of Object.entries(rec.firmas)) {
       if (f.blob) nuevasFirmas[rol] = { nombre: f.nombre, url: urlDeBlob(f.blob) };
-      else remotas.push({ tipo: "firma", clave: rol, ruta: f.ruta, nombre: f.nombre });
+      else firmasRemotas.push({ rol, ruta: f.ruta, nombre: f.nombre });
     }
-    setFotos(nuevasFotos);
+    setFotos(galeria.map((f) => ({ id: f.id, url: f.blob ? urlDeBlob(f.blob) : null })));
     setFirmas(nuevasFirmas);
 
-    if (remotas.length && navigator.onLine) {
-      urlsFirmadas(remotas.map((r) => r.ruta))
+    // Lo que solo está en el servidor necesita URL firmada (requiere conexión).
+    const fotosRemotas = galeria.filter((f) => !f.blob);
+    if (fotosRemotas.length && navigator.onLine) {
+      urlsFirmadas(fotosRemotas.map((f) => f.ruta), BUCKET_FOTOS)
         .then((urls) => {
-          setFotos((prev) => ({ ...prev, ...Object.fromEntries(remotas.filter((r) => r.tipo === "foto").map((r) => [r.clave, { url: urls[r.ruta] }])) }));
-          setFirmas((prev) => ({ ...prev, ...Object.fromEntries(remotas.filter((r) => r.tipo === "firma").map((r) => [r.clave, { nombre: r.nombre, url: urls[r.ruta] }])) }));
+          const rutaDe = Object.fromEntries(fotosRemotas.map((f) => [f.id, f.ruta]));
+          setFotos((prev) => prev.map((p) => (p.url ? p : { ...p, url: urls[rutaDe[p.id]] || null })));
         })
         .catch(() => {}); // sin conexión: quedan sin miniatura hasta la próxima vez
+    }
+    if (firmasRemotas.length && navigator.onLine) {
+      urlsFirmadas(firmasRemotas.map((f) => f.ruta), BUCKET_FIRMAS)
+        .then((urls) => setFirmas((prev) => ({ ...prev, ...Object.fromEntries(firmasRemotas.map((f) => [f.rol, { nombre: f.nombre, url: urls[f.ruta] }])) })))
+        .catch(() => {});
     }
   };
 
@@ -184,14 +187,13 @@ export default function Formulario() {
       .catch((err) => setErrorGuardado(err.message));
   };
 
-  const urlsFotos = Object.fromEntries(Object.entries(fotos).map(([c, f]) => [c, f.url]));
   const noCumple = Object.values(respuestas).filter((v) => v === "no").length;
   const contestadas = Object.keys(respuestas).length;
 
   const resumen = [
     { label: "Ítems respondidos", value: `${contestadas} / ${checklist.length}`, color: "var(--violet-700)" },
     { label: "No cumple", value: String(noCumple), color: noCumple ? "var(--danger-fg)" : "var(--success-fg)" },
-    { label: "Fotos adjuntas", value: String(Object.keys(fotos).length), color: "var(--ink)" },
+    { label: "Fotos adjuntas", value: String(fotos.length), color: "var(--ink)" },
     {
       label: "Guardado",
       value: persisteEnSupabase ? textoGuardado({ error: errorGuardado, guardadoEn, sync }) : "no se guarda (solo en pantalla)",
@@ -272,37 +274,38 @@ export default function Formulario() {
     }
   };
 
-  const marcarSubiendo = (codigo, valor) => setSubiendoFoto((s) => ({ ...s, [codigo]: valor }));
-
-  const subirFoto = async (item, file) => {
-    if (!inspeccionId) return;
-    marcarSubiendo(item.codigo, true);
-    try {
-      const blob = await comprimirImagen(file);
-      await guardarFotoLocal(inspeccionId, item.codigo, blob);
-      setFotos((f) => ({ ...f, [item.codigo]: { url: urlDeBlob(blob) } }));
-      marcarGuardado();
-    } catch (err) {
-      setErrorGuardado(err.message);
-    } finally {
-      marcarSubiendo(item.codigo, false);
+  // Fotos generales de la inspección (se adjuntan en el Paso 4, hasta MAX_FOTOS).
+  const agregarFotos = async (archivos) => {
+    if (persisteEnSupabase && !inspeccionId) return;
+    const lista = [...archivos].slice(0, Math.max(0, MAX_FOTOS - fotos.length));
+    if (!lista.length) return;
+    setSubiendoFotos((n) => n + lista.length);
+    for (const archivo of lista) {
+      try {
+        const blob = await comprimirImagen(archivo);
+        let id = crypto.randomUUID();
+        if (persisteEnSupabase) {
+          id = (await agregarFotoLocal(inspeccionId, blob)).id;
+          marcarGuardado();
+        }
+        setFotos((f) => [...f, { id, url: urlDeBlob(blob) }]);
+      } catch (err) {
+        setErrorGuardado(err.message);
+      } finally {
+        setSubiendoFotos((n) => n - 1);
+      }
     }
   };
 
-  const quitarFoto = async (item) => {
-    if (!fotos[item.codigo]) return;
-    marcarSubiendo(item.codigo, true);
+  const quitarFoto = async (foto) => {
     try {
-      await quitarFotoLocal(inspeccionId, item.codigo);
-      setFotos((f) => {
-        const { [item.codigo]: _quitada, ...resto } = f;
-        return resto;
-      });
-      marcarGuardado();
+      if (persisteEnSupabase) {
+        await quitarFotoLocal(inspeccionId, foto.id);
+        marcarGuardado();
+      }
+      setFotos((f) => f.filter((x) => x.id !== foto.id));
     } catch (err) {
       setErrorGuardado(err.message);
-    } finally {
-      marcarSubiendo(item.codigo, false);
     }
   };
 
@@ -426,16 +429,15 @@ export default function Formulario() {
             items={checklist}
             respuestas={respuestas}
             onResponder={responderChecklist}
-            fotos={urlsFotos}
-            subiendo={subiendoFoto}
-            puedeFotos={persisteEnSupabase && Boolean(inspeccionId) && !cargando}
-            onFoto={subirFoto}
-            onQuitarFoto={quitarFoto}
           /> : null}
         {paso === 2 ? <PasoHallazgos hallazgos={hallazgos} onAgregar={agregarHallazgo} onEliminar={eliminarHallazgo} /> : null}
         {paso === 3 ? (
           <PasoCierre resumen={resumen} titulo={title} generales={generales} checklist={checklist} respuestas={respuestas} hallazgos={hallazgos}
-            fotos={urlsFotos}
+            fotos={fotos}
+            subiendoFotos={subiendoFotos}
+            onAgregarFotos={agregarFotos}
+            onQuitarFoto={quitarFoto}
+            maxFotos={MAX_FOTOS}
             firmas={firmas}
             nombreInspector={nombreInspector}
             nombreResponsable={nombreResponsable}

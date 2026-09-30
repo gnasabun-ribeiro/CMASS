@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { SEVERIDADES } from "../../data/severidades.js";
+import { useColaboradores } from "../../lib/colaboradores.js";
 
 const fieldStyle = {
   width: "100%",
@@ -13,6 +14,7 @@ const fieldStyle = {
 };
 
 export default function PasoHallazgos({ hallazgos, onAgregar, onEliminar }) {
+  const colaboradores = useColaboradores();
   const [abierto, setAbierto] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [form, setForm] = useState({ titulo: "", severidad: "Medio", detalle: "", responsable: "", vence: "" });
@@ -114,10 +116,16 @@ export default function PasoHallazgos({ hallazgos, onAgregar, onEliminar }) {
           <div style={{ display: "flex", gap: 9 }}>
             <input
               placeholder="Responsable"
+              list="lista-colaboradores"
               value={form.responsable}
               onChange={(e) => setForm({ ...form, responsable: e.target.value })}
               style={fieldStyle}
             />
+            <datalist id="lista-colaboradores">
+              {colaboradores.map((c, i) => (
+                <option key={`${c.correo}-${i}`} value={c.etiqueta} label={c.correo || undefined} />
+              ))}
+            </datalist>
             <input
               type="date"
               value={form.vence}

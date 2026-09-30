@@ -142,14 +142,13 @@ function agregarHallazgos(doc, hallazgos, y) {
   return doc.lastAutoTable.finalY + 20;
 }
 
-// fotos: { codigo: dataUrl } — grilla de 2 columnas con el ítem como epígrafe.
-function agregarFotos(doc, checklist, fotos, y) {
-  const items = checklist.filter((it) => fotos[it.codigo]);
-  if (!items.length) return y;
+// fotos: lista de dataUrl (JPEG) — grilla de 2 columnas.
+function agregarFotos(doc, fotos, y) {
+  if (!fotos.length) return y;
   const pagina = { w: doc.internal.pageSize.getWidth(), h: doc.internal.pageSize.getHeight() };
   const anchoCelda = (pagina.w - 80 - 16) / 2;
   const altoImg = 170;
-  const altoCelda = altoImg + 44;
+  const altoCelda = altoImg + 24;
 
   if (y > pagina.h - 100 - altoCelda) {
     doc.addPage();
@@ -157,10 +156,10 @@ function agregarFotos(doc, checklist, fotos, y) {
   }
   doc.setFontSize(12);
   doc.setFont(undefined, "bold");
-  doc.text(`Fotos del checklist (${items.length})`, 40, y);
+  doc.text(`Fotos de la inspección (${fotos.length})`, 40, y);
   y += 14;
 
-  items.forEach((item, i) => {
+  fotos.forEach((dataUrl, i) => {
     const col = i % 2;
     if (col === 0 && i > 0) y += altoCelda;
     if (col === 0 && y + altoCelda > pagina.h - 40) {
@@ -168,13 +167,13 @@ function agregarFotos(doc, checklist, fotos, y) {
       y = 40;
     }
     const x = 40 + col * (anchoCelda + 16);
-    const props = doc.getImageProperties(fotos[item.codigo]);
+    const props = doc.getImageProperties(dataUrl);
     const escala = Math.min(anchoCelda / props.width, altoImg / props.height);
-    doc.addImage(fotos[item.codigo], "JPEG", x, y, props.width * escala, props.height * escala);
+    doc.addImage(dataUrl, "JPEG", x, y, props.width * escala, props.height * escala);
     doc.setFontSize(8.5);
     doc.setFont(undefined, "normal");
     doc.setTextColor(60, 60, 70);
-    doc.text(doc.splitTextToSize(`${item.codigo} — ${item.texto}`, anchoCelda).slice(0, 3), x, y + altoImg + 12);
+    doc.text(`Foto ${i + 1}`, x, y + altoImg + 12);
     doc.setTextColor(20, 20, 20);
   });
   return y + altoCelda + 10;
@@ -218,7 +217,7 @@ function agregarFirmas(doc, firmas, y) {
   return y + altoImg + 45;
 }
 
-export function construirInformePDF({ titulo, generales, resumen, checklist, respuestas, hallazgos, fotos = {}, firmas = {} }) {
+export function construirInformePDF({ titulo, generales, resumen, checklist, respuestas, hallazgos, fotos = [], firmas = {} }) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
 
   agregarEncabezado(doc, titulo);
@@ -227,7 +226,7 @@ export function construirInformePDF({ titulo, generales, resumen, checklist, res
   y = agregarResumen(doc, resumen, y);
   y = agregarChecklist(doc, checklist, respuestas, y);
   y = agregarHallazgos(doc, hallazgos, y);
-  y = agregarFotos(doc, checklist, fotos, y);
+  y = agregarFotos(doc, fotos, y);
   agregarFirmas(doc, firmas, y);
 
   return doc;

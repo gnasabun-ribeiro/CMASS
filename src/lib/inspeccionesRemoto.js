@@ -91,14 +91,16 @@ export async function listarInspecciones(t, { moduloId, subId } = {}) {
 
 // Carga una inspección completa para retomarla en el formulario.
 export async function cargarInspeccionRemota(t, inspeccionId) {
-  const [cab, resp, hall] = await Promise.all([
+  const [cab, resp, hall, fot] = await Promise.all([
     supabase.from(t.cab).select("*").eq("id", inspeccionId).single(),
-    supabase.from(t.checklist).select("codigo, valor, foto_url").eq("inspeccion_id", inspeccionId),
+    supabase.from(t.checklist).select("codigo, valor").eq("inspeccion_id", inspeccionId),
     supabase.from(t.hallazgos).select("*").eq("inspeccion_id", inspeccionId).order("created_at"),
+    supabase.from(t.fotos).select("id, ruta").eq("inspeccion_id", inspeccionId).order("created_at"),
   ]);
   if (cab.error) throw cab.error;
   if (resp.error) throw resp.error;
   if (hall.error) throw hall.error;
+  if (fot.error) throw fot.error;
   const c = cab.data;
   // datetime-local necesita "YYYY-MM-DDTHH:mm" en hora local
   const f = c.fecha_hora ? new Date(c.fecha_hora) : null;
@@ -117,7 +119,7 @@ export async function cargarInspeccionRemota(t, inspeccionId) {
       tareaObservada: c.tarea_observada || "",
     },
     respuestas: Object.fromEntries(resp.data.map((r) => [r.codigo, r.valor])),
-    fotos: Object.fromEntries(resp.data.filter((r) => r.foto_url).map((r) => [r.codigo, r.foto_url])),
+    galeria: fot.data,
     hallazgos: hall.data,
   };
 }

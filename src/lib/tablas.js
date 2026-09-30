@@ -7,6 +7,7 @@ export const TABLAS_OBRA = {
   checklist: "inspecciones_obra_checklist",
   hallazgos: "inspecciones_obra_hallazgos",
   firmas: "inspecciones_obra_firmas",
+  fotos: "inspecciones_obra_fotos",
 };
 
 export const TABLAS_GENERICAS = {
@@ -15,6 +16,7 @@ export const TABLAS_GENERICAS = {
   checklist: "inspecciones_checklist",
   hallazgos: "inspecciones_hallazgos",
   firmas: "inspecciones_firmas",
+  fotos: "inspecciones_fotos",
 };
 
 export const tablasDe = (moduloId) => (!moduloId || moduloId === "obra" ? TABLAS_OBRA : TABLAS_GENERICAS);

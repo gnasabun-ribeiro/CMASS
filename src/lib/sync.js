@@ -17,7 +17,7 @@ import {
   marcarEnviada,
 } from "./inspeccionesRemoto.js";
 import { tablasDe } from "./tablas.js";
-import { quitarFotoChecklist, subirFotoChecklist } from "./fotosChecklist.js";
+import { quitarFotoGeneral, subirFotoGeneral } from "./fotos.js";
 import { guardarFirmaObra, guardarNombreFirmaObra } from "./firmasObra.js";
 
 // Motor de sincronización: vacía la cola local hacia Supabase. Las operaciones
@@ -100,14 +100,17 @@ async function ejecutar(op, rec) {
     case "hallazgoDel":
       return borrarHallazgo(t, op.clave);
     case "foto": {
-      if (op.payload.accion === "quitar") return quitarFotoChecklist(t, id, op.clave, op.payload.ruta);
-      const f = rec.fotos[op.clave];
+      if (op.payload.accion === "quitar") return quitarFotoGeneral(t, op.clave, op.payload.ruta);
+      const f = (rec.galeria ?? []).find((x) => x.id === op.clave);
       if (!f?.blob) return;
-      const anterior = f.rutaServidor && f.rutaServidor !== f.ruta ? f.rutaServidor : undefined;
-      await subirFotoChecklist(t, id, op.clave, f.blob, anterior, f.ruta);
+      await subirFotoGeneral(t, id, f.id, f.blob, f.ruta);
+      let huerfana = false;
       await actualizarLocal(id, (r) => {
-        if (r.fotos[op.clave]?.ruta === f.ruta) r.fotos[op.clave].rutaServidor = f.ruta;
+        const x = (r.galeria ?? []).find((y) => y.id === f.id);
+        if (x) x.subida = true;
+        else huerfana = true; // se quitó mientras se subía: se borra del servidor también
       });
+      if (huerfana) await quitarFotoGeneral(t, f.id, f.ruta);
       return;
     }
     case "firma": {

@@ -1,8 +1,9 @@
-import { borrarOpsDe, encolar, enSerie, guardarInspeccion, obtenerInspeccion, obtenerOp } from "./localDb.js";
+import { borrarOpsDe, encolar, enSerie, guardarInspeccion, obtenerInspeccion } from "./localDb.js";
 import { agendarSync } from "./sync.js";
 import { cargarInspeccionRemota } from "./inspeccionesRemoto.js";
 import { tablasDe } from "./tablas.js";
 import { listarFirmasObra } from "./firmasObra.js";
+import { uuid } from "./uuid.js";
 
 // API que usa el formulario: todo se escribe primero en el dispositivo y se
 // encola para subirlo a Supabase apenas haya conexión (ver sync.js).
@@ -31,7 +32,7 @@ function modificar(id, fn) {
 
 export async function nuevaInspeccion(inspectorId, moduloId, subId = null) {
   const rec = {
-    id: crypto.randomUUID(),
+    id: uuid(),
     inspectorId,
     moduloId,
     subId,
@@ -40,7 +41,7 @@ export async function nuevaInspeccion(inspectorId, moduloId, subId = null) {
     generales: { ...GENERALES_VACIOS },
     respuestas: {}, // codigo -> { valor, categoria, texto }
     hallazgos: [], // { id, titulo, severidad, detalle, responsable, vence }
-    fotos: {}, // codigo -> { blob, ruta, rutaServidor }
+    galeria: [], // fotos generales: { id, blob?, ruta, subida }
     firmas: {}, // rol -> { nombre, blob, ruta, rutaServidor }
   };
   await guardarInspeccion(rec);
@@ -63,7 +64,7 @@ export async function cargarInspeccion(id, moduloId) {
     generales: d.generales,
     respuestas: Object.fromEntries(Object.entries(d.respuestas).map(([codigo, valor]) => [codigo, { valor }])),
     hallazgos: d.hallazgos.map((h) => ({ id: h.id, titulo: h.titulo, severidad: h.severidad, detalle: h.detalle, responsable: h.responsable, vence: h.vence })),
-    fotos: Object.fromEntries(Object.entries(d.fotos).map(([codigo, ruta]) => [codigo, { ruta, rutaServidor: ruta }])),
+    galeria: d.galeria.map((f) => ({ id: f.id, ruta: f.ruta, subida: true })),
     firmas: Object.fromEntries(firmas.map((f) => [f.rol, { nombre: f.nombre, ruta: f.ruta, rutaServidor: f.ruta }])),
   };
   await enSerie(() => guardarInspeccion(rec));
@@ -83,7 +84,7 @@ export const guardarRespuesta = (id, item, valor) =>
   });
 
 export const agregarHallazgo = (id, datos) => {
-  const hallazgo = { id: crypto.randomUUID(), ...datos, vence: datos.vence || null };
+  const hallazgo = { id: uuid(), ...datos, vence: datos.vence || null };
   return modificar(id, (rec) => {
     rec.hallazgos.push(hallazgo);
     return [{ tipo: "hallazgo", clave: hallazgo.id }];
@@ -97,28 +98,28 @@ export const borrarHallazgo = (id, hallazgoId) =>
     return [{ tipo: "hallazgoDel", clave: hallazgoId }];
   });
 
-// `blob` ya viene comprimido. Reemplaza la foto anterior del ítem si la había.
-export const guardarFoto = (id, codigo, blob) =>
-  modificar(id, async (rec) => {
-    const previa = rec.fotos[codigo];
-    const quitarPendiente = await obtenerOp(`${rec.id}|foto|${codigo}`);
-    // Ruta que ya está en el servidor (para borrarla cuando suba la nueva).
-    const rutaServidor = previa?.rutaServidor ?? (quitarPendiente?.payload?.accion === "quitar" ? quitarPendiente.payload.ruta : undefined);
-    rec.fotos[codigo] = { blob, ruta: `${rec.id}/${codigo}/${Date.now()}.jpg`, rutaServidor };
-    return [{ tipo: "foto", clave: codigo, payload: { accion: "subir" } }];
+// `blob` ya viene comprimido. Devuelve la foto agregada (con su id).
+export const agregarFoto = async (id, blob) => {
+  let foto;
+  await modificar(id, (rec) => {
+    rec.galeria ??= [];
+    const fotoId = crypto.randomUUID();
+    foto = { id: fotoId, blob, ruta: `${rec.id}/${fotoId}.jpg`, subida: false };
+    rec.galeria.push(foto);
+    return [{ tipo: "foto", clave: fotoId, payload: { accion: "subir" } }];
   });
+  return foto;
+};
 
-export const quitarFoto = (id, codigo) =>
+export const quitarFoto = (id, fotoId) =>
   modificar(id, async (rec) => {
-    const previa = rec.fotos[codigo];
-    const pendiente = await obtenerOp(`${rec.id}|foto|${codigo}`);
-    const rutaServidor = previa?.rutaServidor ?? (pendiente?.payload?.accion === "quitar" ? pendiente.payload.ruta : undefined);
-    delete rec.fotos[codigo];
-    if (!rutaServidor) {
-      await borrarOpsDe(rec.id, "foto", codigo); // nunca llegó al servidor
+    const foto = (rec.galeria ?? []).find((f) => f.id === fotoId);
+    rec.galeria = (rec.galeria ?? []).filter((f) => f.id !== fotoId);
+    if (!foto?.subida) {
+      await borrarOpsDe(rec.id, "foto", fotoId); // nunca llegó al servidor
       return [];
     }
-    return [{ tipo: "foto", clave: codigo, payload: { accion: "quitar", ruta: rutaServidor } }];
+    return [{ tipo: "foto", clave: fotoId, payload: { accion: "quitar", ruta: foto.ruta } }];
   });
 
 export const guardarFirma = (id, rol, nombre, blob) =>
