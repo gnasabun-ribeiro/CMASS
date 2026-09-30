@@ -45,6 +45,12 @@ App de inspecciones de seguridad e higiene (React + Vite, backend en Supabase).
 - La planilla original también tenía datos de identificación del vehículo (tipo de vehículo, dominio/patente, liviano/pesado/otros, si el viaje es rutinario) que **no se cargaron** como ítems del checklist porque no son preguntas de sí/no/n-a — no encajan en el modelo `OPCIONES` (ok/no/na) que usa `PasoChecklist`. Quedan pendientes de definir dónde van (¿campos propios en Generales para este sub-módulo? ¿otro paso?) si se piden.
 - Sin persistencia en Supabase, igual que el resto de `reglas` (ver arriba).
 
+## Checklist de Gestión Ambiental
+
+- Fuente: `checklist ambiental.xlsx` (RG-34-01, 5 secciones: Residuos, Documentación, Combustible, Emergencias, Emisiones y Efluentes; 79 ítems).
+- Cargado en `src/data/checklist.js` como `CHECKLIST_AMBIENTE`, registrado en `CHECKLISTS_POR_MODULO` bajo `ambiente`. Aplica a todo el módulo (hoy tiene una sola sub).
+- Decisiones al pasar la planilla: los sub-ítems (listas con guión, filas "Detalle...") se unieron al texto de su pregunta; se omitieron las filas "Otros" (texto libre) y un ítem repetido en Emergencias ("equipos, productos o residuos acopiados sobre suelo natural"). La columna "Comentarios" de la planilla no se modela en el checklist.
+
 ## Persistencia (Supabase)
 
 - `supabase/profiles.sql` — perfil 1 a 1 con `auth.users` (ya en uso, ver `AuthContext.jsx`).
@@ -82,3 +88,9 @@ App de inspecciones de seguridad e higiene (React + Vite, backend en Supabase).
 - El bloque `cron.schedule` en `centros_de_costos.sql` tiene placeholders `<PROJECT_REF>` y `<SYNC_SECRET>` que se completan recién en el SQL Editor, no en el archivo.
 - **Confirmado:** `ribeiro.dw.finneg.com` acepta conexiones desde la nube de Supabase. El DW es un Amazon Aurora (RDS); su certificado lo firma la CA de RDS, que Deno no trae, y está emitido para el host de RDS y no para el alias `ribeiro.dw.finneg.com`. Por eso la función necesita además los secrets `DW_CA_CERT` (bundle PEM oficial de RDS us-east-1) y `DW_TLS_SERVERNAME` (host de RDS del certificado). No usar `DW_SSL_INSECURE`: `postgres.js` en Deno ignora `rejectUnauthorized:false`. Si el error es "table does not exist" (42P01), la función devuelve en `candidatas` las tablas del DW con nombre parecido.
 - Todavía no hay UI que consuma esta tabla — se agregó como tabla auxiliar para que otros módulos (ej. selects de "centro de costos" en el formulario) la puedan usar más adelante.
+
+## Checklist de Trailers y Obradores
+
+- Fuente: `checklist trailers y obradores TRUE.xlsx` (INSPECCION OBRADORES - TALLERES; 76 ítems en 12 secciones: Instalación General, Provisión de agua, Locales sanitarios, Residuos, Prevención de incendios y Plan de contingencias, Depósitos de productos químicos, Depósito de cilindros, Derrame, Instalación eléctrica general, Talleres de prefabricado, Instalación de gas, Habilitación de tráiler).
+- Cargado en `src/data/checklist.js` como `CHECKLIST_TRAILERS` (registrado bajo `trailers`). Antes tenía por error una copia del checklist ambiental.
+- Los ítems críticos llevan `*` en el texto (22): si falta alguno no se habilita el obrador. El bloque "Estado" del final de la planilla (habilitado 100% / con observaciones ≤90% / no habilitado) no se cargó como ítem; hoy no se calcula en la app.
