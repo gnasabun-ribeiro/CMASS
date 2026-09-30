@@ -1,12 +1,17 @@
-import { useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useState } from "react";
 import Icon from "../../components/Icon.jsx";
 import { OPCIONES, agruparPorCategoria } from "../../data/checklist.js";
 
-export default function PasoChecklist({ items, respuestas, onResponder }) {
+export default function PasoChecklist({ items, respuestas, onResponder, onPaginaChange }) {
   const bloques = useMemo(() => agruparPorCategoria(items), [items]);
   const [bloqueActual, setBloqueActual] = useState(0);
   const indice = Math.min(bloqueActual, bloques.length - 1);
   const bloque = bloques[indice];
+
+  // Avisa al wizard si estamos en la última página, para mostrar "Siguiente" recién ahí.
+  useLayoutEffect(() => {
+    onPaginaChange?.(indice === bloques.length - 1);
+  }, [indice, bloques.length, onPaginaChange]);
 
   if (!bloque) return null;
 

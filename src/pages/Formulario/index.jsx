@@ -67,6 +67,7 @@ export default function Formulario() {
   const [nombreResponsable, setNombreResponsable] = useState("");
   const [guardandoFirma, setGuardandoFirma] = useState({});
   const [avisoCierre, setAvisoCierre] = useState(null);
+  const [checklistUltimaPagina, setChecklistUltimaPagina] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [cargando, setCargando] = useState(persisteEnSupabase);
 
@@ -206,6 +207,8 @@ export default function Formulario() {
 
   const avance = Math.round((paso / 3) * 100);
   const esUltimo = paso === 3;
+  // En el paso Checklist, "Siguiente" recién aparece al llegar a la última categoría.
+  const mostrarSiguiente = paso !== 1 || checklistUltimaPagina;
 
   const siguiente = async () => {
     if (!esUltimo) {
@@ -436,6 +439,7 @@ export default function Formulario() {
             items={checklist}
             respuestas={respuestas}
             onResponder={responderChecklist}
+            onPaginaChange={setChecklistUltimaPagina}
           /> : null}
         {paso === 2 ? <PasoHallazgos hallazgos={hallazgos} onAgregar={agregarHallazgo} onEliminar={eliminarHallazgo} colaboradores={colaboradores} /> : null}
         {paso === 3 ? (
@@ -476,25 +480,27 @@ export default function Formulario() {
           >
             Borrador
           </button>
-          <button
-            onClick={siguiente}
-            disabled={enviando}
-            style={{
-              flex: 1,
-              border: 0,
-              background: "var(--cta-gradient)",
-              color: "var(--on-cta)",
-              fontWeight: 700,
-              fontSize: 14.5,
-              padding: "15px 18px",
-              borderRadius: 18,
-              cursor: "pointer",
-              minHeight: 52,
-              boxShadow: "var(--shadow-cta)",
-            }}
-          >
-            {esUltimo ? "Cerrar y enviar" : "Siguiente"}
-          </button>
+          {mostrarSiguiente ? (
+            <button
+              onClick={siguiente}
+              disabled={enviando}
+              style={{
+                flex: 1,
+                border: 0,
+                background: "var(--cta-gradient)",
+                color: "var(--on-cta)",
+                fontWeight: 700,
+                fontSize: 14.5,
+                padding: "15px 18px",
+                borderRadius: 18,
+                cursor: "pointer",
+                minHeight: 52,
+                boxShadow: "var(--shadow-cta)",
+              }}
+            >
+              {esUltimo ? "Cerrar y enviar" : "Siguiente"}
+            </button>
+          ) : null}
         </div>
       </div>
     </AppShell>
