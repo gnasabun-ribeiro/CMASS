@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { correoDe, filtrarColaboradores } from "../lib/colaboradores.js";
+import { correoDe, filtrarColaboradores, sinCorreoCorporativo } from "../lib/colaboradores.js";
 
 // Campo de texto con sugerencias de colaboradores (nombre y apellido). Sigue siendo
 // texto libre, pero si el texto coincide con un colaborador se muestra su correo:
@@ -8,6 +8,7 @@ export default function ColaboradorInput({ value, onChange, onBlur, colaboradore
   const [abierto, setAbierto] = useState(false);
   const sugerencias = abierto ? filtrarColaboradores(colaboradores, value).slice(0, 6) : [];
   const correo = correoDe(colaboradores, value);
+  const faltaCorreo = sinCorreoCorporativo(colaboradores, value);
   const hayTexto = value.trim().length > 0;
 
   return (
@@ -62,8 +63,12 @@ export default function ColaboradorInput({ value, onChange, onBlur, colaboradore
         </div>
       ) : null}
       {hayTexto ? (
-        <div style={{ fontSize: 11.5, marginTop: 5, color: correo ? "var(--success-fg)" : "var(--muted)" }}>
-          {correo ? `El informe se enviará a ${correo}` : "Sin correo asociado: elegí a la persona de la lista para que reciba el informe"}
+        <div style={{ fontSize: 11.5, marginTop: 5, color: correo ? "var(--success-fg)" : faltaCorreo ? "var(--warn-fg)" : "var(--muted)" }}>
+          {correo
+            ? `El informe se enviará a ${correo}`
+            : faltaCorreo
+              ? "Esta persona no tiene correo corporativo (@ribeirosrl.com.ar): hay que cargárselo para que reciba el informe"
+              : "Sin correo asociado: elegí a la persona de la lista para que reciba el informe"}
         </div>
       ) : null}
     </div>

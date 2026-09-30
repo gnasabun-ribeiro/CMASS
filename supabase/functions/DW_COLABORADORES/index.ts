@@ -10,8 +10,8 @@
 // hay que cargar nada nuevo): DW_HOST, DW_PORT, DW_DATABASE, DW_USER,
 // DW_PASSWORD, SYNC_SECRET, DW_CA_CERT, DW_TLS_SERVERNAME y opcional DW_SCHEMA.
 //
-// Solo se guardan los colaboradores con estado "Activo" y correo @ribeirosrl.com.ar
-// (el resto no se usa: la tabla sirve para elegir destinatarios de informes).
+// Solo se guardan los colaboradores con estado "Activo". El correo se guarda solo si
+// es @ribeirosrl.com.ar; si no, queda vacío (la app avisa que falta cargarlo).
 //
 // Como todavía no vimos las columnas reales de la tabla origen, cada fila se
 // guarda entera como jsonb en `data` (igual que centros_de_costos).
@@ -83,18 +83,25 @@ Deno.serve(async (req) => {
       return capitalizar([nombre, apellido].filter(Boolean).join(" ")) || null;
     };
 
-    // Solo interesan los activos con correo corporativo (@ribeirosrl.com.ar).
-    // Si falta alguna de las dos columnas se corta antes de borrar, para no
-    // dejar la tabla vacía ni cargar a todo el mundo sin filtrar.
+    // Solo interesan los activos. Si falta alguna de las dos columnas se corta
+    // antes de borrar, para no dejar la tabla vacía ni cargar a todo el mundo.
     const colEstado = buscar(/^estado$/i);
     if (filas.length > 0 && (!colCorreo || !colEstado)) {
       throw new Error(`no se encontró la columna de ${!colCorreo ? "correo" : "estado"}; columnas: ${columnas.join(", ")}`);
     }
-    const relevantes = filas.filter(
-      (fila) =>
-        texto(fila[colEstado!])?.toLowerCase() === "activo" &&
-        texto(fila[colCorreo!])?.toLowerCase().endsWith("@ribeirosrl.com.ar"),
-    );
+    // Un correo que no es @ribeirosrl.com.ar (personal u otro) se descarta: la
+    // persona queda con correo vacío y la app avisa que hay que cargarle uno
+    // corporativo en Finnegans. Tampoco se deja el otro correo en `data`.
+    const correoCorporativo = (fila: Record<string, unknown>) => {
+      const c = texto(fila[colCorreo!])?.toLowerCase() ?? null;
+      return c && c.endsWith("@ribeirosrl.com.ar") ? c : null;
+    };
+    const relevantes = filas
+      .filter((fila) => texto(fila[colEstado!])?.toLowerCase() === "activo")
+      .map((fila) => {
+        const correo = correoCorporativo(fila);
+        return { fila: { ...fila, [colCorreo!]: correo }, correo };
+      });
 
     // Repuebla entera (no hay clave natural conocida para hacer upsert).
     const { error: deleteError } = await supabase
@@ -107,9 +114,9 @@ Deno.serve(async (req) => {
       const { error: insertError } = await supabase
         .from("colaboradores")
         .insert(
-          relevantes.map((fila) => ({
+          relevantes.map(({ fila, correo }) => ({
             nombre_completo: colNombreCompleto ? nombreApellido(texto(fila[colNombreCompleto])) : null,
-            correo: colCorreo ? texto(fila[colCorreo])?.toLowerCase() ?? null : null,
+            correo,
             data: fila,
           })),
         );
@@ -122,6 +129,7 @@ Deno.serve(async (req) => {
         ok: true,
         filas: filas.length,
         guardadas: relevantes.length,
+        sinCorreoCorporativo: relevantes.filter((r) => !r.correo).length,
         columnas,
         mapeo: { nombreCompleto: colNombreCompleto, correo: colCorreo },
       }),

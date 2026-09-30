@@ -92,6 +92,15 @@ export function correoDe(lista, texto) {
   return correos.size === 1 ? [...correos][0] : "";
 }
 
+// true si el texto es exactamente un colaborador y ninguno de los que coinciden tiene
+// correo corporativo cargado (hay que cargarlo en Finnegans para que reciba el informe).
+export function sinCorreoCorporativo(lista, texto) {
+  const buscado = normalizar(texto);
+  if (!buscado) return false;
+  const coinciden = lista.filter((c) => normalizar(c.etiqueta) === buscado);
+  return coinciden.length > 0 && coinciden.every((c) => !c.correo);
+}
+
 // Devuelve la lista de colaboradores; si falla, queda vacía y el campo
 // sigue siendo de texto libre.
 export function useColaboradores() {
