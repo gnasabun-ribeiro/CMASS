@@ -103,7 +103,7 @@ export const agregarFoto = async (id, blob) => {
   let foto;
   await modificar(id, (rec) => {
     rec.galeria ??= [];
-    const fotoId = crypto.randomUUID();
+    const fotoId = uuid();
     foto = { id: fotoId, blob, ruta: `${rec.id}/${fotoId}.jpg`, subida: false };
     rec.galeria.push(foto);
     return [{ tipo: "foto", clave: fotoId, payload: { accion: "subir" } }];

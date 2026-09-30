@@ -11,6 +11,7 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import { supabaseConfigured } from "../../lib/supabaseClient.js";
 import { armarHallazgo } from "../../data/severidades.js";
 import { BUCKET_FIRMAS, BUCKET_FOTOS, MAX_FOTOS, comprimirImagen, urlsFirmadas } from "../../lib/fotos.js";
+import { uuid } from "../../lib/uuid.js";
 import {
   agregarHallazgo as agregarHallazgoLocal,
   borrarHallazgo as borrarHallazgoLocal,
@@ -283,7 +284,7 @@ export default function Formulario() {
     for (const archivo of lista) {
       try {
         const blob = await comprimirImagen(archivo);
-        let id = crypto.randomUUID();
+        let id = uuid();
         if (persisteEnSupabase) {
           id = (await agregarFotoLocal(inspeccionId, blob)).id;
           marcarGuardado();
