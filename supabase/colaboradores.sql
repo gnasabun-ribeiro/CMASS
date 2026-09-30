@@ -1,5 +1,5 @@
 -- Tabla auxiliar "colaboradores": espejo de RIBEIRO_GENERALES_COLABORADORES
--- (nombre, apellido, correo, ...), que vive en el Data Warehouse de Finnegans.
+-- (nombre completo, correo, ...), que vive en el Data Warehouse de Finnegans.
 -- La conexión al DW la hace la Edge Function DW_COLABORADORES (Deno); usa los
 -- mismos secrets que DW_FINNEGANS, no hay que cargar nada nuevo.
 -- Ver supabase/functions/DW_COLABORADORES/index.ts.
@@ -12,12 +12,11 @@ create extension if not exists pg_net;
 
 -- Cada fila es un registro del DW tal cual, en jsonb. Cuando se confirmen los
 -- nombres de columna (la función los devuelve en `columnas`), se puede agregar
--- una vista sobre `data` con nombre / apellido / correo.
+-- una vista sobre `data`.
 drop table if exists public.colaboradores;
 create table public.colaboradores (
   id bigint generated always as identity primary key,
-  nombre text,
-  apellido text,
+  nombre_completo text, -- "Nombre Apellido" (el DW lo trae como "APELLIDO, NOMBRE")
   correo text,
   data jsonb not null,
   synced_at timestamptz not null default now()

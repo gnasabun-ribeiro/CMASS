@@ -10,6 +10,9 @@
 // hay que cargar nada nuevo): DW_HOST, DW_PORT, DW_DATABASE, DW_USER,
 // DW_PASSWORD, SYNC_SECRET, DW_CA_CERT, DW_TLS_SERVERNAME y opcional DW_SCHEMA.
 //
+// Solo se guardan los colaboradores con estado "Activo" y correo @ribeirosrl.com.ar
+// (el resto no se usa: la tabla sirve para elegir destinatarios de informes).
+//
 // Como todavía no vimos las columnas reales de la tabla origen, cada fila se
 // guarda entera como jsonb en `data` (igual que centros_de_costos).
 
@@ -63,10 +66,35 @@ Deno.serve(async (req) => {
     const columnas = filas.length > 0 ? Object.keys(filas[0]) : [];
     const buscar = (...patrones: RegExp[]) =>
       columnas.find((c) => patrones.some((p) => p.test(c)));
-    const colNombre = buscar(/^(nombres?|first_?name|primer_?nombre)$/i, /^nombre$/i);
-    const colApellido = buscar(/^(apellidos?|last_?name)$/i);
+    // El DW trae un solo campo, "APELLIDO, NOMBRE" en mayúsculas (columna nombrecompleto).
+    const colNombreCompleto = buscar(/^nombre_?completo$/i);
     const colCorreo = buscar(/^(correo|email|e_?mail|mail)(_?electronico)?$/i, /(correo|mail)/i);
     const texto = (v: unknown) => (v == null || String(v).trim() === "" ? null : String(v).trim());
+    const capitalizar = (s: string) =>
+      s.toLowerCase().replace(/(^|[\s'-])(\p{L})/gu,(_, sep, letra) => sep + letra.toUpperCase());
+    // "GARCIA LOPEZ, MARIA JOSE" -> "Maria Jose Garcia Lopez" (Nombre Apellido).
+    // Sin coma no se puede dar vuelta: se deja tal cual, capitalizado.
+    const nombreApellido = (completo: string | null) => {
+      if (!completo) return null;
+      const i = completo.indexOf(",");
+      if (i < 0) return capitalizar(completo);
+      const apellido = completo.slice(0, i).trim();
+      const nombre = completo.slice(i + 1).trim();
+      return capitalizar([nombre, apellido].filter(Boolean).join(" ")) || null;
+    };
+
+    // Solo interesan los activos con correo corporativo (@ribeirosrl.com.ar).
+    // Si falta alguna de las dos columnas se corta antes de borrar, para no
+    // dejar la tabla vacía ni cargar a todo el mundo sin filtrar.
+    const colEstado = buscar(/^estado$/i);
+    if (filas.length > 0 && (!colCorreo || !colEstado)) {
+      throw new Error(`no se encontró la columna de ${!colCorreo ? "correo" : "estado"}; columnas: ${columnas.join(", ")}`);
+    }
+    const relevantes = filas.filter(
+      (fila) =>
+        texto(fila[colEstado!])?.toLowerCase() === "activo" &&
+        texto(fila[colCorreo!])?.toLowerCase().endsWith("@ribeirosrl.com.ar"),
+    );
 
     // Repuebla entera (no hay clave natural conocida para hacer upsert).
     const { error: deleteError } = await supabase
@@ -75,13 +103,12 @@ Deno.serve(async (req) => {
       .gte("id", 0);
     if (deleteError) throw deleteError;
 
-    if (filas.length > 0) {
+    if (relevantes.length > 0) {
       const { error: insertError } = await supabase
         .from("colaboradores")
         .insert(
-          filas.map((fila) => ({
-            nombre: colNombre ? texto(fila[colNombre]) : null,
-            apellido: colApellido ? texto(fila[colApellido]) : null,
+          relevantes.map((fila) => ({
+            nombre_completo: colNombreCompleto ? nombreApellido(texto(fila[colNombreCompleto])) : null,
             correo: colCorreo ? texto(fila[colCorreo])?.toLowerCase() ?? null : null,
             data: fila,
           })),
@@ -94,8 +121,9 @@ Deno.serve(async (req) => {
       JSON.stringify({
         ok: true,
         filas: filas.length,
+        guardadas: relevantes.length,
         columnas,
-        mapeo: { nombre: colNombre, apellido: colApellido, correo: colCorreo },
+        mapeo: { nombreCompleto: colNombreCompleto, correo: colCorreo },
       }),
       { headers: { "content-type": "application/json" } },
     );

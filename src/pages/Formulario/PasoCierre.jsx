@@ -3,7 +3,7 @@ import Icon from "../../components/Icon.jsx";
 import { OPCIONES, agruparPorCategoria } from "../../data/checklist.js";
 import FirmaPad from "../../components/FirmaPad.jsx";
 import GaleriaFotos from "../../components/GaleriaFotos.jsx";
-import { useColaboradores } from "../../lib/colaboradores.js";
+import ColaboradorInput from "../../components/ColaboradorInput.jsx";
 
 const panelStyle = {
   borderRadius: 18,
@@ -46,8 +46,8 @@ export default function PasoCierre({
   onNombreResponsableBlur,
   onGuardarFirma,
   guardandoFirma = {},
+  colaboradores = [],
 }) {
-  const colaboradores = useColaboradores();
   const bloques = useMemo(() => agruparPorCategoria(checklist), [checklist]);
   const [generandoPDF, setGenerandoPDF] = useState(false);
 
@@ -83,21 +83,16 @@ export default function PasoCierre({
             {rol === "inspector" ? (
               <div style={{ fontSize: 13.5, fontWeight: 600, marginTop: 9 }}>{nombreInspector}</div>
             ) : (
-              <input
-                list="lista-colaboradores-cierre"
-                placeholder="Nombre y apellido del responsable"
-                value={nombreResponsable}
-                onChange={(e) => onNombreResponsable(e.target.value)}
-                onBlur={onNombreResponsableBlur}
-                style={{ width: "100%", marginTop: 9, border: "1px solid var(--border)", borderRadius: 12, padding: 10, fontSize: 13.5, background: "#fff", color: "var(--ink)", minHeight: 42 }}
-              />
-            )}
-            {rol === "responsable" && (
-              <datalist id="lista-colaboradores-cierre">
-                {colaboradores.map((c, i) => (
-                  <option key={`${c.correo}-${i}`} value={c.etiqueta} label={c.correo || undefined} />
-                ))}
-              </datalist>
+              <div style={{ marginTop: 9, display: "flex" }}>
+                <ColaboradorInput
+                  placeholder="Nombre y apellido del responsable"
+                  value={nombreResponsable}
+                  onChange={onNombreResponsable}
+                  onBlur={onNombreResponsableBlur}
+                  colaboradores={colaboradores}
+                  style={{ width: "100%", border: "1px solid var(--border)", borderRadius: 12, padding: 10, fontSize: 13.5, background: "#fff", color: "var(--ink)", minHeight: 42 }}
+                />
+              </div>
             )}
           </div>
         ))}

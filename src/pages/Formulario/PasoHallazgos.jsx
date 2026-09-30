@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { SEVERIDADES } from "../../data/severidades.js";
-import { useColaboradores } from "../../lib/colaboradores.js";
+import ColaboradorInput from "../../components/ColaboradorInput.jsx";
 
 const fieldStyle = {
   width: "100%",
@@ -13,8 +13,7 @@ const fieldStyle = {
   minHeight: 42,
 };
 
-export default function PasoHallazgos({ hallazgos, onAgregar, onEliminar }) {
-  const colaboradores = useColaboradores();
+export default function PasoHallazgos({ hallazgos, onAgregar, onEliminar, colaboradores = [] }) {
   const [abierto, setAbierto] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [form, setForm] = useState({ titulo: "", severidad: "Medio", detalle: "", responsable: "", vence: "" });
@@ -113,24 +112,19 @@ export default function PasoHallazgos({ hallazgos, onAgregar, onEliminar }) {
             onChange={(e) => setForm({ ...form, detalle: e.target.value })}
             style={{ ...fieldStyle, resize: "vertical" }}
           />
-          <div style={{ display: "flex", gap: 9 }}>
-            <input
-              placeholder="Responsable"
-              list="lista-colaboradores"
+          <div style={{ display: "flex", gap: 9, alignItems: "flex-start" }}>
+            <ColaboradorInput
+              placeholder="Responsable (nombre y apellido)"
               value={form.responsable}
-              onChange={(e) => setForm({ ...form, responsable: e.target.value })}
+              onChange={(v) => setForm({ ...form, responsable: v })}
+              colaboradores={colaboradores}
               style={fieldStyle}
             />
-            <datalist id="lista-colaboradores">
-              {colaboradores.map((c, i) => (
-                <option key={`${c.correo}-${i}`} value={c.etiqueta} label={c.correo || undefined} />
-              ))}
-            </datalist>
             <input
               type="date"
               value={form.vence}
               onChange={(e) => setForm({ ...form, vence: e.target.value })}
-              style={fieldStyle}
+              style={{ ...fieldStyle, flex: 1, minWidth: 0 }}
             />
           </div>
           <div style={{ display: "flex", gap: 8 }}>

@@ -15,6 +15,7 @@ import {
   guardarGenerales,
   guardarRespuestaChecklist,
   marcarEnviada,
+  registrarDestinatarios,
 } from "./inspeccionesRemoto.js";
 import { tablasDe } from "./tablas.js";
 import { quitarFotoGeneral, subirFotoGeneral } from "./fotos.js";
@@ -117,17 +118,18 @@ async function ejecutar(op, rec) {
       const f = rec.firmas[op.clave];
       if (!f) return;
       if (f.blob && f.ruta !== f.rutaServidor) {
-        await guardarFirmaObra(t, id, op.clave, f.nombre, f.blob, f.rutaServidor, f.ruta);
+        await guardarFirmaObra(t, id, op.clave, f.nombre, f.blob, f.rutaServidor, f.ruta, f.correo);
         await actualizarLocal(id, (r) => {
           if (r.firmas[op.clave]?.ruta === f.ruta) r.firmas[op.clave].rutaServidor = f.ruta;
         });
       } else {
-        await guardarNombreFirmaObra(t, id, op.clave, f.nombre);
+        await guardarNombreFirmaObra(t, id, op.clave, f.nombre, f.correo);
       }
       return;
     }
     case "enviar":
-      return marcarEnviada(t, id);
+      await marcarEnviada(t, id);
+      return registrarDestinatarios(t, rec); // `enviar` va al final (prioridad 3): hallazgos y firmas ya están arriba
     default:
       throw new Error(`Operación desconocida: ${op.tipo}`);
   }

@@ -45,22 +45,57 @@ export async function marcarEnviada(t, inspeccionId) {
   if (error) throw error;
 }
 
+// Las columnas de correo las agrega supabase/informes_destinatarios.sql. Mientras ese SQL
+// no se haya ejecutado, se guarda igual sin ellas en vez de trabar la sincronización.
+export const faltaColumna = (error, columna) =>
+  Boolean(error) && ["PGRST204", "42703"].includes(error.code) && String(error.message).includes(columna);
+
 // Repetible: el hallazgo trae el id generado en el dispositivo; si ya existe, no se duplica.
 export async function agregarHallazgo(t, inspeccionId, h) {
-  const { error } = await supabase.from(t.hallazgos).upsert(
-    {
-      id: h.id,
-      inspeccion_id: inspeccionId,
-      titulo: h.titulo,
-      severidad: h.severidad,
-      detalle: h.detalle || null,
-      responsable: h.responsable || null,
-      vence: h.vence || null,
-    },
-    { onConflict: "id", ignoreDuplicates: true }
-  );
+  const fila = {
+    id: h.id,
+    inspeccion_id: inspeccionId,
+    titulo: h.titulo,
+    severidad: h.severidad,
+    detalle: h.detalle || null,
+    responsable: h.responsable || null,
+    vence: h.vence || null,
+  };
+  const guardar = (f) => supabase.from(t.hallazgos).upsert(f, { onConflict: "id", ignoreDuplicates: true });
+  let { error } = await guardar({ ...fila, responsable_correo: h.correo || null });
+  if (faltaColumna(error, "responsable_correo")) ({ error } = await guardar(fila));
   if (error) throw error;
   return h.id;
+}
+
+// Al cerrar la inspección deja un renglón por persona que debe recibir el informe: el
+// responsable del área (firma) y los responsables de los hallazgos, con el correo que
+// se asoció al elegirlos de la lista de colaboradores. Es la cola de salida: el envío
+// real (Resend) todavía no está conectado y leerá las filas con estado 'pendiente'.
+// Repetible: (inspeccion_id, correo) es único.
+export async function registrarDestinatarios(t, rec) {
+  const porCorreo = new Map();
+  const sumar = (correo, nombre, rol) => {
+    const c = (correo || "").trim().toLowerCase();
+    if (c && !porCorreo.has(c)) porCorreo.set(c, { correo: c, nombre: nombre || null, rol });
+  };
+  sumar(rec.firmas?.responsable?.correo, rec.firmas?.responsable?.nombre, "responsable");
+  for (const h of rec.hallazgos ?? []) sumar(h.correo, h.responsable, "hallazgo");
+  if (!porCorreo.size) return;
+
+  const filas = [...porCorreo.values()].map((d) => ({
+    inspeccion_id: rec.id,
+    modulo_id: t.generico ? rec.moduloId : "obra",
+    ...d,
+  }));
+  const { error } = await supabase.from("informes_envios").upsert(filas, { onConflict: "inspeccion_id,correo", ignoreDuplicates: true });
+  // Tabla todavía no creada: la inspección igual se envía; los correos se pueden
+  // reconstruir después porque quedan guardados en hallazgos y firmas.
+  if (error && ["PGRST205", "42P01"].includes(error.code)) {
+    console.warn("informes_envios no existe todavía: ejecutá supabase/informes_destinatarios.sql");
+    return;
+  }
+  if (error) throw error;
 }
 
 export async function borrarHallazgo(t, hallazgoId) {

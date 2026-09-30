@@ -40,7 +40,7 @@ export async function nuevaInspeccion(inspectorId, moduloId, subId = null) {
     estado: "borrador",
     generales: { ...GENERALES_VACIOS },
     respuestas: {}, // codigo -> { valor, categoria, texto }
-    hallazgos: [], // { id, titulo, severidad, detalle, responsable, vence }
+    hallazgos: [], // { id, titulo, severidad, detalle, responsable, correo, vence }
     galeria: [], // fotos generales: { id, blob?, ruta, subida }
     firmas: {}, // rol -> { nombre, blob, ruta, rutaServidor }
   };
@@ -63,9 +63,9 @@ export async function cargarInspeccion(id, moduloId) {
     estado: d.estado,
     generales: d.generales,
     respuestas: Object.fromEntries(Object.entries(d.respuestas).map(([codigo, valor]) => [codigo, { valor }])),
-    hallazgos: d.hallazgos.map((h) => ({ id: h.id, titulo: h.titulo, severidad: h.severidad, detalle: h.detalle, responsable: h.responsable, vence: h.vence })),
+    hallazgos: d.hallazgos.map((h) => ({ id: h.id, titulo: h.titulo, severidad: h.severidad, detalle: h.detalle, responsable: h.responsable, correo: h.responsable_correo || "", vence: h.vence })),
     galeria: d.galeria.map((f) => ({ id: f.id, ruta: f.ruta, subida: true })),
-    firmas: Object.fromEntries(firmas.map((f) => [f.rol, { nombre: f.nombre, ruta: f.ruta, rutaServidor: f.ruta }])),
+    firmas: Object.fromEntries(firmas.map((f) => [f.rol, { nombre: f.nombre, correo: f.correo || "", ruta: f.ruta, rutaServidor: f.ruta }])),
   };
   await enSerie(() => guardarInspeccion(rec));
   return rec;
@@ -122,17 +122,17 @@ export const quitarFoto = (id, fotoId) =>
     return [{ tipo: "foto", clave: fotoId, payload: { accion: "quitar", ruta: foto.ruta } }];
   });
 
-export const guardarFirma = (id, rol, nombre, blob) =>
+export const guardarFirma = (id, rol, nombre, blob, correo = "") =>
   modificar(id, (rec) => {
     const rutaServidor = rec.firmas[rol]?.rutaServidor;
-    rec.firmas[rol] = { nombre, blob, ruta: `${rec.id}/firmas/${rol}-${Date.now()}.png`, rutaServidor };
+    rec.firmas[rol] = { nombre, correo, blob, ruta: `${rec.id}/firmas/${rol}-${Date.now()}.png`, rutaServidor };
     return [{ tipo: "firma", clave: rol }];
   });
 
-export const cambiarNombreFirma = (id, rol, nombre) =>
+export const cambiarNombreFirma = (id, rol, nombre, correo = "") =>
   modificar(id, (rec) => {
     if (!rec.firmas[rol]) return [];
-    rec.firmas[rol] = { ...rec.firmas[rol], nombre };
+    rec.firmas[rol] = { ...rec.firmas[rol], nombre, correo };
     return [{ tipo: "firma", clave: rol }];
   });
 

@@ -23,20 +23,30 @@ function guardarCache(lista) {
   }
 }
 
-async function bajarColaboradores() {
-  const { data, error } = await supabase.from("colaboradores").select("nombre, apellido, correo");
-  if (error) throw error;
+const PAGINA = 1000; // tope de filas por consulta de Supabase: la tabla tiene más (activos e inactivos)
 
-  return (data || [])
-    .filter((c) => c.nombre || c.apellido)
+async function bajarColaboradores() {
+  const data = [];
+  for (let desde = 0; ; desde += PAGINA) {
+    const { data: pagina, error } = await supabase
+      .from("colaboradores")
+      .select("nombre_completo, correo")
+      .eq("data->>estado", "Activo") // los dados de baja no pueden ser responsables
+      .order("id")
+      .range(desde, desde + PAGINA - 1);
+    if (error) throw error;
+    data.push(...pagina);
+    if (pagina.length < PAGINA) break;
+  }
+
+  return data
+    .filter((c) => c.nombre_completo)
     .map((c) => ({
-      nombre: c.nombre || "",
-      apellido: c.apellido || "",
       correo: c.correo || "",
       // Es lo que se muestra y se guarda como texto en hallazgos / firma.
-      etiqueta: [c.nombre, c.apellido].filter(Boolean).join(" "),
+      etiqueta: c.nombre_completo,
     }))
-    .sort((a, b) => a.apellido.localeCompare(b.apellido, "es") || a.nombre.localeCompare(b.nombre, "es"));
+    .sort((a, b) => a.etiqueta.localeCompare(b.etiqueta, "es"));
 }
 
 export async function listarColaboradores() {
@@ -53,7 +63,36 @@ export async function listarColaboradores() {
   }
 }
 
-// Devuelve la lista para armar un <datalist>; si falla, queda vacía y el campo
+const normalizar = (s) =>
+  String(s || "")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .trim();
+
+// Sugerencias: todas las palabras escritas tienen que estar en "nombre apellido"
+// (en cualquier orden, sin tildes). Si el texto es exactamente una persona, no sugiere.
+export function filtrarColaboradores(lista, texto) {
+  const palabras = normalizar(texto).split(/\s+/).filter(Boolean);
+  if (!palabras.length) return [];
+  if (lista.some((c) => normalizar(c.etiqueta) === normalizar(texto))) return [];
+  return lista.filter((c) => {
+    const base = normalizar(c.etiqueta);
+    return palabras.every((p) => base.includes(p));
+  });
+}
+
+// Correo asociado a un "Nombre Apellido" escrito/elegido en el formulario. Solo si
+// coincide con una única persona (con dos homónimos no se adivina); "" si no hay.
+export function correoDe(lista, texto) {
+  const buscado = normalizar(texto);
+  if (!buscado) return "";
+  const coinciden = lista.filter((c) => c.correo && normalizar(c.etiqueta) === buscado);
+  const correos = new Set(coinciden.map((c) => c.correo.toLowerCase()));
+  return correos.size === 1 ? [...correos][0] : "";
+}
+
+// Devuelve la lista de colaboradores; si falla, queda vacía y el campo
 // sigue siendo de texto libre.
 export function useColaboradores() {
   const [colaboradores, setColaboradores] = useState(() => leerCache() || []);

@@ -26,6 +26,7 @@ import {
   quitarFoto as quitarFotoLocal,
 } from "../../lib/inspeccionesLocal.js";
 import { useSync } from "../../lib/useSync.js";
+import { correoDe, useColaboradores } from "../../lib/colaboradores.js";
 
 const GENERALES_INICIALES = { cliente: "", ubicacion: "", grupoAuditado: "", fechaHora: "", tareaObservada: "" };
 
@@ -45,6 +46,7 @@ export default function Formulario() {
   const [searchParams] = useSearchParams();
   const idParam = searchParams.get("id"); // retomar una inspección existente
   const sync = useSync();
+  const colaboradores = useColaboradores();
 
   const modulo = findModulo(moduloId);
   const sub = isNested ? findSub(moduloId, subId) : null;
@@ -220,6 +222,10 @@ export default function Formulario() {
       setEnviando(true);
       try {
         if (!(await volcarGenerales())) return;
+        // El correo del responsable se vuelve a resolver acá: la lista de colaboradores puede
+        // haberse cargado después de firmar. Es el destinatario del informe (ver sync.js).
+        const resp = firmas.responsable;
+        if (resp) await cambiarNombreFirma(inspeccionId, "responsable", resp.nombre, correoDe(colaboradores, resp.nombre));
         await marcarEnviada(inspeccionId); // queda en el dispositivo y sube apenas haya conexión
       } catch (err) {
         setErrorGuardado(err.message);
@@ -248,7 +254,7 @@ export default function Formulario() {
     try {
       if (persisteEnSupabase) {
         if (!inspeccionId) throw new Error("La inspección todavía no está lista");
-        await guardarFirmaLocal(inspeccionId, rol, nombreFirmante, blob);
+        await guardarFirmaLocal(inspeccionId, rol, nombreFirmante, blob, rol === "responsable" ? correoDe(colaboradores, nombreFirmante) : "");
         marcarGuardado();
       }
       setFirmas((f) => ({ ...f, [rol]: { nombre: nombreFirmante, url: urlDeBlob(blob) } }));
@@ -268,7 +274,7 @@ export default function Formulario() {
     const actual = firmas.responsable;
     if (!actual || actual.nombre === nombreLimpio || !nombreLimpio) return;
     try {
-      if (persisteEnSupabase) await cambiarNombreFirma(inspeccionId, "responsable", nombreLimpio);
+      if (persisteEnSupabase) await cambiarNombreFirma(inspeccionId, "responsable", nombreLimpio, correoDe(colaboradores, nombreLimpio));
       setFirmas((f) => ({ ...f, responsable: { ...f.responsable, nombre: nombreLimpio } }));
     } catch (err) {
       setErrorGuardado(err.message);
@@ -318,7 +324,7 @@ export default function Formulario() {
     }
     if (!inspeccionId) return false;
     try {
-      const guardado = await agregarHallazgoLocal(inspeccionId, datos);
+      const guardado = await agregarHallazgoLocal(inspeccionId, { ...datos, correo: correoDe(colaboradores, datos.responsable) });
       setHallazgos((list) => [...list, armarHallazgo(guardado)]);
       marcarGuardado();
       return true;
@@ -431,7 +437,7 @@ export default function Formulario() {
             respuestas={respuestas}
             onResponder={responderChecklist}
           /> : null}
-        {paso === 2 ? <PasoHallazgos hallazgos={hallazgos} onAgregar={agregarHallazgo} onEliminar={eliminarHallazgo} /> : null}
+        {paso === 2 ? <PasoHallazgos hallazgos={hallazgos} onAgregar={agregarHallazgo} onEliminar={eliminarHallazgo} colaboradores={colaboradores} /> : null}
         {paso === 3 ? (
           <PasoCierre resumen={resumen} titulo={title} generales={generales} checklist={checklist} respuestas={respuestas} hallazgos={hallazgos}
             fotos={fotos}
@@ -446,6 +452,7 @@ export default function Formulario() {
             onNombreResponsableBlur={guardarNombreResponsable}
             onGuardarFirma={guardarFirma}
             guardandoFirma={guardandoFirma}
+            colaboradores={colaboradores}
           />
         ) : null}
       </div>
