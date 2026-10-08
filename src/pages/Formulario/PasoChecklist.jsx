@@ -2,7 +2,7 @@ import { useLayoutEffect, useMemo, useState } from "react";
 import Icon from "../../components/Icon.jsx";
 import { OPCIONES, agruparPorCategoria } from "../../data/checklist.js";
 
-export default function PasoChecklist({ items, respuestas, onResponder, onPaginaChange }) {
+export default function PasoChecklist({ items, respuestas, comentarios = {}, onResponder, onComentar, onComentarioListo, onPaginaChange }) {
   const bloques = useMemo(() => agruparPorCategoria(items), [items]);
   const [bloqueActual, setBloqueActual] = useState(0);
   const indice = Math.min(bloqueActual, bloques.length - 1);
@@ -127,6 +127,38 @@ export default function PasoChecklist({ items, respuestas, onResponder, onPagina
                 );
               })}
             </div>
+            {respuestas[codigo] === "parcial" ? (
+              <div style={{ marginTop: 10 }}>
+                <label htmlFor={`detalle-${codigo}`} style={{ display: "block", fontSize: 12.5, fontWeight: 700, color: "var(--warn-fg)", marginBottom: 5 }}>
+                  Detalle de lo que no cumple (obligatorio)
+                </label>
+                <textarea
+                  id={`detalle-${codigo}`}
+                  required
+                  aria-required="true"
+                  rows={3}
+                  value={comentarios[codigo] || ""}
+                  onChange={(e) => onComentar({ codigo, categoria, texto }, e.target.value)}
+                  onBlur={onComentarioListo}
+                  placeholder="Qué se cumple y qué falta"
+                  style={{
+                    width: "100%",
+                    boxSizing: "border-box",
+                    font: "inherit",
+                    fontSize: 13.5,
+                    color: "var(--ink)",
+                    background: "#fff",
+                    border: `1.5px solid ${comentarios[codigo]?.trim() ? "var(--border)" : "var(--danger-border)"}`,
+                    borderRadius: 12,
+                    padding: "9px 11px",
+                    resize: "vertical",
+                  }}
+                />
+                {!comentarios[codigo]?.trim() ? (
+                  <div style={{ fontSize: 11.5, color: "var(--danger-fg)", fontWeight: 600, marginTop: 4 }}>Escribí el detalle para poder cerrar la inspección.</div>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         ))}
       </div>

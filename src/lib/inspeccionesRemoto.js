@@ -26,7 +26,7 @@ export async function guardarGenerales(t, inspeccionId, generales) {
   if (error) throw error;
 }
 
-export async function guardarRespuestaChecklist(t, inspeccionId, item, valor) {
+export async function guardarRespuestaChecklist(t, inspeccionId, item, valor, comentario) {
   const { error } = await supabase.from(t.checklist).upsert(
     {
       inspeccion_id: inspeccionId,
@@ -34,6 +34,7 @@ export async function guardarRespuestaChecklist(t, inspeccionId, item, valor) {
       categoria: item.categoria,
       item: item.texto,
       valor,
+      comentario: comentario?.trim() || null,
     },
     { onConflict: "inspeccion_id,codigo" }
   );
@@ -128,7 +129,7 @@ export async function listarInspecciones(t, { moduloId, subId } = {}) {
 export async function cargarInspeccionRemota(t, inspeccionId) {
   const [cab, resp, hall, fot] = await Promise.all([
     supabase.from(t.cab).select("*").eq("id", inspeccionId).single(),
-    supabase.from(t.checklist).select("codigo, valor").eq("inspeccion_id", inspeccionId),
+    supabase.from(t.checklist).select("codigo, valor, comentario").eq("inspeccion_id", inspeccionId),
     supabase.from(t.hallazgos).select("*").eq("inspeccion_id", inspeccionId).order("created_at"),
     supabase.from(t.fotos).select("id, ruta").eq("inspeccion_id", inspeccionId).order("created_at"),
   ]);
@@ -154,6 +155,7 @@ export async function cargarInspeccionRemota(t, inspeccionId) {
       tareaObservada: c.tarea_observada || "",
     },
     respuestas: Object.fromEntries(resp.data.map((r) => [r.codigo, r.valor])),
+    comentarios: Object.fromEntries(resp.data.filter((r) => r.comentario).map((r) => [r.codigo, r.comentario])),
     galeria: fot.data,
     hallazgos: hall.data,
   };

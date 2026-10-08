@@ -69,7 +69,7 @@ export async function cargarInspeccion(id, moduloId, usuarioId) {
     enServidor: true,
     estado: d.estado,
     generales: d.generales,
-    respuestas: Object.fromEntries(Object.entries(d.respuestas).map(([codigo, valor]) => [codigo, { valor }])),
+    respuestas: Object.fromEntries(Object.entries(d.respuestas).map(([codigo, valor]) => [codigo, { valor, comentario: d.comentarios?.[codigo] || "" }])),
     hallazgos: d.hallazgos.map((h) => ({ id: h.id, titulo: h.titulo, severidad: h.severidad, detalle: h.detalle, responsable: h.responsable, correo: h.responsable_correo || "", vence: h.vence })),
     galeria: d.galeria.map((f) => ({ id: f.id, ruta: f.ruta, subida: true })),
     firmas: Object.fromEntries(firmas.map((f) => [f.rol, { nombre: f.nombre, correo: f.correo || "", ruta: f.ruta, rutaServidor: f.ruta }])),
@@ -84,9 +84,15 @@ export const guardarGenerales = (id, generales) =>
     return [{ tipo: "generales" }];
   });
 
-export const guardarRespuesta = (id, item, valor) =>
+// El comentario solo se conserva si la respuesta es "Cumple parcialmente" (ahí es obligatorio).
+export const guardarRespuesta = (id, item, valor, comentario = "") =>
   modificar(id, (rec) => {
-    rec.respuestas[item.codigo] = { valor, categoria: item.categoria, texto: item.texto };
+    rec.respuestas[item.codigo] = {
+      valor,
+      categoria: item.categoria,
+      texto: item.texto,
+      comentario: valor === "parcial" ? comentario : "",
+    };
     return [{ tipo: "respuesta", clave: item.codigo }];
   });
 

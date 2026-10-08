@@ -56,6 +56,7 @@ export default function Formulario() {
   const [paso, setPaso] = useState(0);
   const [generales, setGenerales] = useState(GENERALES_INICIALES);
   const [respuestas, setRespuestas] = useState({});
+  const [comentarios, setComentarios] = useState({}); // codigo -> detalle (obligatorio si la respuesta es "Cumple parcialmente")
   const [hallazgos, setHallazgos] = useState([]);
   const [inspeccionId, setInspeccionId] = useState(null);
   const [guardadoEn, setGuardadoEn] = useState(null);
@@ -97,6 +98,7 @@ export default function Formulario() {
     generalesRef.current = rec.generales;
     setGenerales(rec.generales);
     setRespuestas(Object.fromEntries(Object.entries(rec.respuestas).map(([codigo, r]) => [codigo, r.valor])));
+    setComentarios(Object.fromEntries(Object.entries(rec.respuestas).filter(([, r]) => r.comentario).map(([codigo, r]) => [codigo, r.comentario])));
     setHallazgos(rec.hallazgos.map(armarHallazgo));
 
     const galeria = rec.galeria ?? [];
@@ -182,24 +184,60 @@ export default function Formulario() {
     timerGeneralesRef.current = setTimeout(() => volcarGeneralesRef.current(), 400);
   };
 
+  const guardarRespuestaConDetalle = (item, valor, detalle) =>
+    guardarRespuesta(inspeccionId, item, valor, detalle)
+      .then(marcarGuardado)
+      .catch((err) => setErrorGuardado(err.message));
+
+  // Los detalles se guardan 500 ms después de dejar de escribir (o al salir del campo).
+  const detallesPendientes = useRef({}); // codigo -> { item, texto, timer }
+  const volcarDetalles = () => {
+    for (const [codigo, p] of Object.entries(detallesPendientes.current)) {
+      clearTimeout(p.timer);
+      delete detallesPendientes.current[codigo];
+      if (persisteEnSupabase && inspeccionId) guardarRespuestaConDetalle(p.item, "parcial", p.texto);
+    }
+  };
+  const volcarDetallesRef = useRef(volcarDetalles);
+  volcarDetallesRef.current = volcarDetalles;
+  useEffect(() => () => volcarDetallesRef.current(), []);
+
   if (!modulo || (isNested && !sub)) return <Navigate to="/" replace />;
 
   const backTo = isNested ? `/modulos/${moduloId}` : "/";
   const title = sub ? sub.title : modulo.title;
 
   const responderChecklist = (item, valor) => {
+    // Cambiar a otra respuesta descarta el detalle: solo "Cumple parcialmente" lo lleva.
+    const detalle = valor === "parcial" ? comentarios[item.codigo] || "" : "";
+    clearTimeout(detallesPendientes.current[item.codigo]?.timer);
+    delete detallesPendientes.current[item.codigo];
     setRespuestas((r) => ({ ...r, [item.codigo]: valor }));
+    if (valor !== "parcial") setComentarios(({ [item.codigo]: _quitado, ...resto }) => resto);
     if (!persisteEnSupabase || !inspeccionId) return;
-    guardarRespuesta(inspeccionId, item, valor)
-      .then(marcarGuardado)
-      .catch((err) => setErrorGuardado(err.message));
+    guardarRespuestaConDetalle(item, valor, detalle);
   };
 
+  const comentarChecklist = (item, texto) => {
+    setComentarios((c) => ({ ...c, [item.codigo]: texto }));
+    if (!persisteEnSupabase || !inspeccionId) return;
+    clearTimeout(detallesPendientes.current[item.codigo]?.timer);
+    const timer = setTimeout(() => volcarDetallesRef.current(), 500);
+    detallesPendientes.current[item.codigo] = { item, texto, timer };
+  };
+
+  // Ítems "Cumple parcialmente" sin detalle: no se puede avanzar ni cerrar con ellos.
+  const sinDetalle = checklist.filter((i) => respuestas[i.codigo] === "parcial" && !comentarios[i.codigo]?.trim());
+  const avisoSinDetalle = () =>
+    `Falta el detalle en ${sinDetalle.length === 1 ? "el ítem" : "los ítems"} ${sinDetalle.map((i) => i.codigo).join(", ")} ("Cumple parcialmente"). Completalo en el paso Checklist.`;
+
   const noCumple = Object.values(respuestas).filter((v) => v === "no").length;
+  const cumpleParcial = Object.values(respuestas).filter((v) => v === "parcial").length;
   const contestadas = Object.keys(respuestas).length;
 
   const resumen = [
     { label: "Ítems respondidos", value: `${contestadas} / ${checklist.length}`, color: "var(--violet-700)" },
+    { label: "Cumple parcialmente", value: String(cumpleParcial), color: cumpleParcial ? "var(--warn-fg)" : "var(--success-fg)" },
     { label: "No cumple", value: String(noCumple), color: noCumple ? "var(--danger-fg)" : "var(--success-fg)" },
     { label: "Fotos adjuntas", value: String(fotos.length), color: "var(--ink)" },
     {
@@ -223,6 +261,13 @@ export default function Formulario() {
   const mostrarSiguiente = paso !== 1 || checklistUltimaPagina;
 
   const siguiente = async () => {
+    volcarDetalles();
+    if (sinDetalle.length && (esUltimo || paso === 1)) {
+      setAvisoCierre(avisoSinDetalle());
+      if (esUltimo) setPaso(1);
+      return;
+    }
+    setAvisoCierre(null);
     if (!esUltimo) {
       setPaso((p) => Math.min(3, p + 1));
       return;
@@ -248,6 +293,7 @@ export default function Formulario() {
   };
 
   const guardarBorrador = async () => {
+    volcarDetalles();
     if (!(await volcarGenerales())) return;
     navigate(backTo);
   };
@@ -435,12 +481,15 @@ export default function Formulario() {
         {paso === 1 ? <PasoChecklist
             items={checklist}
             respuestas={respuestas}
+            comentarios={comentarios}
             onResponder={responderChecklist}
+            onComentar={comentarChecklist}
+            onComentarioListo={volcarDetalles}
             onPaginaChange={setChecklistUltimaPagina}
           /> : null}
         {paso === 2 ? <PasoHallazgos hallazgos={hallazgos} onAgregar={agregarHallazgo} onEliminar={eliminarHallazgo} colaboradores={colaboradores} /> : null}
         {paso === 3 ? (
-          <PasoCierre resumen={resumen} titulo={title} generales={generales} checklist={checklist} respuestas={respuestas} hallazgos={hallazgos}
+          <PasoCierre resumen={resumen} titulo={title} generales={generales} checklist={checklist} respuestas={respuestas} comentarios={comentarios} hallazgos={hallazgos}
             fotos={fotos}
             subiendoFotos={subiendoFotos}
             onAgregarFotos={agregarFotos}

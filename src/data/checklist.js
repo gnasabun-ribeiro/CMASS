@@ -484,6 +484,7 @@ export function agruparPorCategoria(items) {
 
 export const OPCIONES = [
   { value: "ok", label: "Cumple", bg: "var(--success-bg)", fg: "var(--success-fg)", border: "var(--success-border)" },
+  { value: "parcial", label: "Cumple parcialmente", bg: "var(--warn-bg)", fg: "var(--warn-fg)", border: "var(--warn-border)" },
   { value: "no", label: "No cumple", bg: "var(--danger-bg)", fg: "var(--danger-fg)", border: "var(--danger-border)" },
   { value: "na", label: "N/A", bg: "var(--neutral-bg)", fg: "var(--neutral-fg)", border: "var(--border)" },
 ];

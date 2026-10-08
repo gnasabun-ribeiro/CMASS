@@ -91,7 +91,7 @@ async function ejecutar(op, rec) {
     case "respuesta": {
       const r = rec.respuestas[op.clave];
       if (!r) return;
-      return guardarRespuestaChecklist(t, id, { codigo: op.clave, categoria: r.categoria, texto: r.texto }, r.valor);
+      return guardarRespuestaChecklist(t, id, { codigo: op.clave, categoria: r.categoria, texto: r.texto }, r.valor, r.comentario);
     }
     case "hallazgo": {
       const h = rec.hallazgos.find((x) => x.id === op.clave);

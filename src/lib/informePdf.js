@@ -9,6 +9,7 @@ const COLOR_RESPUESTA = {
   ok: [21, 128, 61],
   no: [190, 24, 93],
   na: [78, 71, 98],
+  parcial: [138, 61, 8],
 };
 const COLOR_SIN_RESPONDER = [140, 140, 150];
 
@@ -78,7 +79,7 @@ function agregarResumen(doc, resumen, y) {
   return doc.lastAutoTable.finalY + 20;
 }
 
-function agregarChecklist(doc, checklist, respuestas, y) {
+function agregarChecklist(doc, checklist, respuestas, comentarios, y) {
   doc.setFontSize(12);
   doc.setFont(undefined, "bold");
   doc.text("Checklist", 40, y);
@@ -88,7 +89,9 @@ function agregarChecklist(doc, checklist, respuestas, y) {
     head: [["Código", "Categoría", "Ítem", "Respuesta"]],
     body: checklist.map((item) => {
       const valor = respuestas[item.codigo];
-      return [item.codigo, item.categoria, item.texto, valor ? ETIQUETA_RESPUESTA[valor] : "Sin responder"];
+      const detalle = valor === "parcial" && comentarios[item.codigo] ? `
+Detalle: ${comentarios[item.codigo]}` : "";
+      return [item.codigo, item.categoria, item.texto + detalle, valor ? ETIQUETA_RESPUESTA[valor] : "Sin responder"];
     }),
     styles: { fontSize: 9, cellPadding: 5, valign: "top" },
     headStyles: { fillColor: [78, 47, 130], textColor: 255, fontStyle: "bold" },
@@ -216,14 +219,14 @@ function agregarFirmas(doc, firmas, y) {
   return y + altoImg + 45;
 }
 
-export function construirInformePDF({ titulo, generales, resumen, checklist, respuestas, hallazgos, fotos = [], firmas = {} }) {
+export function construirInformePDF({ titulo, generales, resumen, checklist, respuestas, comentarios = {}, hallazgos, fotos = [], firmas = {} }) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
 
   agregarEncabezado(doc, titulo);
   let y = 110;
   y = agregarGenerales(doc, generales, y);
   y = agregarResumen(doc, resumen, y);
-  y = agregarChecklist(doc, checklist, respuestas, y);
+  y = agregarChecklist(doc, checklist, respuestas, comentarios, y);
   y = agregarHallazgos(doc, hallazgos, y);
   y = agregarFotos(doc, fotos, y);
   agregarFirmas(doc, firmas, y);

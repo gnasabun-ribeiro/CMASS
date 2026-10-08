@@ -32,6 +32,7 @@ export default function PasoCierre({
   generales,
   checklist,
   respuestas,
+  comentarios = {},
   hallazgos,
   fotos = [],
   subiendoFotos = 0,
@@ -60,7 +61,7 @@ export default function PasoCierre({
           if (f?.url) firmasPdf[rol] = { nombre: f.nombre, dataUrl: await urlADataUrl(f.url).catch(() => null) };
         })
       );
-      generarInformePDF({ titulo, generales, resumen, checklist, respuestas, hallazgos, fotos: fotosPdf, firmas: firmasPdf });
+      generarInformePDF({ titulo, generales, resumen, checklist, respuestas, comentarios, hallazgos, fotos: fotosPdf, firmas: firmasPdf });
     } finally {
       setGenerandoPDF(false);
     }
@@ -109,7 +110,14 @@ export default function PasoCierre({
                   return (
                     <div key={item.codigo} style={{ display: "flex", gap: 9, alignItems: "flex-start", fontSize: 12.5 }}>
                       <span style={{ flex: "0 0 auto", fontWeight: 700, color: "var(--violet-700)", minWidth: 26 }}>{item.codigo}</span>
-                      <span style={{ flex: 1, color: "var(--ink)", lineHeight: 1.4 }}>{item.texto}</span>
+                      <span style={{ flex: 1, color: "var(--ink)", lineHeight: 1.4 }}>
+                        {item.texto}
+                        {respuestas[item.codigo] === "parcial" ? (
+                          <span style={{ display: "block", marginTop: 3, color: comentarios[item.codigo]?.trim() ? "var(--warn-fg)" : "var(--danger-fg)", fontWeight: 600 }}>
+                            Detalle: {comentarios[item.codigo]?.trim() || "falta completarlo"}
+                          </span>
+                        ) : null}
+                      </span>
                       <span
                         style={{
                           flex: "0 0 auto",
