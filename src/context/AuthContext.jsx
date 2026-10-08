@@ -1,7 +1,18 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabaseClient.js";
+import { ROL_POR_DEFECTO, puede } from "../data/permisos.js";
 
 const AuthContext = createContext(null);
+
+// El rol se guarda en el dispositivo para que, sin conexión, la app siga mostrando lo mismo.
+const claveRol = (userId) => `cmass:rol:${userId}`;
+const leerRolGuardado = (userId) => {
+  try {
+    return localStorage.getItem(claveRol(userId));
+  } catch {
+    return null;
+  }
+};
 
 export function nombreFromEmail(email) {
   const local = (email || "tecnico").split("@")[0];
@@ -17,6 +28,7 @@ export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [perfilListo, setPerfilListo] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -37,17 +49,34 @@ export function AuthProvider({ children }) {
     const userId = session?.user?.id;
     if (!userId) {
       setProfile(null);
+      setPerfilListo(false);
       return;
     }
+    setPerfilListo(false);
     let cancelled = false;
-    supabase
-      .from("profiles")
-      .select("nombre")
-      .eq("id", userId)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (!cancelled) setProfile(data);
-      });
+    // Hasta que llegue el perfil, vale el último rol conocido de este dispositivo.
+    const guardado = leerRolGuardado(userId);
+    if (guardado) setProfile((p) => p ?? { rol: guardado, activo: true, soloRolGuardado: true });
+
+    const cargar = async () => {
+      let { data, error } = await supabase.from("profiles").select("nombre, rol, activo").eq("id", userId).maybeSingle();
+      // Antes de ejecutar supabase/roles_y_permisos.sql no existen rol/activo: se sigue sin roles.
+      if (error) ({ data } = await supabase.from("profiles").select("nombre").eq("id", userId).maybeSingle());
+      if (cancelled) return;
+      // Sin conexión no llega nada: se conserva el último rol conocido en vez de borrarlo.
+      if (data) setProfile(data);
+      setPerfilListo(true);
+      if (data?.rol) {
+        try {
+          localStorage.setItem(claveRol(userId), data.rol);
+        } catch {
+          /* sin almacenamiento: no pasa nada */
+        }
+      }
+      // Usuario dado de baja: se cierra la sesión.
+      if (data?.activo === false) supabase.auth.signOut();
+    };
+    cargar().catch(() => !cancelled && setPerfilListo(true));
     return () => {
       cancelled = true;
     };
@@ -55,17 +84,22 @@ export function AuthProvider({ children }) {
 
   const value = useMemo(() => {
     const email = session?.user?.email || "";
+    const rol = profile?.rol || ROL_POR_DEFECTO;
     return {
       email,
       userId: session?.user?.id || null,
       isAuthenticated: Boolean(session),
       loading,
       nombre: profile?.nombre || nombreFromEmail(email),
+      rol,
+      // false hasta que se sabe el rol (de la base o del último guardado en el dispositivo)
+      rolListo: perfilListo || Boolean(profile?.rol),
+      puede: (accion) => puede(rol, accion),
       login: (email, password) => supabase.auth.signInWithPassword({ email, password }),
       logout: () => supabase.auth.signOut(),
       resetPassword: (email) => supabase.auth.resetPasswordForEmail(email),
     };
-  }, [session, profile, loading]);
+  }, [session, profile, perfilListo, loading]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -41,7 +41,7 @@ export default function Formulario() {
   const location = useLocation();
   const navigate = useNavigate();
   const isNested = location.pathname.startsWith("/modulos/");
-  const { userId, nombre: nombreInspector } = useAuth();
+  const { userId, nombre: nombreInspector, puede, rolListo } = useAuth();
   const [searchParams] = useSearchParams();
   const idParam = searchParams.get("id"); // retomar una inspección existente
   const sync = useSync();
@@ -68,6 +68,7 @@ export default function Formulario() {
   const [checklistUltimaPagina, setChecklistUltimaPagina] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [cargando, setCargando] = useState(persisteEnSupabase);
+  const [datosInsp, setDatosInsp] = useState({ estado: "borrador", inspectorId: null }); // de quién es y si ya se envió
 
   const nuevaRef = useRef(null); // promesa de la inspección nueva (evita crearla dos veces con StrictMode)
   const generalesRef = useRef(GENERALES_INICIALES);
@@ -92,6 +93,7 @@ export default function Formulario() {
 
   // Vuelca la copia local al formulario (y pide URLs firmadas para lo que solo está en el servidor).
   const hidratar = (rec) => {
+    setDatosInsp({ estado: rec.estado, inspectorId: rec.inspectorId ?? null });
     generalesRef.current = rec.generales;
     setGenerales(rec.generales);
     setRespuestas(Object.fromEntries(Object.entries(rec.respuestas).map(([codigo, r]) => [codigo, r.valor])));
@@ -126,10 +128,15 @@ export default function Formulario() {
 
   // Abre la inspección: la existente (?id=…) o una nueva. Todo vive primero en el dispositivo.
   useEffect(() => {
-    if (!persisteEnSupabase || !userId) return;
+    if (!persisteEnSupabase || !userId || !rolListo) return;
+    // 'Solo lectura' no crea inspecciones nuevas (la base tampoco lo deja).
+    if (!idParam && !puede("crearInspecciones")) {
+      navigate("/", { replace: true });
+      return;
+    }
     let cancelado = false;
     let promesa;
-    if (idParam) promesa = cargarInspeccion(idParam, moduloId);
+    if (idParam) promesa = cargarInspeccion(idParam, moduloId, userId);
     else promesa = nuevaRef.current ??= nuevaInspeccion(userId, moduloId, isNested ? subId : null);
     promesa
       .then((rec) => {
@@ -143,7 +150,7 @@ export default function Formulario() {
       cancelado = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idParam, persisteEnSupabase, userId, moduloId, subId]);
+  }, [idParam, persisteEnSupabase, userId, rolListo, moduloId, subId]);
 
   // Guarda Generales en el dispositivo (solo si el usuario los tocó). Devuelve true si salió bien.
   const volcarGenerales = async () => {
@@ -202,6 +209,14 @@ export default function Formulario() {
     },
   ];
 
+  // Se puede mirar pero no tocar: inspección de otra persona (si no sos administrador),
+  // inspección ya enviada (solo el administrador la corrige) o rol de solo lectura.
+  const soloLectura =
+    persisteEnSupabase &&
+    Boolean(idParam) &&
+    !cargando &&
+    !puede("editarEnviadas") &&
+    (datosInsp.estado === "enviado" || (datosInsp.inspectorId && datosInsp.inspectorId !== userId) || !puede("crearInspecciones"));
   const avance = Math.round((paso / 3) * 100);
   const esUltimo = paso === 3;
   // En el paso Checklist, "Siguiente" recién aparece al llegar a la última categoría.
@@ -338,6 +353,11 @@ export default function Formulario() {
 
   return (
     <AppShell title={title} subtitle="Formulario en 4 pasos" onBack={() => navigate(backTo)} padBottom="200px">
+      {soloLectura ? (
+        <div style={{ background: "var(--warn-bg)", color: "var(--warn-fg)", borderRadius: 16, padding: 12, marginBottom: 12, fontSize: 13, fontWeight: 600 }}>
+          Solo lectura: {datosInsp.estado === "enviado" ? "esta inspección ya fue enviada y solo un administrador puede corregirla." : "no podés modificar esta inspección."}
+        </div>
+      ) : null}
       {cargando ? (
         <div style={{ background: "#fff", borderRadius: 16, padding: 12, marginBottom: 12, fontSize: 13, color: "var(--muted)" }}>Cargando inspección…</div>
       ) : null}
@@ -407,6 +427,8 @@ export default function Formulario() {
       </div>
 
       <div className="app-screen" style={{ background: "#fff", borderRadius: 22, padding: 16, boxShadow: "0 12px 30px -24px rgba(36,18,70,.5)" }}>
+        {/* fieldset disabled apaga todos los campos y botones de los pasos de una sola vez */}
+        <fieldset disabled={soloLectura && paso !== 3} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
         {paso === 0 ? (
           <PasoGenerales valores={generales} onCambiar={cambiarGeneral} />
         ) : null}
@@ -428,13 +450,15 @@ export default function Formulario() {
             nombreInspector={nombreInspector}
             onGuardarFirma={guardarFirma}
             guardandoFirma={guardandoFirma}
+            soloLectura={soloLectura}
           />
         ) : null}
+        </fieldset>
       </div>
 
       <div style={{ position: "fixed", left: 0, right: 0, bottom: 78, padding: "0 14px", zIndex: 25, pointerEvents: "none" }}>
         <div style={{ maxWidth: 1020, margin: "0 auto", display: "flex", gap: 9, pointerEvents: "auto" }}>
-          <button
+          {!soloLectura ? <button
             onClick={guardarBorrador}
             style={{
               border: 0,
@@ -450,8 +474,8 @@ export default function Formulario() {
             }}
           >
             Borrador
-          </button>
-          {mostrarSiguiente ? (
+          </button> : null}
+          {mostrarSiguiente && !(soloLectura && esUltimo) ? (
             <button
               onClick={siguiente}
               disabled={enviando}

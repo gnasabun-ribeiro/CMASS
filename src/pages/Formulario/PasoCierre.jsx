@@ -3,6 +3,7 @@ import Icon from "../../components/Icon.jsx";
 import { OPCIONES, agruparPorCategoria } from "../../data/checklist.js";
 import FirmaPad from "../../components/FirmaPad.jsx";
 import GaleriaFotos from "../../components/GaleriaFotos.jsx";
+import { useAuth } from "../../context/AuthContext.jsx";
 
 const panelStyle = {
   borderRadius: 18,
@@ -41,9 +42,11 @@ export default function PasoCierre({
   nombreInspector,
   onGuardarFirma,
   guardandoFirma = {},
+  soloLectura = false,
 }) {
   const bloques = useMemo(() => agruparPorCategoria(checklist), [checklist]);
   const [generandoPDF, setGenerandoPDF] = useState(false);
+  const { puede } = useAuth();
 
   const descargarPDF = async () => {
     setGenerandoPDF(true);
@@ -65,6 +68,8 @@ export default function PasoCierre({
 
   return (
     <div>
+      {/* El PDF queda fuera: se puede descargar aunque la inspección sea de solo lectura. */}
+      <fieldset disabled={soloLectura} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
       <GaleriaFotos fotos={fotos} subiendo={subiendoFotos} max={maxFotos} onAgregar={onAgregarFotos} onQuitar={onQuitarFoto} />
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 12, marginBottom: 14 }}>
@@ -78,6 +83,7 @@ export default function PasoCierre({
           </div>
         ))}
       </div>
+      </fieldset>
 
       <div style={{ borderRadius: 18, background: "var(--violet-75)", border: "1px solid var(--border)", padding: 14 }}>
         <div style={panelTituloStyle}>Resumen</div>
@@ -162,7 +168,7 @@ export default function PasoCierre({
         </div>
       ) : null}
 
-      <button
+      {puede("descargarPdf") ? <button
         onClick={descargarPDF}
         disabled={generandoPDF}
         style={{
@@ -186,7 +192,7 @@ export default function PasoCierre({
       >
         <Icon name="download" size={17} strokeWidth={2} />
         {generandoPDF ? "Generando PDF…" : "Descargar informe (PDF)"}
-      </button>
+      </button> : null}
     </div>
   );
 }

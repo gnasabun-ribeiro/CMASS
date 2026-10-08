@@ -1,4 +1,4 @@
-import { borrarOpsDe, encolar, enSerie, guardarInspeccion, obtenerInspeccion } from "./localDb.js";
+import { borrarOpsDe, encolar, enSerie, guardarInspeccion, listarCola, obtenerInspeccion } from "./localDb.js";
 import { agendarSync } from "./sync.js";
 import { cargarInspeccionRemota } from "./inspeccionesRemoto.js";
 import { tablasDe } from "./tablas.js";
@@ -49,9 +49,16 @@ export async function nuevaInspeccion(inspectorId, moduloId, subId = null) {
 }
 
 // Devuelve la copia local; si no existe (ej. otro dispositivo) la baja del servidor.
-export async function cargarInspeccion(id, moduloId) {
+// Una inspección de otra persona que quedó guardada acá solo para mirarla puede estar vieja:
+// con conexión y sin cambios propios en cola se vuelve a bajar.
+export async function cargarInspeccion(id, moduloId, usuarioId) {
   const local = await obtenerInspeccion(id);
-  if (local) return local;
+  if (local) {
+    const ajena = Boolean(usuarioId && local.inspectorId && local.inspectorId !== usuarioId);
+    if (!ajena || !navigator.onLine) return local;
+    const conCambios = (await listarCola()).some((op) => op.inspeccionId === id);
+    if (conCambios) return local;
+  }
   const t = tablasDe(moduloId);
   const [d, firmas] = await Promise.all([cargarInspeccionRemota(t, id), listarFirmasObra(t, id)]);
   const rec = {

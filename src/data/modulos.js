@@ -123,6 +123,16 @@ export const MODULOS = [
     cta: "Revisar",
     nav: "/pendientes",
   },
+  {
+    id: "panel",
+    title: "Panel de seguimiento",
+    desc: "Hallazgos abiertos y cerrados, inspecciones por persona y usuarios.",
+    icon: "chart",
+    badge: "",
+    cta: "Abrir panel",
+    nav: "/panel",
+    permiso: "verPanel", // solo se muestra si el rol tiene este permiso (data/permisos.js)
+  },
 ];
 
 export function findModulo(id) {

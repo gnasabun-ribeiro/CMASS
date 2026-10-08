@@ -24,7 +24,7 @@ function gridColumnas(valor) {
 
 export default function Home() {
   const navigate = useNavigate();
-  const { nombre, email } = useAuth();
+  const { nombre, email, puede } = useAuth();
   const { tema, setTema } = useTheme();
   const [columnas, setColumnas] = useState(
     () => localStorage.getItem(COLUMNAS_KEY) || "auto"
@@ -109,7 +109,7 @@ export default function Home() {
           gap: 18,
         }}
       >
-        {MODULOS.map((m, i) => (
+        {MODULOS.filter((m) => !m.permiso || puede(m.permiso)).map((m, i) => (
           <ModuleCard
             key={m.id}
             modulo={m}
