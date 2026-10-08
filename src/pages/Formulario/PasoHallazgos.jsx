@@ -139,7 +139,7 @@ export default function PasoHallazgos({ hallazgos, onAgregar, onEliminar, colabo
               disabled={guardando}
               style={{ flex: 1, border: 0, background: "var(--active-bg)", color: "var(--on-active)", fontWeight: 700, fontSize: 13, padding: 11, borderRadius: 12, cursor: "pointer" }}
             >
-              {guardando ? "Guardando…" : "Guardar hallazgo"}
+              {guardando ? "Enviando…" : "Enviar hallazgo"}
             </button>
           </div>
         </div>

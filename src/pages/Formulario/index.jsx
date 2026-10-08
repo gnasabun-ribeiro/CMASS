@@ -239,6 +239,7 @@ export default function Formulario() {
     { label: "Ítems respondidos", value: `${contestadas} / ${checklist.length}`, color: "var(--violet-700)" },
     { label: "Cumple parcialmente", value: String(cumpleParcial), color: cumpleParcial ? "var(--warn-fg)" : "var(--success-fg)" },
     { label: "No cumple", value: String(noCumple), color: noCumple ? "var(--danger-fg)" : "var(--success-fg)" },
+    { label: "Hallazgos cargados", value: String(hallazgos.length), color: hallazgos.length ? "var(--warn-fg)" : "var(--ink)" },
     { label: "Fotos adjuntas", value: String(fotos.length), color: "var(--ink)" },
     {
       label: "Guardado",

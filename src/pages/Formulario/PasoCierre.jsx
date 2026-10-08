@@ -98,6 +98,40 @@ export default function PasoCierre({
         ))}
       </div>
 
+      {hallazgos.length === 0 ? (
+        <div style={panelStyle}>
+          <div style={panelTituloStyle}>Hallazgos (0)</div>
+          <div style={{ fontSize: 12.5, color: "var(--muted)" }}>No se cargaron hallazgos en el paso 3. El informe saldrá sin esa sección.</div>
+        </div>
+      ) : (
+        <div style={panelStyle}>
+          <div style={panelTituloStyle}>Hallazgos ({hallazgos.length})</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {hallazgos.map((h, i) => (
+              <div key={`${h.titulo}-${i}`} style={{ borderRadius: 14, background: "#fff8fb", border: "1px solid #f7dce7", padding: 11 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: 6 }}>
+                  <strong className="heading" style={{ fontSize: 13 }}>
+                    {h.titulo}
+                  </strong>
+                  <span style={{ background: h.sevBg, color: h.sevFg, fontSize: 10.5, fontWeight: 700, padding: "3px 9px", borderRadius: 20 }}>
+                    {h.severidad}
+                  </span>
+                </div>
+                {h.detalle ? <div style={{ fontSize: 12, color: "var(--muted-4)", lineHeight: 1.45, marginBottom: 6 }}>{h.detalle}</div> : null}
+                <div style={{ display: "flex", gap: 12, flexWrap: "wrap", fontSize: 11, color: "var(--muted)" }}>
+                  <span>
+                    Responsable: <strong style={{ color: "var(--ink)" }}>{h.responsable}</strong>
+                  </span>
+                  <span>
+                    Vence: <strong style={{ color: "var(--ink)" }}>{h.vence}</strong>
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div style={panelStyle}>
         <div style={panelTituloStyle}>Resumen del checklist</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -141,34 +175,6 @@ export default function PasoCierre({
         </div>
       </div>
 
-      {hallazgos.length > 0 ? (
-        <div style={panelStyle}>
-          <div style={panelTituloStyle}>Hallazgos ({hallazgos.length})</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {hallazgos.map((h, i) => (
-              <div key={`${h.titulo}-${i}`} style={{ borderRadius: 14, background: "#fff8fb", border: "1px solid #f7dce7", padding: 11 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: 6 }}>
-                  <strong className="heading" style={{ fontSize: 13 }}>
-                    {h.titulo}
-                  </strong>
-                  <span style={{ background: h.sevBg, color: h.sevFg, fontSize: 10.5, fontWeight: 700, padding: "3px 9px", borderRadius: 20 }}>
-                    {h.severidad}
-                  </span>
-                </div>
-                {h.detalle ? <div style={{ fontSize: 12, color: "var(--muted-4)", lineHeight: 1.45, marginBottom: 6 }}>{h.detalle}</div> : null}
-                <div style={{ display: "flex", gap: 12, flexWrap: "wrap", fontSize: 11, color: "var(--muted)" }}>
-                  <span>
-                    Responsable: <strong style={{ color: "var(--ink)" }}>{h.responsable}</strong>
-                  </span>
-                  <span>
-                    Vence: <strong style={{ color: "var(--ink)" }}>{h.vence}</strong>
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : null}
 
       {ROLES_FIRMA.some(({ rol }) => !firmas[rol]) ? (
         <div style={{ marginTop: 14, background: "var(--warn-bg)", color: "var(--warn-fg)", borderRadius: 14, padding: 11, fontSize: 12.5, fontWeight: 600 }}>
