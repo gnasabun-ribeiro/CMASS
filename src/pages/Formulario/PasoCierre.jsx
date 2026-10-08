@@ -3,7 +3,6 @@ import Icon from "../../components/Icon.jsx";
 import { OPCIONES, agruparPorCategoria } from "../../data/checklist.js";
 import FirmaPad from "../../components/FirmaPad.jsx";
 import GaleriaFotos from "../../components/GaleriaFotos.jsx";
-import ColaboradorInput from "../../components/ColaboradorInput.jsx";
 
 const panelStyle = {
   borderRadius: 18,
@@ -24,7 +23,6 @@ const panelTituloStyle = {
 
 const ROLES_FIRMA = [
   { rol: "inspector", titulo: "Inspector CMASS" },
-  { rol: "responsable", titulo: "Responsable del área" },
 ];
 
 export default function PasoCierre({
@@ -41,12 +39,8 @@ export default function PasoCierre({
   maxFotos,
   firmas = {},
   nombreInspector,
-  nombreResponsable,
-  onNombreResponsable,
-  onNombreResponsableBlur,
   onGuardarFirma,
   guardandoFirma = {},
-  colaboradores = [],
 }) {
   const bloques = useMemo(() => agruparPorCategoria(checklist), [checklist]);
   const [generandoPDF, setGenerandoPDF] = useState(false);
@@ -80,20 +74,7 @@ export default function PasoCierre({
               {tituloRol}
             </div>
             <FirmaPad firma={firmas[rol]} guardando={Boolean(guardandoFirma[rol])} onGuardar={(blob) => onGuardarFirma(rol, blob)} />
-            {rol === "inspector" ? (
-              <div style={{ fontSize: 13.5, fontWeight: 600, marginTop: 9 }}>{nombreInspector}</div>
-            ) : (
-              <div style={{ marginTop: 9, display: "flex" }}>
-                <ColaboradorInput
-                  placeholder="Nombre y apellido del responsable"
-                  value={nombreResponsable}
-                  onChange={onNombreResponsable}
-                  onBlur={onNombreResponsableBlur}
-                  colaboradores={colaboradores}
-                  style={{ width: "100%", border: "1px solid var(--border)", borderRadius: 12, padding: 10, fontSize: 13.5, background: "#fff", color: "var(--ink)", minHeight: 42 }}
-                />
-              </div>
-            )}
+            <div style={{ fontSize: 13.5, fontWeight: 600, marginTop: 9 }}>{nombreInspector}</div>
           </div>
         ))}
       </div>

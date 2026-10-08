@@ -183,7 +183,6 @@ function agregarFotos(doc, fotos, y) {
 function agregarFirmas(doc, firmas, y) {
   const roles = [
     ["inspector", "Inspector CMASS"],
-    ["responsable", "Responsable del área"],
   ];
   const pagina = { w: doc.internal.pageSize.getWidth(), h: doc.internal.pageSize.getHeight() };
   const ancho = (pagina.w - 80 - 30) / 2;

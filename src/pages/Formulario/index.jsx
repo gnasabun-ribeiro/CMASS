@@ -15,7 +15,6 @@ import { uuid } from "../../lib/uuid.js";
 import {
   agregarHallazgo as agregarHallazgoLocal,
   borrarHallazgo as borrarHallazgoLocal,
-  cambiarNombreFirma,
   cargarInspeccion,
   guardarFirma as guardarFirmaLocal,
   agregarFoto as agregarFotoLocal,
@@ -64,7 +63,6 @@ export default function Formulario() {
   const [fotos, setFotos] = useState([]); // fotos generales: { id, url }
   const [subiendoFotos, setSubiendoFotos] = useState(0);
   const [firmas, setFirmas] = useState({}); // rol -> { nombre, url }
-  const [nombreResponsable, setNombreResponsable] = useState("");
   const [guardandoFirma, setGuardandoFirma] = useState({});
   const [avisoCierre, setAvisoCierre] = useState(null);
   const [checklistUltimaPagina, setChecklistUltimaPagina] = useState(false);
@@ -98,7 +96,6 @@ export default function Formulario() {
     setGenerales(rec.generales);
     setRespuestas(Object.fromEntries(Object.entries(rec.respuestas).map(([codigo, r]) => [codigo, r.valor])));
     setHallazgos(rec.hallazgos.map(armarHallazgo));
-    setNombreResponsable(rec.firmas.responsable?.nombre || "");
 
     const galeria = rec.galeria ?? [];
     const nuevasFirmas = {};
@@ -216,19 +213,14 @@ export default function Formulario() {
       return;
     }
     if (persisteEnSupabase) {
-      const faltan = [!firmas.inspector && "del inspector", !firmas.responsable && "del responsable"].filter(Boolean);
-      if (faltan.length) {
-        setAvisoCierre(`Falta la firma ${faltan.join(" y ")}. Firmá y tocá "Guardar firma" antes de cerrar.`);
+      if (!firmas.inspector) {
+        setAvisoCierre('Falta la firma del inspector. Firmá y tocá "Guardar firma" antes de cerrar.');
         return;
       }
       setAvisoCierre(null);
       setEnviando(true);
       try {
         if (!(await volcarGenerales())) return;
-        // El correo del responsable se vuelve a resolver acá: la lista de colaboradores puede
-        // haberse cargado después de firmar. Es el destinatario del informe (ver sync.js).
-        const resp = firmas.responsable;
-        if (resp) await cambiarNombreFirma(inspeccionId, "responsable", resp.nombre, correoDe(colaboradores, resp.nombre));
         await marcarEnviada(inspeccionId); // queda en el dispositivo y sube apenas haya conexión
       } catch (err) {
         setErrorGuardado(err.message);
@@ -247,17 +239,13 @@ export default function Formulario() {
 
   // Devuelve false si no se pudo guardar (el recuadro conserva el trazo).
   const guardarFirma = async (rol, blob) => {
-    const nombreFirmante = rol === "inspector" ? nombreInspector : nombreResponsable.trim();
-    if (!nombreFirmante) {
-      setAvisoCierre("Escribí el nombre del responsable antes de guardar su firma.");
-      return false;
-    }
+    const nombreFirmante = nombreInspector;
     setAvisoCierre(null);
     setGuardandoFirma((g) => ({ ...g, [rol]: true }));
     try {
       if (persisteEnSupabase) {
         if (!inspeccionId) throw new Error("La inspección todavía no está lista");
-        await guardarFirmaLocal(inspeccionId, rol, nombreFirmante, blob, rol === "responsable" ? correoDe(colaboradores, nombreFirmante) : "");
+        await guardarFirmaLocal(inspeccionId, rol, nombreFirmante, blob, "");
         marcarGuardado();
       }
       setFirmas((f) => ({ ...f, [rol]: { nombre: nombreFirmante, url: urlDeBlob(blob) } }));
@@ -268,19 +256,6 @@ export default function Formulario() {
       return false;
     } finally {
       setGuardandoFirma((g) => ({ ...g, [rol]: false }));
-    }
-  };
-
-  // Si el responsable ya firmó y corrige su nombre, se actualiza también en la copia guardada.
-  const guardarNombreResponsable = async () => {
-    const nombreLimpio = nombreResponsable.trim();
-    const actual = firmas.responsable;
-    if (!actual || actual.nombre === nombreLimpio || !nombreLimpio) return;
-    try {
-      if (persisteEnSupabase) await cambiarNombreFirma(inspeccionId, "responsable", nombreLimpio, correoDe(colaboradores, nombreLimpio));
-      setFirmas((f) => ({ ...f, responsable: { ...f.responsable, nombre: nombreLimpio } }));
-    } catch (err) {
-      setErrorGuardado(err.message);
     }
   };
 
@@ -451,12 +426,8 @@ export default function Formulario() {
             maxFotos={MAX_FOTOS}
             firmas={firmas}
             nombreInspector={nombreInspector}
-            nombreResponsable={nombreResponsable}
-            onNombreResponsable={setNombreResponsable}
-            onNombreResponsableBlur={guardarNombreResponsable}
             onGuardarFirma={guardarFirma}
             guardandoFirma={guardandoFirma}
-            colaboradores={colaboradores}
           />
         ) : null}
       </div>
