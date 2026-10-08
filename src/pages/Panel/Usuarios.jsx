@@ -1,19 +1,27 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ROLES } from "../../data/permisos.js";
 import { actualizarUsuario, faltaMigracion, listarUsuarios, MENSAJE_MIGRACION } from "../../lib/panel.js";
-import { Aviso, Chip, campo, tarjeta } from "./ui.jsx";
+import AltaUsuario from "./AltaUsuario.jsx";
+import { Aviso, Chip, boton, campo, tarjeta } from "./ui.jsx";
 
 export default function Usuarios({ userId }) {
   const [usuarios, setUsuarios] = useState(null);
   const [error, setError] = useState(null);
   const [guardando, setGuardando] = useState(null);
   const [texto, setTexto] = useState("");
+  const [agregando, setAgregando] = useState(false);
+
+  const cargar = useCallback(
+    () =>
+      listarUsuarios()
+        .then(setUsuarios)
+        .catch((e) => setError(faltaMigracion(e) ? MENSAJE_MIGRACION : e.message)),
+    []
+  );
 
   useEffect(() => {
-    listarUsuarios()
-      .then(setUsuarios)
-      .catch((e) => setError(faltaMigracion(e) ? MENSAJE_MIGRACION : e.message));
-  }, []);
+    cargar();
+  }, [cargar]);
 
   const cambiar = async (u, cambios) => {
     setGuardando(u.id);
@@ -28,7 +36,7 @@ export default function Usuarios({ userId }) {
     }
   };
 
-  if (!usuarios) return error ? <Aviso>{error}</Aviso> : <div style={{ color: "var(--muted)", fontSize: 13.5 }}>Cargando usuarios…</div>;
+  if (!usuarios) return error ? <Aviso>{error}</Aviso> : <div style={{ color: "var(--violet-150)", fontSize: 13.5 }}>Cargando usuarios…</div>;
 
   const q = texto.trim().toLowerCase();
   const visibles = usuarios.filter((u) => !q || `${u.nombre} ${u.email}`.toLowerCase().includes(q));
@@ -36,8 +44,14 @@ export default function Usuarios({ userId }) {
 
   return (
     <div>
+      {agregando ? (
+        <AltaUsuario usuarios={usuarios} onCreado={cargar} onCerrar={() => setAgregando(false)} />
+      ) : (
+        <button onClick={() => setAgregando(true)} style={{ ...boton(true), marginBottom: 12 }}>Agregar usuario</button>
+      )}
+
       <input aria-label="Buscar usuario" value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Buscar por nombre o correo" style={{ ...campo, width: "100%", marginBottom: 10 }} />
-      <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 8, lineHeight: 1.5 }}>
+      <div style={{ fontSize: 12.5, color: "var(--violet-150)", marginBottom: 10, lineHeight: 1.5 }}>
         {ROLES.map((r) => <div key={r.value}><b>{r.label}:</b> {r.desc}</div>)}
       </div>
       {error ? <Aviso>{error}</Aviso> : null}
@@ -52,8 +66,9 @@ export default function Usuarios({ userId }) {
               <div style={{ flex: "1 1 200px", minWidth: 0 }}>
                 <div style={{ fontWeight: 700, fontSize: 14, overflowWrap: "anywhere" }}>
                   {u.nombre || "Sin nombre"} {yo ? <Chip bg="var(--violet-50)" fg="var(--violet-800)">Vos</Chip> : null}
+                  {!u.activo ? <Chip bg="var(--neutral-bg)" fg="var(--neutral-fg)">De baja</Chip> : null}
                 </div>
-                <div style={{ fontSize: 12.5, color: "var(--muted)", overflowWrap: "anywhere" }}>{u.email}</div>
+                <div style={{ fontSize: 12.5, color: "var(--card-desc, var(--muted))", overflowWrap: "anywhere" }}>{u.email}</div>
               </div>
               <select
                 aria-label={`Rol de ${u.nombre || u.email}`}
@@ -75,9 +90,6 @@ export default function Usuarios({ userId }) {
           );
         })}
       </div>
-      <Aviso tipo="aviso">
-        Las altas de usuarios nuevos todavía se hacen desde Supabase (Authentication → Users). Al crearlos entran como Inspector y acá les cambiás el rol.
-      </Aviso>
     </div>
   );
 }

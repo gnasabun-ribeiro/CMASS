@@ -72,7 +72,7 @@ export default function Panel() {
       </div>
 
       {error && tab !== "usuarios" ? <Aviso>{error}</Aviso> : null}
-      {tab !== "usuarios" && hallazgos === null ? <div style={{ color: "var(--muted)", fontSize: 13.5 }}>Cargando…</div> : null}
+      {tab !== "usuarios" && hallazgos === null ? <div style={{ color: "var(--violet-150)", fontSize: 13.5 }}>Cargando…</div> : null}
       {tab === "resumen" && hallazgos ? <Resumen hallazgos={hallazgos} inspecciones={inspecciones} /> : null}
       {tab === "hallazgos" && hallazgos ? <Hallazgos hallazgos={hallazgos} puedeCerrar={puede("cerrarHallazgos")} userId={userId} onCambio={alCambiar} /> : null}
       {tab === "usuarios" && puede("gestionarUsuarios") ? <Usuarios userId={userId} /> : null}

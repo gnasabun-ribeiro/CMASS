@@ -5,22 +5,26 @@ export const tarjeta = {
   borderRadius: 18,
   padding: "14px 16px",
   boxShadow: "0 10px 22px -20px rgba(36,18,70,.5)",
+  color: "var(--card-title, var(--ink))", // en el tema Ribeiro las tarjetas son oscuras
 };
 
-export function Cifra({ valor, etiqueta, color }) {
+// `tono` (warn | ok | danger) pinta el número con los colores semánticos, que no cambian entre
+// temas y por eso van sobre su propio fondo, legible tanto en tarjeta clara como oscura.
+export function Cifra({ valor, etiqueta, tono }) {
+  const chip = tono ? { background: `var(--${tono}-bg)`, color: `var(--${tono}-fg)`, borderRadius: 10, padding: "0 10px" } : null;
   return (
     <div style={{ ...tarjeta, flex: "1 1 140px" }}>
-      <div className="heading" style={{ fontWeight: 800, fontSize: 28, lineHeight: 1.1, color: color || "var(--ink)", fontVariantNumeric: "tabular-nums" }}>
+      <div className="heading" style={{ display: "inline-block", fontWeight: 800, fontSize: 28, lineHeight: 1.3, fontVariantNumeric: "tabular-nums", ...chip }}>
         {valor}
       </div>
-      <div style={{ fontSize: 12.5, color: "var(--muted)", marginTop: 4, fontWeight: 600 }}>{etiqueta}</div>
+      <div style={{ fontSize: 12.5, color: "var(--card-desc, var(--muted))", marginTop: 4, fontWeight: 600 }}>{etiqueta}</div>
     </div>
   );
 }
 
 export function Titulo({ children }) {
   return (
-    <h2 className="heading" style={{ fontSize: 15, fontWeight: 800, margin: "20px 2px 10px", color: "var(--ink)" }}>
+    <h2 className="heading" style={{ fontSize: 15, fontWeight: 800, margin: "20px 2px 10px", color: "var(--violet-150)" }}>
       {children}
     </h2>
   );

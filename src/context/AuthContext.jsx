@@ -29,6 +29,7 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [perfilListo, setPerfilListo] = useState(false);
+  const [recuperando, setRecuperando] = useState(false); // entró con el enlace de "Olvidé mi contraseña"
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -38,8 +39,9 @@ export function AuthProvider({ children }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    } = supabase.auth.onAuthStateChange((evento, nextSession) => {
       setSession(nextSession);
+      if (evento === "PASSWORD_RECOVERY") setRecuperando(true);
     });
 
     return () => subscription.unsubscribe();
@@ -98,8 +100,15 @@ export function AuthProvider({ children }) {
       login: (email, password) => supabase.auth.signInWithPassword({ email, password }),
       logout: () => supabase.auth.signOut(),
       resetPassword: (email) => supabase.auth.resetPasswordForEmail(email),
+      // Usuario recién dado de alta con contraseña temporal, o que llegó por el enlace de recuperación.
+      debeCambiarClave: recuperando || Boolean(session?.user?.user_metadata?.debe_cambiar_clave),
+      cambiarClave: async (nueva) => {
+        const { error } = await supabase.auth.updateUser({ password: nueva, data: { debe_cambiar_clave: false } });
+        if (!error) setRecuperando(false);
+        return { error };
+      },
     };
-  }, [session, profile, perfilListo, loading]);
+  }, [session, profile, perfilListo, loading, recuperando]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

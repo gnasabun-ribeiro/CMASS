@@ -39,8 +39,8 @@ function Hallazgo({ h, puedeCerrar, userId, onCambio }) {
         {h.vencido ? <Chip bg="var(--danger-bg)" fg="var(--danger-fg)">Vencido</Chip> : null}
       </div>
       <div style={{ fontWeight: 700, fontSize: 14.5 }}>{h.titulo}</div>
-      {h.detalle ? <div style={{ fontSize: 13, color: "var(--muted)", marginTop: 3, overflowWrap: "anywhere" }}>{h.detalle}</div> : null}
-      <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 8, display: "grid", gap: 2 }}>
+      {h.detalle ? <div style={{ fontSize: 13, color: "var(--card-desc, var(--muted))", marginTop: 3, overflowWrap: "anywhere" }}>{h.detalle}</div> : null}
+      <div style={{ fontSize: 12, color: "var(--card-desc, var(--muted))", marginTop: 8, display: "grid", gap: 2 }}>
         <span>{nombreModulo(h.moduloId, h.subId)} · {h.cliente || "Sin cliente"}{h.ubicacion ? ` · ${h.ubicacion}` : ""}</span>
         <span>Inspector: {h.inspector || "—"} · Responsable: {h.responsable || "Sin asignar"} · Vence: {fmt(h.vence)}</span>
         {h.estado === "cerrado" ? <span>Cerrado el {fmt(h.cerradoAt)}{h.notaCierre ? ` · ${h.notaCierre}` : ""}</span> : null}
@@ -102,9 +102,9 @@ export default function Hallazgos({ hallazgos, puedeCerrar, userId, onCambio }) 
         </select>
         <input aria-label="Buscar" value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Buscar" style={{ ...campo, flex: 1, minWidth: 120 }} />
       </div>
-      <div style={{ fontSize: 12.5, color: "var(--muted)", marginBottom: 8, fontWeight: 600 }}>{visibles.length} hallazgos</div>
+      <div style={{ fontSize: 12.5, color: "var(--violet-150)", marginBottom: 8, fontWeight: 600 }}>{visibles.length} hallazgos</div>
       {visibles.length === 0 ? (
-        <div style={{ ...tarjeta, color: "var(--muted)", fontSize: 13.5, textAlign: "center" }}>No hay hallazgos con estos filtros.</div>
+        <div style={{ ...tarjeta, color: "var(--card-desc, var(--muted))", fontSize: 13.5, textAlign: "center" }}>No hay hallazgos con estos filtros.</div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(300px,1fr))", gap: 10 }}>
           {visibles.map((h) => <Hallazgo key={h.id} h={h} puedeCerrar={puedeCerrar} userId={userId} onCambio={onCambio} />)}

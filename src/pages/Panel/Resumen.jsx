@@ -62,10 +62,10 @@ export default function Resumen({ hallazgos, inspecciones }) {
   return (
     <div>
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-        <Cifra valor={datos.abiertos} etiqueta="Hallazgos abiertos" color={datos.abiertos ? "var(--warn-fg)" : undefined} />
-        <Cifra valor={datos.cerrados} etiqueta="Hallazgos cerrados" color="var(--success-fg)" />
-        <Cifra valor={datos.criticos} etiqueta="Críticos abiertos" color={datos.criticos ? "var(--danger-fg)" : undefined} />
-        <Cifra valor={datos.vencidos} etiqueta="Abiertos vencidos" color={datos.vencidos ? "var(--danger-fg)" : undefined} />
+        <Cifra valor={datos.abiertos} etiqueta="Hallazgos abiertos" tono={datos.abiertos ? "warn" : undefined} />
+        <Cifra valor={datos.cerrados} etiqueta="Hallazgos cerrados" tono="success" />
+        <Cifra valor={datos.criticos} etiqueta="Críticos abiertos" tono={datos.criticos ? "danger" : undefined} />
+        <Cifra valor={datos.vencidos} etiqueta="Abiertos vencidos" tono={datos.vencidos ? "danger" : undefined} />
       </div>
 
       <Titulo>Hallazgos por módulo (abiertos / cerrados)</Titulo>
@@ -88,4 +88,4 @@ export default function Resumen({ hallazgos, inspecciones }) {
   );
 }
 
-const Vacio = () => <div style={{ fontSize: 13, color: "var(--muted)" }}>Todavía no hay datos.</div>;
+const Vacio = () => <div style={{ fontSize: 13, color: "var(--card-desc, var(--muted))" }}>Todavía no hay datos.</div>;
