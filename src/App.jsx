@@ -6,6 +6,7 @@ import { listarCentrosDeCostos } from "./lib/centrosDeCostos.js";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import Login from "./pages/Login.jsx";
 import Home from "./pages/Home.jsx";
+import Inspecciones from "./pages/Inspecciones.jsx";
 import Modulo from "./pages/Modulo.jsx";
 import Lista from "./pages/Lista.jsx";
 import Formulario from "./pages/Formulario/index.jsx";
@@ -36,6 +37,7 @@ export default function App() {
 
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<Home />} />
+          <Route path="/inspecciones" element={<Inspecciones />} />
           <Route path="/modulos/:moduloId" element={<Modulo />} />
           <Route path="/modulos/:moduloId/form/:subId" element={<Formulario />} />
           <Route path="/modulos/:moduloId/registros/:subId" element={<Lista />} />

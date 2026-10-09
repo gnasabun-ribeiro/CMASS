@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AppShell from "../components/AppShell.jsx";
 import ModuleCard from "../components/ModuleCard.jsx";
-import { MODULOS } from "../data/modulos.js";
+import { enGrupoInspecciones, GRUPO_INSPECCIONES, MODULOS } from "../data/modulos.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { TEMAS, useTheme } from "../context/ThemeContext.jsx";
 
@@ -33,6 +33,14 @@ export default function Home() {
   useEffect(() => {
     localStorage.setItem(COLUMNAS_KEY, columnas);
   }, [columnas]);
+
+  // Los módulos agrupados se reemplazan por una sola card "Inspecciones" (en el lugar del primero).
+  const itemsHome = [];
+  for (const m of MODULOS) {
+    if (m.permiso && !puede(m.permiso)) continue;
+    if (!enGrupoInspecciones(m.id)) itemsHome.push(m);
+    else if (!itemsHome.includes(GRUPO_INSPECCIONES)) itemsHome.push(GRUPO_INSPECCIONES);
+  }
 
   const openModulo = (m) => {
     if (m.nav) navigate(m.nav);
@@ -109,7 +117,7 @@ export default function Home() {
           gap: 18,
         }}
       >
-        {MODULOS.filter((m) => !m.permiso || puede(m.permiso)).map((m, i) => (
+        {itemsHome.map((m, i) => (
           <ModuleCard
             key={m.id}
             modulo={m}

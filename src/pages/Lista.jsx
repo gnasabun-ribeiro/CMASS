@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import AppShell from "../components/AppShell.jsx";
 import { ESTADOS, ESTADO_COLORS, hallazgosColor } from "../data/mockRegistros.js";
-import { findModulo, findSub, rutaFormulario } from "../data/modulos.js";
+import { findModulo, findSub, rutaFormulario, rutaVolver } from "../data/modulos.js";
 import { supabaseConfigured } from "../lib/supabaseClient.js";
 import { listarInspecciones } from "../lib/inspeccionesRemoto.js";
 import { TABLAS_GENERICAS, TABLAS_OBRA } from "../lib/tablas.js";
@@ -79,7 +79,7 @@ export default function Lista() {
 
   let title = "Mis Registros";
   let subtitle = "Registros cargados";
-  let backTo = "/";
+  let backTo = moduloId ? rutaVolver(moduloId) : "/";
   if (sub) {
     title = sub.title;
     backTo = `/modulos/${moduloId}`;

@@ -1,7 +1,7 @@
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import AppShell from "../components/AppShell.jsx";
 import SubItemCard from "../components/SubItemCard.jsx";
-import { findModulo } from "../data/modulos.js";
+import { findModulo, rutaVolver } from "../data/modulos.js";
 
 export default function Modulo() {
   const { moduloId } = useParams();
@@ -11,7 +11,7 @@ export default function Modulo() {
   if (!modulo || !modulo.subs) return <Navigate to="/" replace />;
 
   return (
-    <AppShell title={modulo.title} subtitle={modulo.desc} onBack={() => navigate("/")}>
+    <AppShell title={modulo.title} subtitle={modulo.desc} onBack={() => navigate(rutaVolver(modulo.id))}>
       <div
         style={{
           display: "grid",

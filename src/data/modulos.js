@@ -135,6 +135,28 @@ export const MODULOS = [
   },
 ];
 
+// Menú que agrupa varios módulos en una sola card del Home. Los módulos siguen
+// existiendo con su propio id/ruta; esto solo decide dónde se muestran y a dónde "volver".
+export const GRUPO_INSPECCIONES = {
+  id: "inspecciones",
+  title: "Inspecciones",
+  desc: "Obra pública, servicios petroleros, trailers y obradores, reglas de oro y gestión ambiental.",
+  icon: "clipboard",
+  badge: "",
+  cta: "Abrir",
+  nav: "/inspecciones",
+  modulos: ["obra", "servicio", "trailers", "reglas", "ambiente"],
+};
+
+export function enGrupoInspecciones(moduloId) {
+  return GRUPO_INSPECCIONES.modulos.includes(moduloId);
+}
+
+// Pantalla a la que vuelve un módulo: su menú agrupado, o el Home.
+export function rutaVolver(moduloId) {
+  return enGrupoInspecciones(moduloId) ? GRUPO_INSPECCIONES.nav : "/";
+}
+
 export function findModulo(id) {
   return MODULOS.find((m) => m.id === id);
 }

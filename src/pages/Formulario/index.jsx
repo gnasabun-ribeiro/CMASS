@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import AppShell from "../../components/AppShell.jsx";
-import { findModulo, findSub, PASOS } from "../../data/modulos.js";
+import { findModulo, findSub, PASOS, rutaVolver } from "../../data/modulos.js";
 import PasoGenerales from "./PasoGenerales.jsx";
 import PasoChecklist from "./PasoChecklist.jsx";
 import PasoHallazgos from "./PasoHallazgos.jsx";
@@ -204,7 +204,7 @@ export default function Formulario() {
 
   if (!modulo || (isNested && !sub)) return <Navigate to="/" replace />;
 
-  const backTo = isNested ? `/modulos/${moduloId}` : "/";
+  const backTo = isNested ? `/modulos/${moduloId}` : rutaVolver(moduloId);
   const title = sub ? sub.title : modulo.title;
 
   const responderChecklist = (item, valor) => {
