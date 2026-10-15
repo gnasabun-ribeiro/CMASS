@@ -44,7 +44,7 @@ export default function PasoGenerales({ valores, onCambiar }) {
   const valorFueraDeLista = valores.cliente && !centros.some((c) => c.etiqueta === valores.cliente);
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(230px,1fr))", gap: 13 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(230px,100%),1fr))", gap: 13 }}>
       <label>
         <span style={labelStyle}>Cliente</span>
         <select value={valores.cliente} onChange={(e) => onCambiar("cliente", e.target.value)} style={fieldStyle}>

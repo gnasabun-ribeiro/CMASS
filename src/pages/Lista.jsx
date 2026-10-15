@@ -9,6 +9,7 @@ import { TABLAS_GENERICAS, TABLAS_OBRA } from "../lib/tablas.js";
 import { listarCola, listarInspeccionesLocales } from "../lib/localDb.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useSync } from "../lib/useSync.js";
+import { useCelular } from "../lib/useCelular.js";
 
 const MESES = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
 
@@ -72,6 +73,7 @@ export default function Lista() {
   const navigate = useNavigate();
   const { userId } = useAuth();
   const sync = useSync();
+  const celular = useCelular();
   const [filtro, setFiltro] = useState("Todos");
 
   const modulo = moduloId ? findModulo(moduloId) : null;
@@ -186,6 +188,23 @@ export default function Lista() {
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {registros.map((r, i) => {
           const estadoColor = ESTADO_COLORS[r.estado];
+          const estado = (
+            <span
+              style={{
+                flex: "0 0 auto",
+                background: estadoColor.bg,
+                color: estadoColor.fg,
+                fontSize: 11.5,
+                fontWeight: 700,
+                padding: "6px 12px",
+                borderRadius: 20,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {r.estado}
+              {r.pendiente ? " · sin enviar" : ""}
+            </span>
+          );
           return (
             <button
               key={r.id}
@@ -197,10 +216,10 @@ export default function Lista() {
                 width: "100%",
                 background: "#fff",
                 borderRadius: 20,
-                padding: 14,
+                padding: celular ? 12 : 14,
                 display: "flex",
-                gap: 13,
-                alignItems: "center",
+                gap: celular ? 11 : 13,
+                alignItems: celular ? "flex-start" : "center",
                 flexWrap: "wrap",
                 cursor: "pointer",
                 boxShadow: "0 12px 24px -22px rgba(36,18,70,.5)",
@@ -228,33 +247,36 @@ export default function Lista() {
                   {r.mes}
                 </span>
               </span>
-              <span style={{ flex: "1 1 200px", minWidth: 0 }}>
-                <span className="heading" style={{ display: "block", fontWeight: 700, fontSize: 14.5, letterSpacing: "-.15px" }}>
+              <span style={{ flex: celular ? 1 : "1 1 200px", minWidth: 0 }}>
+                <span className="heading" style={{ display: "block", fontWeight: 700, fontSize: 14.5, letterSpacing: "-.15px", overflowWrap: "anywhere" }}>
                   {r.titulo}
                 </span>
-                <span style={{ display: "block", fontSize: 12, color: "var(--muted-2)", marginTop: 2 }}>{r.detalle}</span>
+                <span style={{ display: "block", fontSize: 12, color: "var(--muted-2)", marginTop: 2, overflowWrap: "anywhere" }}>{r.detalle}</span>
+                {/* En el celular estado y hallazgos van debajo del título: a la derecha no entraban y
+                    caían sueltos a una segunda fila, debajo de la fecha. */}
+                {celular ? (
+                  <span style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginTop: 8 }}>
+                    {estado}
+                    <span style={{ fontSize: 12, color: "var(--muted)" }}>
+                      Hallazgos:{" "}
+                      <strong className="heading" style={{ fontSize: 14, color: hallazgosColor(r.hallazgos) }}>
+                        {r.hallazgos}
+                      </strong>
+                    </span>
+                  </span>
+                ) : null}
               </span>
-              <span style={{ flex: "0 0 auto", textAlign: "center" }}>
-                <span style={{ display: "block", fontSize: 10.5, color: "var(--muted)" }}>Hallazgos</span>
-                <span className="heading" style={{ display: "block", fontWeight: 800, fontSize: 17, color: hallazgosColor(r.hallazgos) }}>
-                  {r.hallazgos}
-                </span>
-              </span>
-              <span
-                style={{
-                  flex: "0 0 auto",
-                  background: estadoColor.bg,
-                  color: estadoColor.fg,
-                  fontSize: 11.5,
-                  fontWeight: 700,
-                  padding: "6px 12px",
-                  borderRadius: 20,
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {r.estado}
-                {r.pendiente ? " · sin enviar" : ""}
-              </span>
+              {!celular ? (
+                <>
+                  <span style={{ flex: "0 0 auto", textAlign: "center" }}>
+                    <span style={{ display: "block", fontSize: 10.5, color: "var(--muted)" }}>Hallazgos</span>
+                    <span className="heading" style={{ display: "block", fontWeight: 800, fontSize: 17, color: hallazgosColor(r.hallazgos) }}>
+                      {r.hallazgos}
+                    </span>
+                  </span>
+                  {estado}
+                </>
+              ) : null}
             </button>
           );
         })}

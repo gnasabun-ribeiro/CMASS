@@ -126,7 +126,7 @@ export const MODULOS = [
   {
     id: "panel",
     title: "Panel de seguimiento",
-    desc: "Hallazgos abiertos y cerrados, inspecciones por persona y usuarios.",
+    desc: "Hallazgos abiertos y cerrados e inspecciones por persona.",
     icon: "chart",
     badge: "",
     cta: "Abrir panel",

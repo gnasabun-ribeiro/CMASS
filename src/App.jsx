@@ -12,6 +12,7 @@ import Lista from "./pages/Lista.jsx";
 import Formulario from "./pages/Formulario/index.jsx";
 import Pendientes from "./pages/Pendientes.jsx";
 import Panel from "./pages/Panel/index.jsx";
+import Configuracion from "./pages/Configuracion/index.jsx";
 import CambiarClave from "./pages/CambiarClave.jsx";
 
 // Deja lista en el dispositivo la información que se necesita sin conexión.
@@ -46,6 +47,7 @@ export default function App() {
           <Route path="/registros/:moduloId" element={<Lista />} />
           <Route path="/pendientes" element={<Pendientes />} />
           <Route path="/panel" element={<Panel />} />
+          <Route path="/configuracion" element={<Configuracion />} />
           <Route path="/cambiar-clave" element={<CambiarClave />} />
         </Route>
 

@@ -5,6 +5,7 @@ import { findModulo, findSub, rutaFormulario } from "../data/modulos.js";
 import { listarCola, obtenerInspeccion } from "../lib/localDb.js";
 import { sincronizar } from "../lib/sync.js";
 import { useSync } from "../lib/useSync.js";
+import { useCelular } from "../lib/useCelular.js";
 
 const ETIQUETA_TIPO = {
   crear: "creación",
@@ -24,6 +25,7 @@ function formatoHora(fecha) {
 export default function Pendientes() {
   const navigate = useNavigate();
   const sync = useSync();
+  const celular = useCelular();
   const [grupos, setGrupos] = useState([]);
 
   // Vuelve a armar el detalle cada vez que cambia la cola.
@@ -95,6 +97,7 @@ export default function Pendientes() {
           onClick={sincronizar}
           disabled={botonInactivo}
           style={{
+            width: celular ? "100%" : undefined, // en el celular cae debajo del texto: a todo el ancho
             border: 0,
             background: "var(--violet-400)",
             color: "var(--ink)",
@@ -114,7 +117,7 @@ export default function Pendientes() {
       {grupos.length === 0 ? (
         <div style={{ textAlign: "center", color: "var(--violet-150)", padding: "24px 0", fontSize: 13.5 }}>No hay nada por enviar.</div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(280px,100%),1fr))", gap: 10 }}>
           {grupos.map((g) => (
             <button
               key={g.id}

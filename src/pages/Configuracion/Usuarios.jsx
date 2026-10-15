@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ROLES } from "../../data/permisos.js";
 import { actualizarUsuario, faltaMigracion, listarUsuarios, MENSAJE_MIGRACION } from "../../lib/panel.js";
 import AltaUsuario from "./AltaUsuario.jsx";
-import { Aviso, Chip, boton, campo, tarjeta } from "./ui.jsx";
+import { Aviso, Chip, boton, campo, tarjeta } from "../Panel/ui.jsx";
 
 export default function Usuarios({ userId }) {
   const [usuarios, setUsuarios] = useState(null);

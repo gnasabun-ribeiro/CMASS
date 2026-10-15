@@ -1,4 +1,4 @@
--- Alta de usuarios desde la app (Panel > Usuarios > Agregar usuario).
+-- Alta de usuarios desde la app (Configuración > Agregar usuario).
 -- La persona se busca en public.colaboradores; si no tiene correo corporativo se le
 -- asigna uno al darla de alta. Como esa tabla se borra y se vuelve a cargar entera en cada
 -- sincronización con el DW (Edge Function DW_COLABORADORES), un correo puesto a mano se

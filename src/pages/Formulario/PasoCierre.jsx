@@ -73,7 +73,7 @@ export default function PasoCierre({
       <fieldset disabled={soloLectura} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
       <GaleriaFotos fotos={fotos} subiendo={subiendoFotos} max={maxFotos} onAgregar={onAgregarFotos} onQuitar={onQuitarFoto} />
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 12, marginBottom: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(260px,100%),1fr))", gap: 12, marginBottom: 14 }}>
         {ROLES_FIRMA.map(({ rol, titulo: tituloRol }) => (
           <div key={rol} style={{ borderRadius: 18, border: "1px solid var(--border)", background: "var(--violet-tint-2)", padding: 14 }}>
             <div style={{ fontSize: 11, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--muted)", fontWeight: 600, marginBottom: 9 }}>

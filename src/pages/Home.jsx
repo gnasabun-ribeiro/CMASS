@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AppShell from "../components/AppShell.jsx";
-import ModuleCard from "../components/ModuleCard.jsx";
+import ModuleCard, { GRILLA_CELULAR } from "../components/ModuleCard.jsx";
 import { enGrupoInspecciones, GRUPO_INSPECCIONES, MODULOS } from "../data/modulos.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { TEMAS, useTheme } from "../context/ThemeContext.jsx";
+import { useCelular } from "../lib/useCelular.js";
 
 const COLUMNAS_KEY = "cmass:home:columnas";
 
@@ -19,13 +20,15 @@ function gridColumnas(valor) {
   if (valor === "1") return "1fr";
   if (valor === "2") return "repeat(2,1fr)";
   if (valor === "4") return "repeat(4,1fr)";
-  return "repeat(auto-fill,minmax(340px,1fr))";
+  // min(): en un celular de 360 px quedan 332 px de ancho y una columna fija de 340 se salía de la pantalla.
+  return "repeat(auto-fill,minmax(min(340px,100%),1fr))";
 }
 
 export default function Home() {
   const navigate = useNavigate();
   const { nombre, email, puede } = useAuth();
   const { tema, setTema } = useTheme();
+  const celular = useCelular();
   const [columnas, setColumnas] = useState(
     () => localStorage.getItem(COLUMNAS_KEY) || "auto"
   );
@@ -49,43 +52,53 @@ export default function Home() {
   };
 
   return (
-    <AppShell title={`¡Bienvenido, ${nombre}!`} subtitle={`Inspecciones CMASS · ${email}`}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "flex-end",
-          gap: 6,
-          marginBottom: 12,
-          flexWrap: "wrap",
-        }}
-      >
-        <span style={{ fontSize: 13, fontWeight: 600, color: "var(--muted)", marginRight: 2 }}>Tema</span>
-        {TEMAS.map((t) => (
-          <button
-            key={t.value}
-            onClick={() => setTema(t.value)}
-            style={{
-              border: 0,
-              background: tema === t.value ? "var(--active-bg)" : "var(--violet-50)",
-              color: tema === t.value ? "var(--on-active)" : "var(--violet-800)",
-              fontSize: 12.5,
-              fontWeight: 700,
-              padding: "8px 14px",
-              borderRadius: 20,
-              cursor: "pointer",
-              minHeight: 38,
-            }}
-          >
-            {t.label}
-          </button>
-        ))}
+    // En el celular el nombre ya ocupa dos líneas: el subtítulo queda solo con el correo.
+    <AppShell title={`¡Bienvenido, ${nombre}!`} subtitle={celular ? email : `Inspecciones CMASS · ${email}`}>
+      {/* Selector segmentado sobre fondo de card: "Tema" en gris sobre el degradé violeta no se leía,
+          y la opción activa (violeta) se perdía contra el fondo. */}
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+        <div
+          role="group"
+          aria-label="Tema"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 2,
+            padding: 4,
+            borderRadius: 22,
+            background: "var(--card-bg)",
+            border: "1px solid var(--card-border)",
+            boxShadow: "var(--shadow-panel)",
+          }}
+        >
+          <span style={{ fontSize: 12.5, fontWeight: 600, color: "var(--card-desc)", padding: "0 8px 0 10px" }}>Tema</span>
+          {TEMAS.map((t) => (
+            <button
+              key={t.value}
+              onClick={() => setTema(t.value)}
+              aria-pressed={tema === t.value}
+              style={{
+                border: 0,
+                background: tema === t.value ? "var(--active-bg)" : "transparent",
+                color: tema === t.value ? "var(--on-active)" : "var(--card-accent)",
+                fontSize: 12.5,
+                fontWeight: 700,
+                padding: "7px 14px",
+                borderRadius: 18,
+                cursor: "pointer",
+                minHeight: 34,
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
       </div>
       <div
         className="columnas-selector"
         style={{ alignItems: "center", justifyContent: "flex-end", gap: 8, marginBottom: 14 }}
       >
-        <label htmlFor="columnas" style={{ fontSize: 13, fontWeight: 600, color: "var(--muted)" }}>
+        <label htmlFor="columnas" style={{ fontSize: 13, fontWeight: 600, color: "var(--violet-150)" }}>
           Cards por fila
         </label>
         <select
@@ -110,13 +123,8 @@ export default function Home() {
           ))}
         </select>
       </div>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: gridColumnas(columnas),
-          gap: 18,
-        }}
-      >
+      {/* En el celular el selector de columnas no se ve: siempre una card por fila, todas de la misma altura. */}
+      <div style={celular ? GRILLA_CELULAR : { display: "grid", gridTemplateColumns: gridColumnas(columnas), gap: 18 }}>
         {itemsHome.map((m, i) => (
           <ModuleCard
             key={m.id}

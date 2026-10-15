@@ -5,7 +5,6 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import { faltaMigracion, listarHallazgos, listarInspeccionesEnviadas, MENSAJE_MIGRACION } from "../../lib/panel.js";
 import Hallazgos from "./Hallazgos.jsx";
 import Resumen from "./Resumen.jsx";
-import Usuarios from "./Usuarios.jsx";
 import { Aviso, boton } from "./ui.jsx";
 
 export default function Panel() {
@@ -55,27 +54,24 @@ export default function Panel() {
   const pestanas = [
     { id: "resumen", label: "Resumen" },
     { id: "hallazgos", label: "Hallazgos" },
-    ...(puede("gestionarUsuarios") ? [{ id: "usuarios", label: "Usuarios" }] : []),
   ];
 
+  // Los usuarios se administran desde la pestaña Configuración de la barra inferior.
   return (
-    <AppShell title="Panel de seguimiento" subtitle="Hallazgos, inspecciones y usuarios" onBack={() => navigate("/")}>
+    <AppShell title="Panel de seguimiento" subtitle="Hallazgos e inspecciones" onBack={() => navigate("/")}>
       <div role="tablist" style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
         {pestanas.map((p) => (
           <button key={p.id} role="tab" aria-selected={tab === p.id} onClick={() => setTab(p.id)} style={boton(tab === p.id)}>
             {p.label}
           </button>
         ))}
-        {tab !== "usuarios" ? (
-          <button onClick={cargar} style={{ ...boton(false), marginLeft: "auto" }}>Actualizar</button>
-        ) : null}
+        <button onClick={cargar} style={{ ...boton(false), marginLeft: "auto" }}>Actualizar</button>
       </div>
 
-      {error && tab !== "usuarios" ? <Aviso>{error}</Aviso> : null}
-      {tab !== "usuarios" && hallazgos === null ? <div style={{ color: "var(--violet-150)", fontSize: 13.5 }}>Cargando…</div> : null}
+      {error ? <Aviso>{error}</Aviso> : null}
+      {hallazgos === null ? <div style={{ color: "var(--violet-150)", fontSize: 13.5 }}>Cargando…</div> : null}
       {tab === "resumen" && hallazgos ? <Resumen hallazgos={hallazgos} inspecciones={inspecciones} /> : null}
       {tab === "hallazgos" && hallazgos ? <Hallazgos hallazgos={hallazgos} puedeCerrar={puede("cerrarHallazgos")} userId={userId} onCambio={alCambiar} /> : null}
-      {tab === "usuarios" && puede("gestionarUsuarios") ? <Usuarios userId={userId} /> : null}
     </AppShell>
   );
 }

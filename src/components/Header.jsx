@@ -3,6 +3,15 @@ import Icon from "./Icon.jsx";
 import { useSync } from "../lib/useSync.js";
 import logoRibeiro from "../assets/logo-ribeiro.png";
 
+// Corta con "…" recién al final de la segunda línea.
+const dosLineas = {
+  display: "-webkit-box",
+  WebkitBoxOrient: "vertical",
+  WebkitLineClamp: 2,
+  overflow: "hidden",
+  overflowWrap: "anywhere",
+};
+
 export default function Header({ title, subtitle, onBack }) {
   const navigate = useNavigate();
   const { pendientes } = useSync();
@@ -17,6 +26,7 @@ export default function Header({ title, subtitle, onBack }) {
         backdropFilter: "blur(14px)",
         borderBottom: "1px solid var(--border)",
         padding: "11px 14px",
+        paddingTop: "max(11px, env(safe-area-inset-top))",
         display: "flex",
         alignItems: "center",
         gap: 11,
@@ -65,27 +75,28 @@ export default function Header({ title, subtitle, onBack }) {
         </div>
       )}
 
+      {/* Título y subtítulo pasan a una segunda línea antes de cortarse (en un celular de 360 px
+          "Inspecciones de Obra Pública" no entra en una). */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div
           className="heading"
           style={{
+            ...dosLineas,
             fontWeight: 700,
-            fontSize: 17.5,
+            fontSize: "clamp(15px, 4.4vw, 17.5px)",
+            lineHeight: 1.2,
             letterSpacing: "-.35px",
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
           }}
         >
           {title}
         </div>
         <div
           style={{
+            ...dosLineas,
             fontSize: 11.5,
+            lineHeight: 1.3,
+            marginTop: 1,
             color: "var(--muted)",
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
           }}
         >
           {subtitle}

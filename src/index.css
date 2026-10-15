@@ -167,9 +167,21 @@ button {
   transition: transform 0.2s cubic-bezier(0.34, 1.45, 0.64, 1), box-shadow 0.2s ease-out;
 }
 
-button:hover {
-  transform: translateY(-2px) !important;
-  box-shadow: 0 10px 20px -10px rgba(36, 18, 70, 0.4) !important;
+/* Sin el recuadro gris que pinta Android al tocar: cada botón ya tiene su propio estado presionado. */
+button,
+a,
+label,
+[role="button"] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Los efectos de :hover van solo donde hay mouse: en el celular quedan "pegados" después de tocar
+   (el botón queda levantado hasta tocar otra cosa). */
+@media (hover: hover) {
+  button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 10px 20px -10px rgba(36, 18, 70, 0.4) !important;
+  }
 }
 
 button:active {
@@ -188,9 +200,11 @@ button:active {
     border-color 0.15s ease-out, background-color 0.15s ease-out;
 }
 
-.card-tap:hover {
-  transform: translateY(-6px) scale(1.012) !important;
-  box-shadow: 0 30px 50px -22px rgba(36, 18, 70, 0.6) !important;
+@media (hover: hover) {
+  .card-tap:hover {
+    transform: translateY(-6px) scale(1.012) !important;
+    box-shadow: 0 30px 50px -22px rgba(36, 18, 70, 0.6) !important;
+  }
 }
 
 .card-tap:active,
@@ -202,25 +216,37 @@ button:active {
   box-shadow: 0 0 0 6px rgba(217, 119, 6, 0.25), 0 20px 40px -18px rgba(36, 18, 70, 0.55) !important;
 }
 
-.card-lift:hover {
-  transform: translateY(-5px) scale(1.01) !important;
-  box-shadow: 0 28px 46px -24px rgba(36, 18, 70, 0.55) !important;
+@media (hover: hover) {
+  .card-lift:hover {
+    transform: translateY(-5px) scale(1.01) !important;
+    box-shadow: 0 28px 46px -24px rgba(36, 18, 70, 0.55) !important;
+  }
+
+  /* Ribeiro: la card destacada al pasar el mouse, como en el portal real (círculo e ícono en amarillo sólido). */
+  [data-tema="ribeiro"] .card-tap:hover,
+  [data-tema="ribeiro"] .card-lift:hover {
+    border-color: var(--violet-400) !important;
+    box-shadow: 0 0 0 1px var(--violet-400), 0 30px 55px -20px rgba(244, 207, 71, 0.25) !important;
+  }
+
+  [data-tema="ribeiro"] .card-tap:hover .card-title,
+  [data-tema="ribeiro"] .card-lift:hover .card-title {
+    color: var(--violet-400) !important;
+  }
+
+  [data-tema="ribeiro"] .card-tap:hover .card-icon,
+  [data-tema="ribeiro"] .card-lift:hover .card-icon {
+    background: var(--violet-400) !important;
+    color: var(--violet-900) !important;
+  }
 }
 
-/* Ribeiro: la card destacada al pasar el mouse, como en el portal real (círculo e ícono en amarillo sólido). */
-[data-tema="ribeiro"] .card-tap:hover,
-[data-tema="ribeiro"] .card-lift:hover {
-  border-color: var(--violet-400) !important;
-  box-shadow: 0 0 0 1px var(--violet-400), 0 30px 55px -20px rgba(244, 207, 71, 0.25) !important;
-}
-
-[data-tema="ribeiro"] .card-tap:hover .card-title,
-[data-tema="ribeiro"] .card-lift:hover .card-title {
+/* En el celular (sin hover) el mismo destacado aparece al tocar la card. */
+[data-tema="ribeiro"] .card-tap.is-pressed .card-title {
   color: var(--violet-400) !important;
 }
 
-[data-tema="ribeiro"] .card-tap:hover .card-icon,
-[data-tema="ribeiro"] .card-lift:hover .card-icon {
+[data-tema="ribeiro"] .card-tap.is-pressed .card-icon {
   background: var(--violet-400) !important;
   color: var(--violet-900) !important;
 }

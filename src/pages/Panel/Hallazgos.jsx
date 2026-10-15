@@ -106,7 +106,7 @@ export default function Hallazgos({ hallazgos, puedeCerrar, userId, onCambio }) 
       {visibles.length === 0 ? (
         <div style={{ ...tarjeta, color: "var(--card-desc, var(--muted))", fontSize: 13.5, textAlign: "center" }}>No hay hallazgos con estos filtros.</div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(300px,1fr))", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(300px,100%),1fr))", gap: 10 }}>
           {visibles.map((h) => <Hallazgo key={h.id} h={h} puedeCerrar={puedeCerrar} userId={userId} onCambio={onCambio} />)}
         </div>
       )}

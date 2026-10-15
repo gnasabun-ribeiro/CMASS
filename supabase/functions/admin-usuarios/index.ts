@@ -1,4 +1,4 @@
-// Alta de usuarios desde la app (Panel > Usuarios > Agregar usuario).
+// Alta de usuarios desde la app (Configuración > Agregar usuario).
 // Crear un usuario de Supabase Auth necesita la service role key, que no puede estar en
 // el navegador: por eso va en esta Edge Function. Solo la puede usar un administrador
 // activo (se verifica con el token de quien llama).
@@ -10,6 +10,7 @@
 //   3. si viene de la lista de colaboradores (base + legajo) y esa persona no tenía correo,
 //      se lo guarda en public.colaboradores y en public.colaboradores_correos (para que la
 //      próxima sincronización con el DW no se lo borre; ver supabase/usuarios_alta.sql).
+//      Sin base + legajo (persona cargada a mano, no está en la lista) se saltea este paso.
 // Devuelve la contraseña temporal una sola vez, para que el administrador se la pase.
 //
 // Deploy: Dashboard > Edge Functions > New function > admin-usuarios (con verify JWT

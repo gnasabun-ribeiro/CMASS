@@ -25,6 +25,7 @@ import {
   quitarFoto as quitarFotoLocal,
 } from "../../lib/inspeccionesLocal.js";
 import { useSync } from "../../lib/useSync.js";
+import { useCelular } from "../../lib/useCelular.js";
 import { correoDe, useColaboradores } from "../../lib/colaboradores.js";
 
 const GENERALES_INICIALES = { cliente: "", ubicacion: "", grupoAuditado: "", fechaHora: "", tareaObservada: "" };
@@ -46,6 +47,7 @@ export default function Formulario() {
   const idParam = searchParams.get("id"); // retomar una inspección existente
   const sync = useSync();
   const colaboradores = useColaboradores();
+  const celular = useCelular();
 
   const modulo = findModulo(moduloId);
   const sub = isNested ? findSub(moduloId, subId) : null;
@@ -431,7 +433,7 @@ export default function Formulario() {
           Sin conexión con el servidor configurada: lo que cargues se pierde al salir.
         </div>
       ) : null}
-      <div style={{ background: "#fff", borderRadius: 22, padding: 14, marginBottom: 12, boxShadow: "var(--shadow-panel)" }}>
+      <div style={{ background: "#fff", borderRadius: 22, padding: celular ? 12 : 14, marginBottom: 12, boxShadow: "var(--shadow-panel)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 9 }}>
           <span className="heading" style={{ fontWeight: 700, fontSize: 14 }}>
             Paso {paso + 1} de 4 · {PASOS[paso]}
@@ -449,31 +451,49 @@ export default function Formulario() {
             }}
           />
         </div>
-        <div style={{ display: "flex", gap: 7, overflowX: "auto", paddingBottom: 2 }}>
+        {/* En el celular los 4 pasos van en 4 columnas iguales con el número arriba del nombre:
+            en fila no entraban en 360 px y "4. Cierre" quedaba fuera de la pantalla. */}
+        <div
+          style={
+            celular
+              ? { display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 5 }
+              : { display: "flex", gap: 7, overflowX: "auto", paddingBottom: 2 }
+          }
+        >
           {pasos.map((p) => (
             <button
               key={p.label}
               onClick={() => setPaso(p.n - 1)}
+              aria-current={p.on ? "step" : undefined}
               style={{
                 flex: "0 0 auto",
+                minWidth: 0,
                 border: 0,
                 background: p.on ? "var(--active-bg)" : p.done ? "var(--violet-150)" : "var(--violet-50)",
                 color: p.on ? "var(--on-active)" : p.done ? "var(--violet-800)" : "var(--muted)",
-                borderRadius: 20,
-                padding: "10px 15px",
+                borderRadius: celular ? 14 : 20,
+                padding: celular ? "6px 2px" : "10px 15px",
                 cursor: "pointer",
                 minHeight: 44,
-                fontSize: 12.5,
+                fontSize: celular ? 11 : 12.5,
                 fontWeight: 700,
+                lineHeight: 1.2,
               }}
             >
-              {p.n}. {p.label}
+              {celular ? (
+                <>
+                  <span style={{ display: "block", fontSize: 14, fontWeight: 800 }}>{p.n}</span>
+                  <span style={{ display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.label}</span>
+                </>
+              ) : (
+                `${p.n}. ${p.label}`
+              )}
             </button>
           ))}
         </div>
       </div>
 
-      <div className="app-screen" style={{ background: "#fff", borderRadius: 22, padding: 16, boxShadow: "0 12px 30px -24px rgba(36,18,70,.5)" }}>
+      <div className="app-screen" style={{ background: "#fff", borderRadius: 22, padding: celular ? 12 : 16, boxShadow: "0 12px 30px -24px rgba(36,18,70,.5)" }}>
         {/* fieldset disabled apaga todos los campos y botones de los pasos de una sola vez */}
         <fieldset disabled={soloLectura && paso !== 3} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
         {paso === 0 ? (
@@ -506,7 +526,8 @@ export default function Formulario() {
         </fieldset>
       </div>
 
-      <div style={{ position: "fixed", left: 0, right: 0, bottom: 78, padding: "0 14px", zIndex: 25, pointerEvents: "none" }}>
+      {/* Justo arriba de la TabBar (78 px + el área segura de los celulares con barra de gestos). */}
+      <div style={{ position: "fixed", left: 0, right: 0, bottom: "calc(78px + env(safe-area-inset-bottom))", padding: "0 14px", zIndex: 25, pointerEvents: "none" }}>
         <div style={{ maxWidth: 1020, margin: "0 auto", display: "flex", gap: 9, pointerEvents: "auto" }}>
           {!soloLectura ? <button
             onClick={guardarBorrador}

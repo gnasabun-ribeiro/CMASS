@@ -21,7 +21,7 @@ export default function AppShell({ title, subtitle, onBack, padBottom = "108px",
           maxWidth: 1020,
           margin: "0 auto",
           padding: "16px 14px",
-          paddingBottom: padBottom,
+          paddingBottom: `calc(${padBottom} + env(safe-area-inset-bottom))`, // la TabBar crece con el área segura
         }}
       >
         <div className="app-screen">{children}</div>

@@ -1,11 +1,55 @@
 import { useRef, useState } from "react";
 import Icon from "./Icon.jsx";
+import { useCelular } from "../lib/useCelular.js";
+
+// Grilla de las cards en el celular: una por fila y todas de la misma altura (la de la más alta).
+export const GRILLA_CELULAR = {
+  display: "grid",
+  gridTemplateColumns: "minmax(0, 1fr)",
+  gridAutoRows: "1fr",
+  gap: 14,
+};
+
+// Medidas de la card. En el celular, la misma card que en la computadora pero con tamaños en vw,
+// para que mantenga la proporción en cualquier celular (360 px → título de ~17 px, ícono de ~52 px).
+const MEDIDAS = {
+  escritorio: {
+    padding: 22,
+    gap: 14,
+    radius: 26,
+    minHeight: 226,
+    marca: 150,
+    marcaOffset: -20,
+    icono: 64,
+    iconoRadius: 20,
+    iconoTamano: 32,
+    titulo: 19.5,
+    descripcion: 13.5,
+    cta: 13.5,
+  },
+  celular: {
+    padding: "clamp(16px, 5vw, 20px)",
+    gap: 12,
+    radius: 22,
+    minHeight: 0,
+    marca: 118,
+    marcaOffset: -16,
+    icono: "clamp(46px, 14.5vw, 56px)",
+    iconoRadius: 16,
+    iconoTamano: "50%",
+    titulo: "clamp(15.5px, 4.7vw, 18.5px)",
+    descripcion: "clamp(12px, 3.6vw, 13.5px)",
+    cta: 13,
+  },
+};
 
 export default function ModuleCard({ modulo, index = 0, onOpen, onRegistros }) {
   const hasList = Boolean(modulo.form);
   const [pressed, setPressed] = useState(false);
   const [ripple, setRipple] = useState(null);
   const cardRef = useRef(null);
+  const celular = useCelular();
+  const m = celular ? MEDIDAS.celular : MEDIDAS.escritorio;
 
   const handleOpen = (e) => {
     const el = cardRef.current;
@@ -35,30 +79,33 @@ export default function ModuleCard({ modulo, index = 0, onOpen, onRegistros }) {
         overflow: "hidden",
         textAlign: "left",
         border: "3px solid var(--card-border)",
-        borderRadius: 26,
+        borderRadius: m.radius,
         background: "var(--card-bg)",
         color: "var(--card-title)",
-        padding: 22,
+        padding: m.padding,
         cursor: "pointer",
         display: "flex",
         flexDirection: "column",
-        gap: 14,
-        minHeight: 226,
+        gap: m.gap,
+        minHeight: m.minHeight,
         boxShadow: "var(--shadow-card)",
         animationDelay: `${index * 0.045}s`,
       }}
     >
+      {/* Adorno: el ícono del módulo en grande y tenue en la esquina (antes era un círculo). */}
       <span
         style={{
           position: "absolute",
-          right: -38,
-          top: -38,
-          width: 148,
-          height: 148,
-          borderRadius: "50%",
-          background: "var(--card-decor)",
+          right: m.marcaOffset,
+          top: m.marcaOffset,
+          lineHeight: 0,
+          color: "var(--card-decor)",
+          transform: "rotate(-12deg)",
+          pointerEvents: "none",
         }}
-      />
+      >
+        <Icon name={modulo.icon} size={m.marca} strokeWidth={1.4} />
+      </span>
       {ripple ? (
         <span
           key={ripple.key}
@@ -83,9 +130,9 @@ export default function ModuleCard({ modulo, index = 0, onOpen, onRegistros }) {
         <span
           className={`card-icon${pressed ? " icon-pulse" : ""}`}
           style={{
-            width: 64,
-            height: 64,
-            borderRadius: 20,
+            width: m.icono,
+            height: m.icono,
+            borderRadius: m.iconoRadius,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -95,7 +142,7 @@ export default function ModuleCard({ modulo, index = 0, onOpen, onRegistros }) {
             transition: "background .2s, color .2s",
           }}
         >
-          <Icon name={modulo.icon} size={32} strokeWidth={1.5} />
+          <Icon name={modulo.icon} size={m.iconoTamano} strokeWidth={1.5} />
         </span>
         {modulo.badge ? (
           <span
@@ -120,7 +167,7 @@ export default function ModuleCard({ modulo, index = 0, onOpen, onRegistros }) {
           style={{
             display: "block",
             fontWeight: 800,
-            fontSize: 19.5,
+            fontSize: m.titulo,
             lineHeight: 1.2,
             letterSpacing: "-.35px",
             transition: "color .2s",
@@ -130,11 +177,14 @@ export default function ModuleCard({ modulo, index = 0, onOpen, onRegistros }) {
         </span>
         <span
           style={{
-            display: "block",
-            fontSize: 13.5,
+            fontSize: m.descripcion,
             color: "var(--card-desc)",
             lineHeight: 1.5,
             marginTop: 6,
+            // En el celular, a lo sumo dos líneas: así ninguna card queda mucho más alta que las demás.
+            ...(celular
+              ? { display: "-webkit-box", WebkitBoxOrient: "vertical", WebkitLineClamp: 2, overflow: "hidden" }
+              : { display: "block" }),
           }}
         >
           {modulo.desc}
@@ -149,7 +199,7 @@ export default function ModuleCard({ modulo, index = 0, onOpen, onRegistros }) {
           alignItems: "center",
           gap: 9,
           color: "var(--card-accent)",
-          fontSize: 13.5,
+          fontSize: m.cta,
           fontWeight: 700,
         }}
       >

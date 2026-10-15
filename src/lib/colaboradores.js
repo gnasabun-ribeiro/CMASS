@@ -70,16 +70,22 @@ const normalizar = (s) =>
     .toLowerCase()
     .trim();
 
-// Sugerencias: todas las palabras escritas tienen que estar en "nombre apellido"
-// (en cualquier orden, sin tildes). Si el texto es exactamente una persona, no sugiere.
-export function filtrarColaboradores(lista, texto) {
+// Coincidencias: todas las palabras escritas tienen que estar en "nombre apellido"
+// (en cualquier orden, sin tildes).
+export function buscarColaboradores(lista, texto) {
   const palabras = normalizar(texto).split(/\s+/).filter(Boolean);
   if (!palabras.length) return [];
-  if (lista.some((c) => normalizar(c.etiqueta) === normalizar(texto))) return [];
   return lista.filter((c) => {
     const base = normalizar(c.etiqueta);
     return palabras.every((p) => base.includes(p));
   });
+}
+
+// Sugerencias para un campo de texto: como buscarColaboradores, pero si el texto ya es
+// exactamente una persona, no sugiere.
+export function filtrarColaboradores(lista, texto) {
+  if (lista.some((c) => normalizar(c.etiqueta) === normalizar(texto))) return [];
+  return buscarColaboradores(lista, texto);
 }
 
 // Correo asociado a un "Nombre Apellido" escrito/elegido en el formulario. Solo si

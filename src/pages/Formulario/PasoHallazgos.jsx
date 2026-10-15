@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { SEVERIDADES } from "../../data/severidades.js";
 import ColaboradorInput from "../../components/ColaboradorInput.jsx";
+import { useCelular } from "../../lib/useCelular.js";
 
 const fieldStyle = {
   width: "100%",
@@ -14,6 +15,7 @@ const fieldStyle = {
 };
 
 export default function PasoHallazgos({ hallazgos, onAgregar, onEliminar, colaboradores = [] }) {
+  const celular = useCelular();
   const [abierto, setAbierto] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [form, setForm] = useState({ titulo: "", severidad: "Medio", detalle: "", responsable: "", vence: "" });
@@ -112,7 +114,8 @@ export default function PasoHallazgos({ hallazgos, onAgregar, onEliminar, colabo
             onChange={(e) => setForm({ ...form, detalle: e.target.value })}
             style={{ ...fieldStyle, resize: "vertical" }}
           />
-          <div style={{ display: "flex", gap: 9, alignItems: "flex-start" }}>
+          {/* En el celular uno debajo del otro: lado a lado no se leía el responsable ni la fecha. */}
+          <div style={celular ? { display: "grid", gap: 9 } : { display: "flex", gap: 9, alignItems: "flex-start" }}>
             <ColaboradorInput
               placeholder="Responsable (nombre y apellido)"
               value={form.responsable}
@@ -122,6 +125,7 @@ export default function PasoHallazgos({ hallazgos, onAgregar, onEliminar, colabo
             />
             <input
               type="date"
+              aria-label="Vence"
               value={form.vence}
               onChange={(e) => setForm({ ...form, vence: e.target.value })}
               style={{ ...fieldStyle, flex: 1, minWidth: 0 }}

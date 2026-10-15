@@ -1,8 +1,10 @@
 import { useLayoutEffect, useMemo, useState } from "react";
 import Icon from "../../components/Icon.jsx";
 import { OPCIONES, agruparPorCategoria } from "../../data/checklist.js";
+import { useCelular } from "../../lib/useCelular.js";
 
 export default function PasoChecklist({ items, respuestas, comentarios = {}, onResponder, onComentar, onComentarioListo, onPaginaChange }) {
+  const celular = useCelular();
   const bloques = useMemo(() => agruparPorCategoria(items), [items]);
   const [bloqueActual, setBloqueActual] = useState(0);
   const indice = Math.min(bloqueActual, bloques.length - 1);
@@ -82,7 +84,7 @@ export default function PasoChecklist({ items, respuestas, comentarios = {}, onR
               borderRadius: 18,
               background: "var(--violet-tint-2)",
               border: "1px solid var(--border)",
-              padding: 13,
+              padding: celular ? 11 : 13,
               animationDelay: `${i * 0.045}s`,
             }}
           >
@@ -102,24 +104,28 @@ export default function PasoChecklist({ items, respuestas, comentarios = {}, onR
               </span>
               <span style={{ fontSize: 14, lineHeight: 1.45, fontWeight: 500 }}>{texto}</span>
             </div>
-            <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+            {/* En el celular, grilla de 2×2 con botones parejos (en fila quedaban 2 arriba y 2 abajo de distinto ancho). */}
+            <div style={celular ? { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 } : { display: "flex", gap: 7, flexWrap: "wrap" }}>
               {OPCIONES.map((o) => {
                 const on = respuestas[codigo] === o.value;
                 return (
                   <button
                     key={o.value}
                     onClick={() => onResponder({ codigo, categoria, texto }, o.value)}
+                    aria-pressed={on}
                     style={{
                       border: `1.5px solid ${on ? o.border : "var(--border)"}`,
                       background: on ? o.bg : "#fff",
                       color: on ? o.fg : "var(--muted-4)",
                       fontSize: 12.5,
                       fontWeight: 700,
-                      padding: "10px 16px",
+                      padding: celular ? "8px 6px" : "10px 16px",
                       borderRadius: 14,
                       cursor: "pointer",
                       minHeight: 46,
-                      whiteSpace: "nowrap",
+                      lineHeight: 1.2,
+                      // "Cumple parcialmente" no entra en media fila de 360 px: ahí puede pasar a dos líneas.
+                      whiteSpace: celular ? "normal" : "nowrap",
                     }}
                   >
                     {o.label}
@@ -163,7 +169,9 @@ export default function PasoChecklist({ items, respuestas, comentarios = {}, onR
         ))}
       </div>
 
-      <div style={{ display: "flex", gap: 7, overflowX: "auto", justifyContent: "center", paddingBottom: 2 }}>
+      {/* Pasa a otra fila en vez de desplazarse: centrado y con scroll, las primeras páginas quedaban
+          cortadas a la izquierda sin forma de llegar (Trailers tiene 12 secciones). */}
+      <div style={{ display: "flex", gap: 7, flexWrap: "wrap", justifyContent: "center" }}>
         {bloques.map((b, i) => {
           const respondidas = b.items.filter((it) => respuestas[it.codigo] != null).length;
           const completo = respondidas === b.items.length;
