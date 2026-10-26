@@ -11,7 +11,9 @@ const LADO_MAX = 1600;
 
 // Reduce la foto (las del celular pesan varios MB) y la pasa a JPEG.
 export async function comprimirImagen(file) {
-  const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+  const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" }).catch(() => {
+    throw new Error("El archivo no es una imagen que se pueda leer");
+  });
   const escala = Math.min(1, LADO_MAX / Math.max(bitmap.width, bitmap.height));
   const canvas = document.createElement("canvas");
   canvas.width = Math.round(bitmap.width * escala);

@@ -3,10 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { SEVERIDADES } from "../../data/severidades.js";
 import { rutaFormulario } from "../../data/modulos.js";
 import { cambiarEstadoHallazgo } from "../../lib/panel.js";
+import { formatearFecha } from "../../lib/fechas.js";
 import { Aviso, Chip, boton, campo, tarjeta } from "./ui.jsx";
 import { nombreModulo } from "./Resumen.jsx";
-
-const fmt = (iso) => (iso ? new Date(iso).toLocaleDateString("es-AR") : "—");
 
 function Hallazgo({ h, puedeCerrar, userId, onCambio }) {
   const navigate = useNavigate();
@@ -42,8 +41,8 @@ function Hallazgo({ h, puedeCerrar, userId, onCambio }) {
       {h.detalle ? <div style={{ fontSize: 13, color: "var(--card-desc, var(--muted))", marginTop: 3, overflowWrap: "anywhere" }}>{h.detalle}</div> : null}
       <div style={{ fontSize: 12, color: "var(--card-desc, var(--muted))", marginTop: 8, display: "grid", gap: 2 }}>
         <span>{nombreModulo(h.moduloId, h.subId)} · {h.cliente || "Sin cliente"}{h.ubicacion ? ` · ${h.ubicacion}` : ""}</span>
-        <span>Inspector: {h.inspector || "—"} · Responsable: {h.responsable || "Sin asignar"} · Vence: {fmt(h.vence)}</span>
-        {h.estado === "cerrado" ? <span>Cerrado el {fmt(h.cerradoAt)}{h.notaCierre ? ` · ${h.notaCierre}` : ""}</span> : null}
+        <span>Inspector: {h.inspector || "—"} · Responsable: {h.responsable || "Sin asignar"} · Vence: {formatearFecha(h.vence)}</span>
+        {h.estado === "cerrado" ? <span>Cerrado el {formatearFecha(h.cerradoAt)}{h.notaCierre ? ` · ${h.notaCierre}` : ""}</span> : null}
       </div>
 
       {cerrando ? (

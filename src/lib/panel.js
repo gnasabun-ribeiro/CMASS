@@ -1,5 +1,6 @@
 import { supabase } from "./supabaseClient.js";
 import { TABLAS_GENERICAS, TABLAS_OBRA } from "./tablas.js";
+import { hoyLocal } from "./fechas.js";
 
 // Datos del panel de seguimiento. Todo se lee con RLS: lo que llega es lo que el rol puede ver.
 
@@ -8,8 +9,6 @@ export const faltaMigracion = (error) =>
   Boolean(error) && (["PGRST204", "PGRST200", "42703"].includes(error.code) || /estado|rol|activo/.test(String(error.message)));
 
 export const MENSAJE_MIGRACION = "Falta ejecutar supabase/roles_y_permisos.sql en Supabase (SQL Editor).";
-
-const hoy = () => new Date().toISOString().slice(0, 10);
 
 // Hallazgos de inspecciones ya enviadas (los de borradores todavía pueden cambiar).
 export async function listarHallazgos() {
@@ -41,7 +40,7 @@ export async function listarHallazgos() {
       ubicacion: h.inspeccion.ubicacion || "",
       inspector: h.inspeccion.inspector?.nombre || "",
       tabla: t.generico ? "generico" : "obra",
-      vencido: h.estado === "abierto" && Boolean(h.vence) && h.vence < hoy(),
+      vencido: h.estado === "abierto" && Boolean(h.vence) && h.vence < hoyLocal(),
     }));
   };
   const [obra, resto] = await Promise.all([una(TABLAS_OBRA), una(TABLAS_GENERICAS)]);

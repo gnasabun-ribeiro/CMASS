@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import AppShell from "../../components/AppShell.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { faltaMigracion, listarHallazgos, listarInspeccionesEnviadas, MENSAJE_MIGRACION } from "../../lib/panel.js";
+import { hoyLocal } from "../../lib/fechas.js";
 import Hallazgos from "./Hallazgos.jsx";
 import Resumen from "./Resumen.jsx";
 import { Aviso, boton } from "./ui.jsx";
@@ -47,7 +48,7 @@ export default function Panel() {
   const alCambiar = (id, estado, extra) =>
     setHallazgos((lista) =>
       lista.map((h) =>
-        h.id === id ? { ...h, estado, ...extra, vencido: estado === "abierto" && Boolean(h.vence) && h.vence < new Date().toISOString().slice(0, 10) } : h
+        h.id === id ? { ...h, estado, ...extra, vencido: estado === "abierto" && Boolean(h.vence) && h.vence < hoyLocal() } : h
       )
     );
 

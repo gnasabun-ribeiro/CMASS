@@ -43,7 +43,7 @@ export default function Formulario() {
   const navigate = useNavigate();
   const isNested = location.pathname.startsWith("/modulos/");
   const { userId, nombre: nombreInspector, puede, rolListo } = useAuth();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const idParam = searchParams.get("id"); // retomar una inspección existente
   const sync = useSync();
   const colaboradores = useColaboradores();
@@ -65,6 +65,7 @@ export default function Formulario() {
   const [errorGuardado, setErrorGuardado] = useState(null);
   const [fotos, setFotos] = useState([]); // fotos generales: { id, url }
   const [subiendoFotos, setSubiendoFotos] = useState(0);
+  const [errorFotos, setErrorFotos] = useState(null); // archivos que no se pudieron leer como imagen
   const [firmas, setFirmas] = useState({}); // rol -> { nombre, url }
   const [guardandoFirma, setGuardandoFirma] = useState({});
   const [avisoCierre, setAvisoCierre] = useState(null);
@@ -78,6 +79,7 @@ export default function Formulario() {
   const generalesSuciosRef = useRef(false);
   const timerGeneralesRef = useRef(null);
   const urlsCreadasRef = useRef([]);
+  const borradoresFirmaRef = useRef({}); // rol -> trazo sin guardar (dataURL), para no perderlo al cambiar de paso
 
   const errorEnvio = inspeccionId ? sync.errores[inspeccionId] : null;
 
@@ -133,6 +135,7 @@ export default function Formulario() {
   // Abre la inspección: la existente (?id=…) o una nueva. Todo vive primero en el dispositivo.
   useEffect(() => {
     if (!persisteEnSupabase || !userId || !rolListo) return;
+    if (idParam && idParam === inspeccionId) return; // ya abierta: solo se le agregó el ?id= a la URL (ver abajo)
     // 'Solo lectura' no crea inspecciones nuevas (la base tampoco lo deja).
     if (!idParam && !puede("crearInspecciones")) {
       navigate("/", { replace: true });
@@ -155,6 +158,13 @@ export default function Formulario() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idParam, persisteEnSupabase, userId, rolListo, moduloId, subId]);
+
+  // Una inspección nueva pasa a tener su ?id= en la URL: si se recarga la página (o el
+  // celular vuelve a abrir la pestaña) se retoma la misma en vez de empezar otra vacía.
+  useEffect(() => {
+    if (inspeccionId && !idParam) setSearchParams({ id: inspeccionId }, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inspeccionId, idParam]);
 
   // Guarda Generales en el dispositivo (solo si el usuario los tocó). Devuelve true si salió bien.
   const volcarGenerales = async () => {
@@ -247,6 +257,7 @@ export default function Formulario() {
       label: "Guardado",
       value: persisteEnSupabase ? textoGuardado({ error: errorGuardado, guardadoEn, sync }) : "no se guarda (solo en pantalla)",
       color: errorGuardado ? "var(--danger-fg)" : "var(--muted-4)",
+      soloPantalla: true, // estado de la app, no va en el PDF
     },
   ];
 
@@ -323,15 +334,30 @@ export default function Formulario() {
     }
   };
 
+  // El trazo de una firma sin guardar se conserva al salir del paso Cierre (por ejemplo, cuando
+  // "Cerrar y enviar" manda a completar un detalle del checklist) y vuelve al regresar.
+  const cambiarBorradorFirma = (rol, dataUrl) => {
+    if (dataUrl) borradoresFirmaRef.current[rol] = dataUrl;
+    else delete borradoresFirmaRef.current[rol];
+  };
+
   // Fotos generales de la inspección (se adjuntan en el Paso 4, hasta MAX_FOTOS).
   const agregarFotos = async (archivos) => {
     if (persisteEnSupabase && !inspeccionId) return;
     const lista = [...archivos].slice(0, Math.max(0, MAX_FOTOS - fotos.length));
     if (!lista.length) return;
+    setErrorFotos(null);
     setSubiendoFotos((n) => n + lista.length);
+    const ilegibles = [];
     for (const archivo of lista) {
       try {
-        const blob = await comprimirImagen(archivo);
+        let blob;
+        try {
+          blob = await comprimirImagen(archivo);
+        } catch {
+          ilegibles.push(archivo.name); // no es una imagen: se avisa en la galería, no es un error de guardado
+          continue;
+        }
         let id = uuid();
         if (persisteEnSupabase) {
           id = (await agregarFotoLocal(inspeccionId, userId, blob)).id;
@@ -344,6 +370,8 @@ export default function Formulario() {
         setSubiendoFotos((n) => n - 1);
       }
     }
+    if (ilegibles.length === 1) setErrorFotos(`No se pudo agregar "${ilegibles[0]}": no es una imagen que se pueda leer.`);
+    else if (ilegibles.length) setErrorFotos(`No se pudieron agregar ${ilegibles.join(", ")}: no son imágenes que se puedan leer.`);
   };
 
   const quitarFoto = async (foto) => {
@@ -516,7 +544,10 @@ export default function Formulario() {
             onAgregarFotos={agregarFotos}
             onQuitarFoto={quitarFoto}
             maxFotos={MAX_FOTOS}
+            errorFotos={errorFotos}
             firmas={firmas}
+            borradoresFirma={borradoresFirmaRef.current}
+            onBorradorFirma={cambiarBorradorFirma}
             nombreInspector={nombreInspector}
             onGuardarFirma={guardarFirma}
             guardandoFirma={guardandoFirma}

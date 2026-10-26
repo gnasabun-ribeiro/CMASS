@@ -1,6 +1,7 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { OPCIONES } from "../data/checklist.js";
+import { hoyLocal } from "./fechas.js";
 
 const ETIQUETA_RESPUESTA = Object.fromEntries(OPCIONES.map((o) => [o.value, o.label]));
 
@@ -27,6 +28,19 @@ const CAMPOS_GENERALES = [
   ["Tarea observada", "tareaObservada"],
 ];
 
+// Las fuentes del PDF (WinAnsi) traen Latin-1 y unos pocos signos más. Si un texto tiene
+// cualquier otro carácter (un emoji, ≤, →), jsPDF lo escribe entero en otra codificación y
+// sale ilegible: se reemplazan los signos comunes y se descarta el resto.
+const WIN_ANSI_EXTRA = "€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ";
+const REEMPLAZOS_PDF = { "≤": "<=", "≥": ">=", "≠": "!=", "→": "->", "←": "<-", "✓": "OK", "✔": "OK" };
+
+export function textoPdf(valor) {
+  if (typeof valor !== "string") return valor;
+  return Array.from(valor.normalize("NFC"), (c) => REEMPLAZOS_PDF[c] ?? (c <= "\u00ff" || WIN_ANSI_EXTRA.includes(c) ? c : ""))
+    .join("")
+    .replace(/ {2,}/g, " ");
+}
+
 function formatearFechaHora(valor) {
   if (!valor) return "—";
   const fecha = new Date(valor);
@@ -41,8 +55,8 @@ function agregarEncabezado(doc, titulo) {
   doc.setFontSize(11);
   doc.setFont(undefined, "normal");
   doc.setTextColor(90, 90, 100);
-  doc.text(titulo, 40, 64);
-  doc.text(`Generado el ${new Date().toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" })}`, 40, 80);
+  doc.text(textoPdf(titulo), 40, 64);
+  doc.text(textoPdf(`Generado el ${new Date().toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" })}`), 40, 80);
   doc.setTextColor(20, 20, 20);
 }
 
@@ -58,7 +72,7 @@ function agregarGenerales(doc, generales, y) {
     columnStyles: { 0: { fontStyle: "bold", cellWidth: 130 } },
     body: CAMPOS_GENERALES.map(([label, campo]) => [
       label,
-      campo === "fechaHora" ? formatearFechaHora(generales[campo]) : generales[campo] || "—",
+      textoPdf(campo === "fechaHora" ? formatearFechaHora(generales[campo]) : generales[campo] || "—"),
     ]),
   });
   return doc.lastAutoTable.finalY + 20;
@@ -74,7 +88,7 @@ function agregarResumen(doc, resumen, y) {
     theme: "plain",
     styles: { fontSize: 10, cellPadding: 3 },
     columnStyles: { 0: { fontStyle: "bold", cellWidth: 160 } },
-    body: resumen.map((r) => [r.label, r.value]),
+    body: resumen.filter((r) => !r.soloPantalla).map((r) => [textoPdf(r.label), textoPdf(r.value)]),
   });
   return doc.lastAutoTable.finalY + 20;
 }
@@ -91,7 +105,7 @@ function agregarChecklist(doc, checklist, respuestas, comentarios, y) {
       const valor = respuestas[item.codigo];
       const detalle = valor === "parcial" && comentarios[item.codigo] ? `
 Detalle: ${comentarios[item.codigo]}` : "";
-      return [item.codigo, item.categoria, item.texto + detalle, valor ? ETIQUETA_RESPUESTA[valor] : "Sin responder"];
+      return [item.codigo, textoPdf(item.categoria), textoPdf(item.texto + detalle), valor ? ETIQUETA_RESPUESTA[valor] : "Sin responder"];
     }),
     styles: { fontSize: 9, cellPadding: 5, valign: "top" },
     headStyles: { fillColor: [78, 47, 130], textColor: 255, fontStyle: "bold" },
@@ -125,7 +139,7 @@ function agregarHallazgos(doc, hallazgos, y) {
     startY: y + 8,
     margin: { left: 40, right: 40 },
     head: [["Título", "Severidad", "Detalle", "Responsable", "Vence"]],
-    body: hallazgos.map((h) => [h.titulo, h.severidad, h.detalle || "—", h.responsable, h.vence]),
+    body: hallazgos.map((h) => [textoPdf(h.titulo), h.severidad, textoPdf(h.detalle || "—"), textoPdf(h.responsable), h.vence]),
     styles: { fontSize: 9, cellPadding: 5, valign: "top" },
     headStyles: { fillColor: [78, 47, 130], textColor: 255, fontStyle: "bold" },
     columnStyles: {
@@ -210,7 +224,7 @@ function agregarFirmas(doc, firmas, y) {
     doc.line(x, y + altoImg + 4, x + ancho, y + altoImg + 4);
     doc.setFontSize(9.5);
     doc.setFont(undefined, "bold");
-    doc.text(f?.nombre || "—", x, y + altoImg + 18);
+    doc.text(textoPdf(f?.nombre || "—"), x, y + altoImg + 18);
     doc.setFont(undefined, "normal");
     doc.setTextColor(90, 90, 100);
     doc.text(etiqueta, x, y + altoImg + 31);
@@ -236,6 +250,6 @@ export function construirInformePDF({ titulo, generales, resumen, checklist, res
 
 export function generarInformePDF(datos) {
   const doc = construirInformePDF(datos);
-  const nombreArchivo = `informe-inspeccion-${new Date().toISOString().slice(0, 10)}.pdf`;
+  const nombreArchivo = `informe-inspeccion-${hoyLocal()}.pdf`;
   doc.save(nombreArchivo);
 }

@@ -1,7 +1,7 @@
 import Icon from "./Icon.jsx";
 
 // Fotos generales de la inspección: se sacan o eligen varias a la vez y se muestran como miniaturas.
-export default function GaleriaFotos({ fotos, subiendo = 0, max = 20, onAgregar, onQuitar }) {
+export default function GaleriaFotos({ fotos, subiendo = 0, max = 20, aviso = null, onAgregar, onQuitar }) {
   const lleno = fotos.length >= max;
   const ocupado = subiendo > 0;
   const habilitado = !lleno && !ocupado;
@@ -51,6 +51,12 @@ export default function GaleriaFotos({ fotos, subiendo = 0, max = 20, onAgregar,
           />
         </label>
       </div>
+
+      {aviso ? (
+        <div role="alert" style={{ fontSize: 12.5, fontWeight: 600, color: "var(--danger-fg)", background: "var(--danger-bg)", borderRadius: 10, padding: "8px 11px", margin: fotos.length || ocupado ? "0 0 12px" : "12px 0 0" }}>
+          {aviso}
+        </div>
+      ) : null}
 
       {fotos.length || ocupado ? (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(96px,1fr))", gap: 10 }}>

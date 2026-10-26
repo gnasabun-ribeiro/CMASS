@@ -39,7 +39,10 @@ export default function PasoCierre({
   onAgregarFotos,
   onQuitarFoto,
   maxFotos,
+  errorFotos = null,
   firmas = {},
+  borradoresFirma = {},
+  onBorradorFirma,
   nombreInspector,
   onGuardarFirma,
   guardandoFirma = {},
@@ -71,7 +74,7 @@ export default function PasoCierre({
     <div>
       {/* El PDF queda fuera: se puede descargar aunque la inspección sea de solo lectura. */}
       <fieldset disabled={soloLectura} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
-      <GaleriaFotos fotos={fotos} subiendo={subiendoFotos} max={maxFotos} onAgregar={onAgregarFotos} onQuitar={onQuitarFoto} />
+      <GaleriaFotos fotos={fotos} subiendo={subiendoFotos} max={maxFotos} aviso={errorFotos} onAgregar={onAgregarFotos} onQuitar={onQuitarFoto} />
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(260px,100%),1fr))", gap: 12, marginBottom: 14 }}>
         {ROLES_FIRMA.map(({ rol, titulo: tituloRol }) => (
@@ -79,8 +82,15 @@ export default function PasoCierre({
             <div style={{ fontSize: 11, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--muted)", fontWeight: 600, marginBottom: 9 }}>
               {tituloRol}
             </div>
-            <FirmaPad firma={firmas[rol]} guardando={Boolean(guardandoFirma[rol])} onGuardar={(blob) => onGuardarFirma(rol, blob)} />
-            <div style={{ fontSize: 13.5, fontWeight: 600, marginTop: 9 }}>{nombreInspector}</div>
+            <FirmaPad
+              firma={firmas[rol]}
+              guardando={Boolean(guardandoFirma[rol])}
+              onGuardar={(blob) => onGuardarFirma(rol, blob)}
+              borrador={borradoresFirma[rol]}
+              onBorrador={(dataUrl) => onBorradorFirma?.(rol, dataUrl)}
+            />
+            {/* Quien firmó, no quien está mirando; si todavía no hay firma, quien va a firmar. */}
+            <div style={{ fontSize: 13.5, fontWeight: 600, marginTop: 9 }}>{firmas[rol]?.nombre || nombreInspector}</div>
           </div>
         ))}
       </div>
