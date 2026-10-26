@@ -156,7 +156,9 @@ export async function sincronizar() {
         await borrarOpSiIgual(op);
         continue;
       }
-      if (rec.inspectorId !== uid) continue; // pertenece a otro usuario de este dispositivo
+      // Cada cambio lo sube quien lo hizo: el dueño, o el administrador que corrige una
+      // inspección ajena. Las operaciones de antes de guardar el autor son del dueño.
+      if ((op.autor ?? rec.inspectorId) !== uid) continue; // la hizo otro usuario de este dispositivo
       try {
         await ejecutar(op, rec);
         await borrarOpSiIgual(op);

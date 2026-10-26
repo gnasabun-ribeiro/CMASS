@@ -6,26 +6,28 @@ import { listarFirmasObra } from "./firmasObra.js";
 import { uuid } from "./uuid.js";
 
 // API que usa el formulario: todo se escribe primero en el dispositivo y se
-// encola para subirlo a Supabase apenas haya conexión (ver sync.js).
+// encola para subirlo a Supabase apenas haya conexión (ver sync.js). Las funciones
+// que modifican reciben `autor` (el usuario logueado): lo sube esa persona, que no
+// siempre es el dueño (el administrador corrige inspecciones ajenas).
 
 const GENERALES_VACIOS = { cliente: "", ubicacion: "", grupoAuditado: "", fechaHora: "", tareaObservada: "" };
 
 // Guarda la copia local y encola las operaciones. Si la inspección todavía no
 // existe en el servidor, antepone "crear" (solo se sube cuando hay algo que subir).
-async function confirmar(rec, ops) {
+async function confirmar(rec, autor, ops) {
   await guardarInspeccion(rec);
-  if (ops.length && !rec.enServidor) await encolar({ inspeccionId: rec.id, tipo: "crear" });
-  for (const op of ops) await encolar({ inspeccionId: rec.id, ...op });
+  if (ops.length && !rec.enServidor) await encolar({ inspeccionId: rec.id, tipo: "crear", autor });
+  for (const op of ops) await encolar({ inspeccionId: rec.id, autor, ...op });
   agendarSync();
 }
 
 // Aplica un cambio a la copia local de forma serializada.
-function modificar(id, fn) {
+function modificar(id, autor, fn) {
   return enSerie(async () => {
     const rec = await obtenerInspeccion(id);
     if (!rec) throw new Error("La inspección no existe en este dispositivo");
     const ops = await fn(rec);
-    await confirmar(rec, ops || []);
+    await confirmar(rec, autor, ops || []);
     return rec;
   });
 }
@@ -78,15 +80,15 @@ export async function cargarInspeccion(id, moduloId, usuarioId) {
   return rec;
 }
 
-export const guardarGenerales = (id, generales) =>
-  modificar(id, (rec) => {
+export const guardarGenerales = (id, autor, generales) =>
+  modificar(id, autor, (rec) => {
     rec.generales = { ...generales };
     return [{ tipo: "generales" }];
   });
 
 // El comentario solo se conserva si la respuesta es "Cumple parcialmente" (ahí es obligatorio).
-export const guardarRespuesta = (id, item, valor, comentario = "") =>
-  modificar(id, (rec) => {
+export const guardarRespuesta = (id, autor, item, valor, comentario = "") =>
+  modificar(id, autor, (rec) => {
     rec.respuestas[item.codigo] = {
       valor,
       categoria: item.categoria,
@@ -96,25 +98,25 @@ export const guardarRespuesta = (id, item, valor, comentario = "") =>
     return [{ tipo: "respuesta", clave: item.codigo }];
   });
 
-export const agregarHallazgo = (id, datos) => {
+export const agregarHallazgo = (id, autor, datos) => {
   const hallazgo = { id: uuid(), ...datos, vence: datos.vence || null };
-  return modificar(id, (rec) => {
+  return modificar(id, autor, (rec) => {
     rec.hallazgos.push(hallazgo);
     return [{ tipo: "hallazgo", clave: hallazgo.id }];
   }).then(() => hallazgo);
 };
 
-export const borrarHallazgo = (id, hallazgoId) =>
-  modificar(id, async (rec) => {
+export const borrarHallazgo = (id, autor, hallazgoId) =>
+  modificar(id, autor, async (rec) => {
     rec.hallazgos = rec.hallazgos.filter((h) => h.id !== hallazgoId);
     await borrarOpsDe(rec.id, "hallazgo", hallazgoId); // si nunca se subió, no hay nada que subir
     return [{ tipo: "hallazgoDel", clave: hallazgoId }];
   });
 
 // `blob` ya viene comprimido. Devuelve la foto agregada (con su id).
-export const agregarFoto = async (id, blob) => {
+export const agregarFoto = async (id, autor, blob) => {
   let foto;
-  await modificar(id, (rec) => {
+  await modificar(id, autor, (rec) => {
     rec.galeria ??= [];
     const fotoId = uuid();
     foto = { id: fotoId, blob, ruta: `${rec.id}/${fotoId}.jpg`, subida: false };
@@ -124,8 +126,8 @@ export const agregarFoto = async (id, blob) => {
   return foto;
 };
 
-export const quitarFoto = (id, fotoId) =>
-  modificar(id, async (rec) => {
+export const quitarFoto = (id, autor, fotoId) =>
+  modificar(id, autor, async (rec) => {
     const foto = (rec.galeria ?? []).find((f) => f.id === fotoId);
     rec.galeria = (rec.galeria ?? []).filter((f) => f.id !== fotoId);
     if (!foto?.subida) {
@@ -135,22 +137,22 @@ export const quitarFoto = (id, fotoId) =>
     return [{ tipo: "foto", clave: fotoId, payload: { accion: "quitar", ruta: foto.ruta } }];
   });
 
-export const guardarFirma = (id, rol, nombre, blob, correo = "") =>
-  modificar(id, (rec) => {
+export const guardarFirma = (id, autor, rol, nombre, blob, correo = "") =>
+  modificar(id, autor, (rec) => {
     const rutaServidor = rec.firmas[rol]?.rutaServidor;
     rec.firmas[rol] = { nombre, correo, blob, ruta: `${rec.id}/firmas/${rol}-${Date.now()}.png`, rutaServidor };
     return [{ tipo: "firma", clave: rol }];
   });
 
-export const cambiarNombreFirma = (id, rol, nombre, correo = "") =>
-  modificar(id, (rec) => {
+export const cambiarNombreFirma = (id, autor, rol, nombre, correo = "") =>
+  modificar(id, autor, (rec) => {
     if (!rec.firmas[rol]) return [];
     rec.firmas[rol] = { ...rec.firmas[rol], nombre, correo };
     return [{ tipo: "firma", clave: rol }];
   });
 
-export const marcarEnviada = (id) =>
-  modificar(id, (rec) => {
+export const marcarEnviada = (id, autor) =>
+  modificar(id, autor, (rec) => {
     rec.estado = "enviado";
     return [{ tipo: "enviar" }];
   });

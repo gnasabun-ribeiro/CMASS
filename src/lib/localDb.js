@@ -3,7 +3,8 @@ import { openDB } from "idb";
 // Base local (IndexedDB). Dos almacenes:
 //  - inspecciones: la copia local completa de cada inspección (incluye fotos y firmas como Blob).
 //  - cola: envíos pendientes a Supabase. La clave `k` = "<inspección>|<tipo>|<clave>" hace que
-//    guardar la misma operación dos veces la reemplace (se conserva solo lo último).
+//    guardar la misma operación dos veces la reemplace (se conserva solo lo último). Cada
+//    operación guarda quién hizo el cambio (`autor`): solo esa persona la sube (ver sync.js).
 let dbPromise;
 export function getDb() {
   dbPromise ??= openDB("cmass", 1, {
@@ -37,13 +38,14 @@ export async function listarInspeccionesLocales() {
 }
 
 let contador = 0;
-export async function encolar({ inspeccionId, tipo, clave = "-", payload = null }) {
+export async function encolar({ inspeccionId, tipo, clave = "-", payload = null, autor = null }) {
   const op = {
     k: `${inspeccionId}|${tipo}|${clave}`,
     inspeccionId,
     tipo,
     clave,
     payload,
+    autor,
     seq: Date.now() * 1000 + (contador++ % 1000),
     intentos: 0,
     error: null,

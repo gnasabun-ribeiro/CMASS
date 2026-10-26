@@ -162,7 +162,7 @@ export default function Formulario() {
     if (!persisteEnSupabase || !inspeccionId || !generalesSuciosRef.current) return true;
     generalesSuciosRef.current = false;
     try {
-      await guardarGenerales(inspeccionId, generalesRef.current);
+      await guardarGenerales(inspeccionId, userId, generalesRef.current);
       marcarGuardado();
       return true;
     } catch (err) {
@@ -187,7 +187,7 @@ export default function Formulario() {
   };
 
   const guardarRespuestaConDetalle = (item, valor, detalle) =>
-    guardarRespuesta(inspeccionId, item, valor, detalle)
+    guardarRespuesta(inspeccionId, userId, item, valor, detalle)
       .then(marcarGuardado)
       .catch((err) => setErrorGuardado(err.message));
 
@@ -284,7 +284,7 @@ export default function Formulario() {
       setEnviando(true);
       try {
         if (!(await volcarGenerales())) return;
-        await marcarEnviada(inspeccionId); // queda en el dispositivo y sube apenas haya conexión
+        await marcarEnviada(inspeccionId, userId); // queda en el dispositivo y sube apenas haya conexión
       } catch (err) {
         setErrorGuardado(err.message);
         return;
@@ -309,7 +309,7 @@ export default function Formulario() {
     try {
       if (persisteEnSupabase) {
         if (!inspeccionId) throw new Error("La inspección todavía no está lista");
-        await guardarFirmaLocal(inspeccionId, rol, nombreFirmante, blob, "");
+        await guardarFirmaLocal(inspeccionId, userId, rol, nombreFirmante, blob, "");
         marcarGuardado();
       }
       setFirmas((f) => ({ ...f, [rol]: { nombre: nombreFirmante, url: urlDeBlob(blob) } }));
@@ -334,7 +334,7 @@ export default function Formulario() {
         const blob = await comprimirImagen(archivo);
         let id = uuid();
         if (persisteEnSupabase) {
-          id = (await agregarFotoLocal(inspeccionId, blob)).id;
+          id = (await agregarFotoLocal(inspeccionId, userId, blob)).id;
           marcarGuardado();
         }
         setFotos((f) => [...f, { id, url: urlDeBlob(blob) }]);
@@ -349,7 +349,7 @@ export default function Formulario() {
   const quitarFoto = async (foto) => {
     try {
       if (persisteEnSupabase) {
-        await quitarFotoLocal(inspeccionId, foto.id);
+        await quitarFotoLocal(inspeccionId, userId, foto.id);
         marcarGuardado();
       }
       setFotos((f) => f.filter((x) => x.id !== foto.id));
@@ -366,7 +366,7 @@ export default function Formulario() {
     }
     if (!inspeccionId) return false;
     try {
-      const guardado = await agregarHallazgoLocal(inspeccionId, { ...datos, correo: correoDe(colaboradores, datos.responsable) });
+      const guardado = await agregarHallazgoLocal(inspeccionId, userId, { ...datos, correo: correoDe(colaboradores, datos.responsable) });
       setHallazgos((list) => [...list, armarHallazgo(guardado)]);
       marcarGuardado();
       return true;
@@ -379,7 +379,7 @@ export default function Formulario() {
   const eliminarHallazgo = async (h) => {
     if (persisteEnSupabase && h.id) {
       try {
-        await borrarHallazgoLocal(inspeccionId, h.id);
+        await borrarHallazgoLocal(inspeccionId, userId, h.id);
         marcarGuardado();
       } catch (err) {
         setErrorGuardado(err.message);
