@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { supabase, supabaseConfigured } from "./supabaseClient.js";
 
 // Lee public.colaboradores (sincronizada desde el DW de Finnegans por la Edge
-// Function DW_COLABORADORES). Se copia en el dispositivo para que el selector
+// Function DW_COLABORADORES) y public.colaboradores_manuales (los que no están en
+// el DW). Se copia en el dispositivo para que el selector
 // de responsables funcione sin conexión (mismo criterio que centrosDeCostos.js).
 const CACHE_KEY = "cmass:colaboradores";
 
@@ -38,6 +39,14 @@ async function bajarColaboradores() {
     data.push(...pagina);
     if (pagina.length < PAGINA) break;
   }
+
+  // Más los que no están en el DW, cargados a mano (supabase/colaboradores_manuales.sql).
+  const { data: manuales, error } = await supabase
+    .from("colaboradores_manuales")
+    .select("nombre_completo, correo")
+    .order("id");
+  if (error) throw error;
+  data.push(...manuales);
 
   return data
     .filter((c) => c.nombre_completo)
