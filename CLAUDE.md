@@ -137,3 +137,13 @@ App de inspecciones de seguridad e higiene (React + Vite, backend en Supabase).
 - **Avisos al volver de otra pantalla:** `navigate(ruta, { state: { aviso } })` y `AppShell` lo muestra arriba hasta que se cierra (hoy: "Inspección enviada" / "se envía sola cuando vuelva la conexión" / "Corrección guardada").
 - **Reabrir un hallazgo** solo cambia `estado`: `cerrado_at`, `cerrado_por` y `nota_cierre` quedan como "último cierre" y el panel los muestra ("Reabierto · último cierre el … por …"). El trigger `proteger_datos_hallazgo` de `supabase/permisos_correcciones.sql` conserva `cerrado_por` al reabrir (cambio del 2026-10-26, **ya ejecutado**).
 - **Salir:** intenta sincronizar; si quedan cambios propios en cola (`contarColaDe`), avisa. Al cerrar sesión (también la automática de un usuario dado de baja) se borran del dispositivo las copias sin cambios pendientes (`borrarCopiasSincronizadas`) y la lista de colaboradores (`borrarCacheColaboradores`, tiene correos); `PrecargaOffline` la vuelve a bajar al entrar.
+
+## Detalles de uso (correcciones de QA, octubre 2026)
+
+- **Búsquedas sin tildes:** `normalizar()` (`src/lib/texto.js`, la usan Registros, el panel, Usuarios y `colaboradores.js`): "nandu" encuentra "Ñandú".
+- **Pills activas sobre el fondo de la app:** llevan `boxShadow: "var(--active-ring)"` (borde blanco en Default, `none` en Ribeiro): el violeta activo no se distinguía del degradé. `boton(activo)` de `Panel/ui.jsx` ya lo trae.
+- **Volver a donde se abrió el formulario:** quien abre una inspección pasa `navigate(ruta, { state: { volverA } })` (Registros, panel) y `Formulario` vuelve ahí al cerrar, con "Borrador" o con la flecha.
+- **Clics dobles:** las cards (`ModuleCard`, `SubItemCard`) ignoran el segundo clic (`e.detail > 1`): navegaban dos veces y "Atrás" no volvía.
+- **Texto libre:** los campos tienen `maxLength` (200 en Generales, 120 en títulos y responsables, 1000 en textos largos) y `inspeccionesRemoto.js` guarda sin espacios en los bordes (`limpio()`).
+- **Login:** el mensaje depende del error (sin conexión, demasiados intentos, credenciales) y con la sesión abierta `/login` redirige.
+- **`faltaMigracion`** (`panel.js`) se decide solo por código de error (columna / función / relación inexistente), no buscando "rol" en el mensaje.

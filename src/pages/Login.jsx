@@ -1,10 +1,21 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 import logoRibeiro from "../assets/logo-ribeiro.png";
 
+// Mensaje según el motivo: antes cualquier falla (sin conexión, demasiados intentos) decía
+// "Correo o contraseña incorrectos".
+function mensajeDeError(err) {
+  if (!navigator.onLine || err.name === "AuthRetryableFetchError" || err.status === 0) return "No hay conexión. Revisá internet y probá de nuevo.";
+  if (err.status === 429 || /rate limit/i.test(err.message)) return "Demasiados intentos. Esperá unos minutos y probá de nuevo.";
+  if (err.code === "email_not_confirmed") return "Tu correo todavía no está confirmado.";
+  if (err.code === "invalid_credentials" || /invalid login credentials/i.test(err.message)) return "Correo o contraseña incorrectos.";
+  if (err.code === "validation_failed" || /invalid format/i.test(err.message)) return "El correo no tiene un formato válido.";
+  return `No se pudo completar: ${err.message}`;
+}
+
 export default function Login() {
-  const { login, resetPassword } = useAuth();
+  const { login, resetPassword, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [email, setEmail] = useState("");
@@ -21,7 +32,7 @@ export default function Login() {
     const { error: authError } = await login(email.trim(), pass);
     setEnviando(false);
     if (authError) {
-      setError("Correo o contraseña incorrectos.");
+      setError(mensajeDeError(authError));
       return;
     }
     const from = location.state?.from?.pathname || "/";
@@ -34,9 +45,16 @@ export default function Login() {
       return;
     }
     setError("");
-    await resetPassword(email.trim());
+    const { error: resetError } = await resetPassword(email.trim());
+    if (resetError) {
+      setError(mensajeDeError(resetError));
+      return;
+    }
     setResetEnviado(true);
   };
+
+  // Con la sesión abierta no tiene sentido mostrar el formulario.
+  if (!loading && isAuthenticated) return <Navigate to={location.state?.from?.pathname || "/"} replace />;
 
   return (
     <div
@@ -86,7 +104,7 @@ export default function Login() {
               Inspecciones CMASS
             </div>
             <div style={{ fontSize: 13, color: "var(--violet-150)", marginTop: 4 }}>
-              Calidad · Ambiente · Seguridad · Sistemas
+              Calidad · Medio Ambiente · Seguridad · Salud
             </div>
           </div>
 

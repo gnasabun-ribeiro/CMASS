@@ -44,7 +44,7 @@ export default function SubItemCard({ sub, index = 0, onNuevo, onRegistros }) {
       </div>
       <div style={{ display: "flex", gap: 8, marginTop: "auto" }}>
         <button
-          onClick={onNuevo}
+          onClick={(e) => e.detail <= 1 && onNuevo()} // un doble clic no navega dos veces
           style={{
             flex: 1,
             border: 0,
@@ -61,7 +61,7 @@ export default function SubItemCard({ sub, index = 0, onNuevo, onRegistros }) {
           Nuevo
         </button>
         <button
-          onClick={onRegistros}
+          onClick={(e) => e.detail <= 1 && onRegistros()}
           style={{
             flex: 1,
             border: 0,

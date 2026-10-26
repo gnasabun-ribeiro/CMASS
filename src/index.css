@@ -50,6 +50,9 @@
   --on-cta: #fff;
   --active-bg: var(--violet-700);
   --on-active: #fff;
+  /* Borde del estado activo en pills que van sobre el fondo de la app: el violeta activo casi
+     no se distinguía del degradé violeta. En Ribeiro el amarillo ya contrasta solo. */
+  --active-ring: 0 0 0 2px #fff;
   --pulse-rgb: 167, 139, 250;
 
   --card-bg: #fff;
@@ -106,6 +109,7 @@
   --on-cta: #1c1b19;
   --active-bg: #f4cf47;
   --on-active: #1c1b19;
+  --active-ring: none;
   --pulse-rgb: 244, 207, 71;
 
   --card-bg: #201e1a;

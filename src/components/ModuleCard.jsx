@@ -63,11 +63,16 @@ export default function ModuleCard({ modulo, index = 0, onOpen, onRegistros }) {
   return (
     <div
       ref={cardRef}
-      onClick={handleOpen}
+      // e.detail > 1: segundo clic de un doble clic (navegaba dos veces y "Atrás" no volvía).
+      onClick={(e) => e.detail <= 1 && handleOpen(e)}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") handleOpen();
+        if (e.target !== e.currentTarget) return; // Enter sobre "Registros" no abre también la card
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleOpen();
+        }
       }}
       className={`pop-in card-tap${pressed ? " is-pressed" : ""}`}
       style={{
@@ -193,7 +198,7 @@ export default function ModuleCard({ modulo, index = 0, onOpen, onRegistros }) {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              onRegistros();
+              if (e.detail <= 1) onRegistros();
             }}
             style={{
               flexShrink: 0,

@@ -3,6 +3,7 @@ import { ROLES } from "../../data/permisos.js";
 import { actualizarUsuario, faltaMigracion, listarUsuarios, MENSAJE_MIGRACION } from "../../lib/panel.js";
 import AltaUsuario from "./AltaUsuario.jsx";
 import { useConfirmacion } from "../../components/Confirmacion.jsx";
+import { normalizar } from "../../lib/texto.js";
 import { Aviso, Chip, boton, campo, tarjeta } from "../Panel/ui.jsx";
 
 export default function Usuarios({ userId }) {
@@ -65,8 +66,8 @@ export default function Usuarios({ userId }) {
 
   if (!usuarios) return error ? <Aviso>{error}</Aviso> : <div style={{ color: "var(--violet-150)", fontSize: 13.5 }}>Cargando usuarios…</div>;
 
-  const q = texto.trim().toLowerCase();
-  const visibles = usuarios.filter((u) => !q || `${u.nombre} ${u.email}`.toLowerCase().includes(q));
+  const q = normalizar(texto);
+  const visibles = usuarios.filter((u) => !q || normalizar(`${u.nombre} ${u.email}`).includes(q));
   const admins = usuarios.filter((u) => u.rol === "administrador" && u.activo).length;
 
   return (
@@ -88,6 +89,10 @@ export default function Usuarios({ userId }) {
           // No se puede dejar la app sin administradores ni cambiarse el rol uno mismo.
           const ultimoAdmin = u.rol === "administrador" && u.activo && admins <= 1;
           const bloqueado = guardando === u.id || yo;
+          const sinRol = bloqueado || ultimoAdmin;
+          const sinBaja = bloqueado || (u.activo && ultimoAdmin);
+          // Por qué no se puede (se ve al pasar el mouse); antes el botón deshabilitado se veía activo.
+          const motivo = yo ? "No podés cambiar tu propio rol ni darte de baja" : ultimoAdmin ? "Tiene que quedar al menos un administrador activo" : undefined;
           return (
             <div key={u.id} style={{ ...tarjeta, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", opacity: u.activo ? 1 : 0.6 }}>
               <div style={{ flex: "1 1 200px", minWidth: 0 }}>
@@ -100,16 +105,18 @@ export default function Usuarios({ userId }) {
               <select
                 aria-label={`Rol de ${u.nombre || u.email}`}
                 value={u.rol}
-                disabled={bloqueado || ultimoAdmin}
+                disabled={sinRol}
+                title={sinRol ? motivo : undefined}
                 onChange={(e) => cambiarRol(u, e.target.value)}
-                style={campo}
+                style={{ ...campo, opacity: sinRol ? 0.55 : 1, cursor: sinRol ? "not-allowed" : "pointer" }}
               >
                 {ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
               </select>
               <button
                 onClick={() => cambiarBaja(u)}
-                disabled={bloqueado || (u.activo && ultimoAdmin)}
-                style={{ ...campo, cursor: bloqueado ? "default" : "pointer", fontWeight: 700 }}
+                disabled={sinBaja}
+                title={sinBaja ? motivo : undefined}
+                style={{ ...campo, fontWeight: 700, opacity: sinBaja ? 0.55 : 1, cursor: sinBaja ? "not-allowed" : "pointer" }}
               >
                 {u.activo ? "Dar de baja" : "Reactivar"}
               </button>

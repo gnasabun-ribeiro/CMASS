@@ -86,7 +86,7 @@ export default function Pendientes() {
       >
         <div style={{ flex: 1, minWidth: 190 }}>
           <div className="heading" style={{ fontWeight: 800, fontSize: 17, color: "#fff", letterSpacing: "-.3px" }}>
-            {sync.pendientes === 0 ? "Sin registros pendientes" : `${sync.pendientes} cambios sin sincronizar`}
+            {sync.pendientes === 0 ? "Sin registros pendientes" : `${sync.pendientes} ${sync.pendientes === 1 ? "cambio" : "cambios"} sin sincronizar`}
           </div>
           <div style={{ fontSize: 12.5, color: "var(--violet-150)", marginTop: 3 }}>
             {estadoConexion}

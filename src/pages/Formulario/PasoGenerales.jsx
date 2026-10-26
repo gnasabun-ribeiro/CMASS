@@ -67,6 +67,7 @@ export default function PasoGenerales({ valores, onCambiar }) {
         <span style={labelStyle}>Ubicación / Zona</span>
         <input
           placeholder="Batería 12 — sector bombas"
+          maxLength={200}
           value={valores.ubicacion}
           onChange={(e) => onCambiar("ubicacion", e.target.value)}
           style={fieldStyle}
@@ -76,6 +77,7 @@ export default function PasoGenerales({ valores, onCambiar }) {
         <span style={labelStyle}>Grupo auditado</span>
         <input
           placeholder="Cuadrilla mecánica 3"
+          maxLength={200}
           value={valores.grupoAuditado}
           onChange={(e) => onCambiar("grupoAuditado", e.target.value)}
           style={fieldStyle}
@@ -95,6 +97,7 @@ export default function PasoGenerales({ valores, onCambiar }) {
         <textarea
           rows={3}
           placeholder="Descripción breve de la tarea…"
+          maxLength={1000}
           value={valores.tareaObservada}
           onChange={(e) => onCambiar("tareaObservada", e.target.value)}
           style={{ ...fieldStyle, resize: "vertical" }}

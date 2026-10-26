@@ -4,7 +4,7 @@ import { correoDe, filtrarColaboradores, sinCorreoCorporativo } from "../lib/col
 // Campo de texto con sugerencias de colaboradores (nombre y apellido). Sigue siendo
 // texto libre, pero si el texto coincide con un colaborador se muestra su correo:
 // es el que recibe el informe al cerrar la inspección (ver registrarDestinatarios).
-export default function ColaboradorInput({ value, onChange, onBlur, colaboradores, placeholder, style }) {
+export default function ColaboradorInput({ value, onChange, onBlur, colaboradores, placeholder, maxLength, style }) {
   const [abierto, setAbierto] = useState(false);
   const sugerencias = abierto ? filtrarColaboradores(colaboradores, value).slice(0, 6) : [];
   const correo = correoDe(colaboradores, value);
@@ -15,6 +15,7 @@ export default function ColaboradorInput({ value, onChange, onBlur, colaboradore
     <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
       <input
         placeholder={placeholder}
+        maxLength={maxLength}
         value={value}
         autoComplete="off"
         onChange={(e) => {

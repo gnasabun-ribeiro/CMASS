@@ -71,6 +71,8 @@ export default function Formulario() {
   const [firmas, setFirmas] = useState({}); // rol -> { nombre, url }
   const [guardandoFirma, setGuardandoFirma] = useState({});
   const [avisoCierre, setAvisoCierre] = useState(null);
+  const [avisarDetalle, setAvisarDetalle] = useState(false); // "Falta el detalle…" (se arma con lo que falta ahora)
+  const [irAItem, setIrAItem] = useState(null); // { codigo } para PasoChecklist
   const [checklistUltimaPagina, setChecklistUltimaPagina] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [cargando, setCargando] = useState(persisteEnSupabase);
@@ -164,7 +166,7 @@ export default function Formulario() {
   // Una inspección nueva pasa a tener su ?id= en la URL: si se recarga la página (o el
   // celular vuelve a abrir la pestaña) se retoma la misma en vez de empezar otra vacía.
   useEffect(() => {
-    if (inspeccionId && !idParam) setSearchParams({ id: inspeccionId }, { replace: true });
+    if (inspeccionId && !idParam) setSearchParams({ id: inspeccionId }, { replace: true, state: location.state });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inspeccionId, idParam]);
 
@@ -218,7 +220,8 @@ export default function Formulario() {
 
   if (!modulo || (isNested && !sub)) return <Navigate to="/" replace />;
 
-  const backTo = isNested ? `/modulos/${moduloId}` : rutaVolver(moduloId);
+  // Se vuelve a donde se abrió (Registros, el panel) o, si no, al menú del módulo.
+  const backTo = location.state?.volverA || (isNested ? `/modulos/${moduloId}` : rutaVolver(moduloId));
   const title = sub ? sub.title : modulo.title;
 
   const responderChecklist = (item, valor) => {
@@ -243,7 +246,11 @@ export default function Formulario() {
   // Ítems "Cumple parcialmente" sin detalle: no se puede avanzar ni cerrar con ellos.
   const sinDetalle = checklist.filter((i) => respuestas[i.codigo] === "parcial" && !comentarios[i.codigo]?.trim());
   const avisoSinDetalle = () =>
-    `Falta el detalle en ${sinDetalle.length === 1 ? "el ítem" : "los ítems"} ${sinDetalle.map((i) => i.codigo).join(", ")} ("Cumple parcialmente"). Completalo en el paso Checklist.`;
+    `Falta el detalle en ${sinDetalle.length === 1 ? "el ítem" : "los ítems"} ${sinDetalle.map((i) => i.codigo).join(", ")} ("Cumple parcialmente").`;
+  const irAlItem = (codigo) => {
+    setPaso(1);
+    setIrAItem({ codigo });
+  };
 
   const noCumple = Object.values(respuestas).filter((v) => v === "no").length;
   const cumpleParcial = Object.values(respuestas).filter((v) => v === "parcial").length;
@@ -271,7 +278,8 @@ export default function Formulario() {
     !cargando &&
     !puede("editarEnviadas") &&
     (datosInsp.estado === "enviado" || (datosInsp.inspectorId && datosInsp.inspectorId !== userId) || !puede("crearInspecciones"));
-  const avance = Math.round((paso / 3) * 100);
+  // Lo que mide la barra es el checklist respondido, no el paso (antes marcaba 100 % en Cierre con 3 de 35).
+  const avance = checklist.length ? Math.round((contestadas / checklist.length) * 100) : 0;
   const esUltimo = paso === 3;
   // En el paso Checklist, "Siguiente" recién aparece al llegar a la última categoría.
   const mostrarSiguiente = paso !== 1 || checklistUltimaPagina;
@@ -279,8 +287,8 @@ export default function Formulario() {
   const siguiente = async () => {
     volcarDetalles();
     if (sinDetalle.length && (esUltimo || paso === 1)) {
-      setAvisoCierre(avisoSinDetalle());
-      if (esUltimo) setPaso(1);
+      setAvisarDetalle(true);
+      irAlItem(sinDetalle[0].codigo);
       return;
     }
     setAvisoCierre(null);
@@ -478,6 +486,17 @@ export default function Formulario() {
       {avisoCierre ? (
         <div style={{ background: "var(--warn-bg)", color: "var(--warn-fg)", borderRadius: 16, padding: 12, marginBottom: 12, fontSize: 13, fontWeight: 600 }}>{avisoCierre}</div>
       ) : null}
+      {avisarDetalle && sinDetalle.length ? (
+        <div role="alert" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", background: "var(--warn-bg)", color: "var(--warn-fg)", borderRadius: 16, padding: 12, marginBottom: 12, fontSize: 13, fontWeight: 600 }}>
+          <span style={{ flex: "1 1 220px" }}>{avisoSinDetalle()}</span>
+          <button
+            onClick={() => irAlItem(sinDetalle[0].codigo)}
+            style={{ border: 0, background: "var(--warn-fg)", color: "#fff", fontWeight: 700, fontSize: 12.5, padding: "8px 12px", borderRadius: 12, cursor: "pointer", minHeight: 38 }}
+          >
+            Ir al ítem {sinDetalle[0].codigo}
+          </button>
+        </div>
+      ) : null}
       {!persisteEnSupabase ? (
         <div style={{ background: "var(--warn-bg)", color: "var(--warn-fg)", borderRadius: 16, padding: 12, marginBottom: 12, fontSize: 13, fontWeight: 600 }}>
           Sin conexión con el servidor configurada: lo que cargues se pierde al salir.
@@ -488,7 +507,9 @@ export default function Formulario() {
           <span className="heading" style={{ fontWeight: 700, fontSize: 14 }}>
             Paso {paso + 1} de 4 · {PASOS[paso]}
           </span>
-          <span style={{ fontSize: 12.5, color: "var(--muted)" }}>{avance}%</span>
+          <span style={{ fontSize: 12.5, color: "var(--muted)" }}>
+            {contestadas}/{checklist.length} ítems
+          </span>
         </div>
         <div style={{ height: 9, background: "var(--border)", borderRadius: 20, overflow: "hidden", marginBottom: 11 }}>
           <div
@@ -557,6 +578,7 @@ export default function Formulario() {
             onComentar={comentarChecklist}
             onComentarioListo={volcarDetalles}
             onPaginaChange={setChecklistUltimaPagina}
+            irA={irAItem}
           /> : null}
         {paso === 2 ? <PasoHallazgos hallazgos={hallazgos} onAgregar={agregarHallazgo} onEliminar={eliminarHallazgo} colaboradores={colaboradores} /> : null}
         {paso === 3 ? (

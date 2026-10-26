@@ -4,6 +4,7 @@ import { SEVERIDADES } from "../../data/severidades.js";
 import { rutaFormulario } from "../../data/modulos.js";
 import { cambiarEstadoHallazgo } from "../../lib/panel.js";
 import { formatearFecha } from "../../lib/fechas.js";
+import { normalizar } from "../../lib/texto.js";
 import { Aviso, Chip, boton, campo, tarjeta } from "./ui.jsx";
 import { useConfirmacion } from "../../components/Confirmacion.jsx";
 import { nombreModulo } from "./Resumen.jsx";
@@ -75,7 +76,7 @@ function Hallazgo({ h, puedeCerrar, userId, userNombre, onCambio }) {
         <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
           {puedeCerrar && h.estado === "abierto" ? <button onClick={() => setCerrando(true)} style={boton(true)}>Cerrar hallazgo</button> : null}
           {puedeCerrar && h.estado === "cerrado" ? <button onClick={reabrir} disabled={ocupado} style={boton(false)}>Reabrir</button> : null}
-          <button onClick={() => navigate(rutaFormulario(h.moduloId, h.subId, h.inspeccionId))} style={boton(false)}>Ver inspección</button>
+          <button onClick={() => navigate(rutaFormulario(h.moduloId, h.subId, h.inspeccionId), { state: { volverA: "/panel" } })} style={boton(false)}>Ver inspección</button>
         </div>
       )}
       {error ? <Aviso>{error}</Aviso> : null}
@@ -93,13 +94,13 @@ export default function Hallazgos({ hallazgos, puedeCerrar, userId, userNombre, 
   const modulos = useMemo(() => [...new Set(hallazgos.map((h) => nombreModulo(h.moduloId, h.subId)))].sort(), [hallazgos]);
 
   const visibles = useMemo(() => {
-    const q = texto.trim().toLowerCase();
+    const q = normalizar(texto);
     return hallazgos.filter(
       (h) =>
         (estado === "todos" || h.estado === estado) &&
         (!severidad || h.severidad === severidad) &&
         (!modulo || nombreModulo(h.moduloId, h.subId) === modulo) &&
-        (!q || [h.titulo, h.detalle, h.cliente, h.responsable, h.inspector].some((v) => v.toLowerCase().includes(q)))
+        (!q || [h.titulo, h.detalle, h.cliente, h.responsable, h.inspector].some((v) => normalizar(v).includes(q)))
     );
   }, [hallazgos, estado, severidad, modulo, texto]);
 
@@ -119,7 +120,7 @@ export default function Hallazgos({ hallazgos, puedeCerrar, userId, userNombre, 
         </select>
         <input aria-label="Buscar" value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Buscar" style={{ ...campo, flex: 1, minWidth: 120 }} />
       </div>
-      <div style={{ fontSize: 12.5, color: "var(--violet-150)", marginBottom: 8, fontWeight: 600 }}>{visibles.length} hallazgos</div>
+      <div style={{ fontSize: 12.5, color: "var(--violet-150)", marginBottom: 8, fontWeight: 600 }}>{visibles.length} {visibles.length === 1 ? "hallazgo" : "hallazgos"}</div>
       {visibles.length === 0 ? (
         <div style={{ ...tarjeta, color: "var(--card-desc, var(--muted))", fontSize: 13.5, textAlign: "center" }}>No hay hallazgos con estos filtros.</div>
       ) : (

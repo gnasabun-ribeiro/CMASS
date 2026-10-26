@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import AppShell from "../components/AppShell.jsx";
 import { ESTADOS, ESTADO_COLORS, hallazgosColor } from "../data/mockRegistros.js";
 import { findModulo, findSub, rutaFormulario, rutaVolver } from "../data/modulos.js";
@@ -10,6 +10,7 @@ import { listarCola, listarInspeccionesLocales } from "../lib/localDb.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useSync } from "../lib/useSync.js";
 import { useCelular } from "../lib/useCelular.js";
+import { normalizar } from "../lib/texto.js";
 
 const MESES = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
 
@@ -71,6 +72,7 @@ const noVacio = (r) => r.estado === "enviado" || r.cliente || r.ubicacion || r.g
 export default function Lista() {
   const { moduloId, subId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { userId } = useAuth();
   const sync = useSync();
   const celular = useCelular();
@@ -139,17 +141,28 @@ export default function Lista() {
   }, [hayLista, moduloId, subId, userId, sync.pendientes]);
 
   const registros = useMemo(() => {
-    const q = busqueda.trim().toLowerCase();
+    const q = normalizar(busqueda); // "nandu" encuentra "Ñandú"
     const d = desde ? new Date(`${desde}T00:00:00`) : null;
     const h = hasta ? new Date(`${hasta}T23:59:59`) : null;
     return todos.filter(
       (r) =>
         (filtro === "Todos" || r.estado === filtro) &&
-        (!q || `${r.titulo} ${r.detalle}`.toLowerCase().includes(q)) &&
+        (!q || normalizar(`${r.titulo} ${r.detalle}`).includes(q)) &&
         (!d || r.fecha >= d) &&
         (!h || r.fecha <= h)
     );
   }, [todos, filtro, busqueda, desde, hasta]);
+
+  const hayFiltros = filtro !== "Todos" || Boolean(busqueda.trim() || desde || hasta);
+  const limpiarFiltros = () => {
+    setFiltro("Todos");
+    setBusqueda("");
+    setDesde("");
+    setHasta("");
+  };
+
+  // /registros/<algo que no existe>: antes mostraba "Mis Registros" vacío.
+  if ((moduloId && !(modulo?.form || modulo?.subs)) || (subId && !sub)) return <Navigate to="/registros" replace />;
 
   return (
     <AppShell title={title} subtitle={subtitle} onBack={() => navigate(backTo)}>
@@ -162,6 +175,11 @@ export default function Lista() {
         />
         <input type="date" aria-label="Desde" value={desde} onChange={(e) => setDesde(e.target.value)} style={{ ...fieldStyle, flex: "1 1 140px" }} />
         <input type="date" aria-label="Hasta" value={hasta} onChange={(e) => setHasta(e.target.value)} style={{ ...fieldStyle, flex: "1 1 140px" }} />
+        {desde && hasta && desde > hasta ? (
+          <div role="alert" style={{ flex: "1 1 100%", fontSize: 12.5, fontWeight: 600, color: "var(--warn-fg)", background: "var(--warn-bg)", borderRadius: 10, padding: "7px 10px" }}>
+            "Desde" es posterior a "Hasta": no puede haber registros en ese rango.
+          </div>
+        ) : null}
       </div>
 
       <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, marginBottom: 12 }}>
@@ -176,6 +194,7 @@ export default function Lista() {
                 border: 0,
                 background: on ? "var(--active-bg)" : "#fff",
                 color: on ? "var(--on-active)" : "var(--muted-3)",
+                boxShadow: on ? "var(--active-ring)" : "none",
                 fontSize: 12.5,
                 fontWeight: 700,
                 padding: "10px 15px",
@@ -188,6 +207,14 @@ export default function Lista() {
             </button>
           );
         })}
+        {hayFiltros ? (
+          <button
+            onClick={limpiarFiltros}
+            style={{ flex: "0 0 auto", border: 0, background: "transparent", color: "#fff", textDecoration: "underline", fontSize: 12.5, fontWeight: 700, padding: "10px 8px", cursor: "pointer", minHeight: 42 }}
+          >
+            Limpiar filtros
+          </button>
+        ) : null}
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -213,7 +240,8 @@ export default function Lista() {
           return (
             <button
               key={r.id}
-              onClick={() => navigate(rutaFormulario(r.moduloId, r.subId, r.id))}
+              // volverA: al cerrar o salir del formulario se vuelve a esta lista (ver Formulario).
+              onClick={() => navigate(rutaFormulario(r.moduloId, r.subId, r.id), { state: { volverA: location.pathname } })}
               className="pop-in"
               style={{
                 textAlign: "left",
@@ -287,7 +315,13 @@ export default function Lista() {
         })}
         {registros.length === 0 ? (
           <div style={{ textAlign: "center", color: "var(--violet-150)", padding: "24px 0", fontSize: 13.5 }}>
-            {estadoCarga === "cargando" ? "Cargando…" : estadoCarga === "error" ? "No se pudieron cargar los registros." : "Todavía no hay registros para mostrar."}
+            {estadoCarga === "cargando"
+              ? "Cargando…"
+              : estadoCarga === "error"
+                ? "No se pudieron cargar los registros."
+                : todos.length && hayFiltros
+                  ? "Ningún registro coincide con los filtros."
+                  : "Todavía no hay registros para mostrar."}
           </div>
         ) : null}
       </div>

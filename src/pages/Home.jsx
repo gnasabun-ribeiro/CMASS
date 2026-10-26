@@ -53,7 +53,7 @@ export default function Home() {
 
   return (
     // En el celular el nombre ya ocupa dos líneas: el subtítulo queda solo con el correo.
-    <AppShell title={`¡Bienvenido, ${nombre}!`} subtitle={celular ? email : `Inspecciones CMASS · ${email}`}>
+    <AppShell title={`¡Hola, ${nombre}!`} subtitle={celular ? email : `Inspecciones CMASS · ${email}`}>
       {/* Selector segmentado sobre fondo de card: "Tema" en gris sobre el degradé violeta no se leía,
           y la opción activa (violeta) se perdía contra el fondo. */}
       <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>

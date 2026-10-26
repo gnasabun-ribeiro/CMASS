@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase, supabaseConfigured } from "./supabaseClient.js";
+import { normalizar } from "./texto.js";
 
 // Lee public.colaboradores (sincronizada desde el DW de Finnegans por la Edge
 // Function DW_COLABORADORES) y public.colaboradores_manuales (los que no están en
@@ -80,13 +81,6 @@ export async function listarColaboradores() {
     throw err;
   }
 }
-
-const normalizar = (s) =>
-  String(s || "")
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .trim();
 
 // Coincidencias: todas las palabras escritas tienen que estar en "nombre apellido"
 // (en cualquier orden, sin tildes).

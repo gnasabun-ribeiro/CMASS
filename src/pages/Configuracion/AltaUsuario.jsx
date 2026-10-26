@@ -74,6 +74,15 @@ export default function AltaUsuario({ usuarios, onCreado, onCerrar }) {
   const nombreCompleto = manual ? limpiar(`${nombre} ${apellido}`) : elegido?.etiqueta;
   const personaLista = manual ? Boolean(limpiar(nombre) && limpiar(apellido)) : Boolean(elegido);
   const puedeCrear = personaLista && correoValido && !correoRepetido && !enviando;
+  // Lo que falta completar, para decirlo en vez de solo apagar el botón.
+  const faltan = [
+    manual && !limpiar(nombre) && "el nombre",
+    manual && !limpiar(apellido) && "el apellido",
+    (elegido || manual) && !correoLimpio && "el correo",
+  ].filter(Boolean);
+  const textoFaltan = faltan.length
+    ? `${faltan.length === 1 ? "Falta" : "Faltan"} ${faltan.length > 1 ? `${faltan.slice(0, -1).join(", ")} y ${faltan.at(-1)}` : faltan[0]}.`
+    : null;
 
   const crear = async () => {
     setEnviando(true);
@@ -235,6 +244,7 @@ export default function AltaUsuario({ usuarios, onCreado, onCerrar }) {
       ) : null}
 
       {error ? <Aviso>{error}</Aviso> : null}
+      {textoFaltan ? <div style={{ ...nota, marginTop: 12, fontWeight: 600 }}>{textoFaltan}</div> : null}
       <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
         <button onClick={crear} disabled={!puedeCrear} style={{ ...boton(true), opacity: puedeCrear ? 1 : 0.5, cursor: puedeCrear ? "pointer" : "default" }}>
           {enviando ? "Creando…" : "Crear usuario"}

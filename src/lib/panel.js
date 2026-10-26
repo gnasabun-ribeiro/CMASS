@@ -5,8 +5,9 @@ import { hoyLocal } from "./fechas.js";
 // Datos del panel de seguimiento. Todo se lee con RLS: lo que llega es lo que el rol puede ver.
 
 // Antes de ejecutar supabase/roles_y_permisos.sql no existen estas columnas ni funciones.
-export const faltaMigracion = (error) =>
-  Boolean(error) && (["PGRST204", "PGRST200", "42703"].includes(error.code) || /estado|rol|activo/.test(String(error.message)));
+// Solo por código (columna, función o relación inexistente): buscar "rol" en el mensaje
+// también agarraba errores que no tienen nada que ver, como "control…".
+export const faltaMigracion = (error) => Boolean(error) && ["PGRST204", "PGRST200", "PGRST202", "42703", "42883"].includes(error.code);
 
 export const MENSAJE_MIGRACION = "Falta ejecutar supabase/roles_y_permisos.sql en Supabase (SQL Editor).";
 

@@ -12,15 +12,18 @@ export async function crearBorrador(t, { id, inspectorId, moduloId, subId }) {
   if (error) throw error;
 }
 
+// Texto libre: sin espacios en los bordes; vacío se guarda como null.
+const limpio = (s) => s?.trim() || null;
+
 export async function guardarGenerales(t, inspeccionId, generales) {
   const { error } = await supabase
     .from(t.cab)
     .update({
-      cliente: generales.cliente || null,
-      ubicacion: generales.ubicacion || null,
-      grupo_auditado: generales.grupoAuditado || null,
+      cliente: limpio(generales.cliente),
+      ubicacion: limpio(generales.ubicacion),
+      grupo_auditado: limpio(generales.grupoAuditado),
       fecha_hora: generales.fechaHora ? new Date(generales.fechaHora).toISOString() : null,
-      tarea_observada: generales.tareaObservada || null,
+      tarea_observada: limpio(generales.tareaObservada),
     })
     .eq("id", inspeccionId);
   if (error) throw error;
@@ -34,7 +37,7 @@ export async function guardarRespuestaChecklist(t, inspeccionId, item, valor, co
       categoria: item.categoria,
       item: item.texto,
       valor,
-      comentario: comentario?.trim() || null,
+      comentario: limpio(comentario),
     },
     { onConflict: "inspeccion_id,codigo" }
   );
@@ -56,10 +59,10 @@ export async function agregarHallazgo(t, inspeccionId, h) {
   const fila = {
     id: h.id,
     inspeccion_id: inspeccionId,
-    titulo: h.titulo,
+    titulo: h.titulo.trim(),
     severidad: h.severidad,
-    detalle: h.detalle || null,
-    responsable: h.responsable || null,
+    detalle: limpio(h.detalle),
+    responsable: limpio(h.responsable),
     vence: h.vence || null,
   };
   const guardar = (f) => supabase.from(t.hallazgos).upsert(f, { onConflict: "id", ignoreDuplicates: true });

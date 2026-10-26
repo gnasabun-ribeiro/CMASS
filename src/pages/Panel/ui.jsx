@@ -52,6 +52,7 @@ export const boton = (activo) => ({
   border: 0,
   background: activo ? "var(--active-bg)" : "var(--violet-50)",
   color: activo ? "var(--on-active)" : "var(--violet-800)",
+  boxShadow: activo ? "var(--active-ring)" : "none", // se distingue sobre el fondo violeta
   fontSize: 12.5,
   fontWeight: 700,
   padding: "8px 14px",

@@ -19,6 +19,7 @@ export default function PasoHallazgos({ hallazgos, onAgregar, onEliminar, colabo
   const celular = useCelular();
   const [abierto, setAbierto] = useState(false);
   const [guardando, setGuardando] = useState(false);
+  const [faltaTitulo, setFaltaTitulo] = useState(false);
   const [form, setForm] = useState({ titulo: "", severidad: "Medio", detalle: "", responsable: "", vence: "" });
   const [confirmar, dialogo] = useConfirmacion();
 
@@ -27,7 +28,11 @@ export default function PasoHallazgos({ hallazgos, onAgregar, onEliminar, colabo
   };
 
   const guardar = async () => {
-    if (!form.titulo.trim() || guardando) return;
+    if (guardando) return;
+    if (!form.titulo.trim()) {
+      setFaltaTitulo(true); // antes no pasaba nada y no se entendía por qué
+      return;
+    }
     setGuardando(true);
     try {
       const ok = await onAgregar({
@@ -89,10 +94,20 @@ export default function PasoHallazgos({ hallazgos, onAgregar, onEliminar, colabo
         <div style={{ borderRadius: 18, border: "1.5px dashed var(--violet-400)", background: "var(--violet-25)", padding: 14, display: "flex", flexDirection: "column", gap: 9 }}>
           <input
             placeholder="Título del hallazgo"
+            maxLength={120}
             value={form.titulo}
-            onChange={(e) => setForm({ ...form, titulo: e.target.value })}
-            style={fieldStyle}
+            onChange={(e) => {
+              setForm({ ...form, titulo: e.target.value });
+              setFaltaTitulo(false);
+            }}
+            aria-invalid={faltaTitulo}
+            style={faltaTitulo ? { ...fieldStyle, borderColor: "var(--danger-fg)" } : fieldStyle}
           />
+          {faltaTitulo ? (
+            <div role="alert" style={{ fontSize: 12.5, fontWeight: 600, color: "var(--danger-fg)", marginTop: -3 }}>
+              Escribí un título para el hallazgo.
+            </div>
+          ) : null}
           <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
             {SEVERIDADES.map((s) => (
               <button
@@ -116,6 +131,7 @@ export default function PasoHallazgos({ hallazgos, onAgregar, onEliminar, colabo
           <textarea
             rows={2}
             placeholder="Detalle…"
+            maxLength={1000}
             value={form.detalle}
             onChange={(e) => setForm({ ...form, detalle: e.target.value })}
             style={{ ...fieldStyle, resize: "vertical" }}
@@ -124,6 +140,7 @@ export default function PasoHallazgos({ hallazgos, onAgregar, onEliminar, colabo
           <div style={celular ? { display: "grid", gap: 9 } : { display: "flex", gap: 9, alignItems: "flex-start" }}>
             <ColaboradorInput
               placeholder="Responsable (nombre y apellido)"
+              maxLength={120}
               value={form.responsable}
               onChange={(v) => setForm({ ...form, responsable: v })}
               colaboradores={colaboradores}
@@ -139,7 +156,10 @@ export default function PasoHallazgos({ hallazgos, onAgregar, onEliminar, colabo
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             <button
-              onClick={() => setAbierto(false)}
+              onClick={() => {
+                setAbierto(false);
+                setFaltaTitulo(false);
+              }}
               style={{ flex: 1, border: 0, background: "var(--neutral-bg)", color: "var(--neutral-fg)", fontWeight: 700, fontSize: 13, padding: 11, borderRadius: 12, cursor: "pointer" }}
             >
               Cancelar
@@ -149,7 +169,7 @@ export default function PasoHallazgos({ hallazgos, onAgregar, onEliminar, colabo
               disabled={guardando}
               style={{ flex: 1, border: 0, background: "var(--active-bg)", color: "var(--on-active)", fontWeight: 700, fontSize: 13, padding: 11, borderRadius: 12, cursor: "pointer" }}
             >
-              {guardando ? "Enviando…" : "Enviar hallazgo"}
+              {guardando ? "Guardando…" : "Guardar hallazgo"}
             </button>
           </div>
         </div>

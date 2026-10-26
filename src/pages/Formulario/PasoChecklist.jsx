@@ -1,14 +1,31 @@
-import { useLayoutEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Icon from "../../components/Icon.jsx";
 import { OPCIONES, agruparPorCategoria } from "../../data/checklist.js";
 import { useCelular } from "../../lib/useCelular.js";
 
-export default function PasoChecklist({ items, respuestas, comentarios = {}, onResponder, onComentar, onComentarioListo, onPaginaChange }) {
+// `irA` ({ codigo }): abre la página de ese ítem y lleva el foco a su detalle (lo usa el aviso
+// "Falta el detalle…" del formulario). Es un objeto nuevo en cada pedido, así se repite.
+export default function PasoChecklist({ items, respuestas, comentarios = {}, onResponder, onComentar, onComentarioListo, onPaginaChange, irA }) {
   const celular = useCelular();
   const bloques = useMemo(() => agruparPorCategoria(items), [items]);
   const [bloqueActual, setBloqueActual] = useState(0);
   const indice = Math.min(bloqueActual, bloques.length - 1);
   const bloque = bloques[indice];
+
+  useEffect(() => {
+    if (!irA) return;
+    const destino = bloques.findIndex((b) => b.items.some((i) => i.codigo === irA.codigo));
+    if (destino >= 0) setBloqueActual(destino);
+  }, [irA, bloques]);
+
+  const irAAtendidoRef = useRef(null); // cada pedido se atiende una vez (no al volver a la página)
+  useEffect(() => {
+    if (!irA || irAAtendidoRef.current === irA || !bloque?.items.some((i) => i.codigo === irA.codigo)) return;
+    irAAtendidoRef.current = irA;
+    const campo = document.getElementById(`detalle-${irA.codigo}`);
+    campo?.scrollIntoView({ block: "center", behavior: "smooth" });
+    campo?.focus({ preventScroll: true });
+  }, [irA, bloque]);
 
   // Avisa al wizard si estamos en la última página, para mostrar "Siguiente" recién ahí.
   useLayoutEffect(() => {
@@ -143,6 +160,7 @@ export default function PasoChecklist({ items, respuestas, comentarios = {}, onR
                   required
                   aria-required="true"
                   rows={3}
+                  maxLength={1000}
                   value={comentarios[codigo] || ""}
                   onChange={(e) => onComentar({ codigo, categoria, texto }, e.target.value)}
                   onBlur={onComentarioListo}
