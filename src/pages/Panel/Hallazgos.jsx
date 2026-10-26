@@ -5,14 +5,20 @@ import { rutaFormulario } from "../../data/modulos.js";
 import { cambiarEstadoHallazgo } from "../../lib/panel.js";
 import { formatearFecha } from "../../lib/fechas.js";
 import { Aviso, Chip, boton, campo, tarjeta } from "./ui.jsx";
+import { useConfirmacion } from "../../components/Confirmacion.jsx";
 import { nombreModulo } from "./Resumen.jsx";
 
-function Hallazgo({ h, puedeCerrar, userId, onCambio }) {
+// "Cerrado el 26/10/2026 por Ana Pérez · nota" (también el último cierre de uno reabierto).
+const textoCierre = (h) =>
+  `${formatearFecha(h.cerradoAt)}${h.cerradoPor ? ` por ${h.cerradoPor}` : ""}${h.notaCierre ? ` · ${h.notaCierre}` : ""}`;
+
+function Hallazgo({ h, puedeCerrar, userId, userNombre, onCambio }) {
   const navigate = useNavigate();
   const [cerrando, setCerrando] = useState(false);
   const [nota, setNota] = useState("");
   const [ocupado, setOcupado] = useState(false);
   const [error, setError] = useState(null);
+  const [confirmar, dialogo] = useConfirmacion();
   const sev = SEVERIDADES.find((s) => s.value === h.severidad) || SEVERIDADES[1];
 
   const cambiar = async (estado) => {
@@ -22,12 +28,22 @@ function Hallazgo({ h, puedeCerrar, userId, onCambio }) {
       await cambiarEstadoHallazgo(h, estado, userId, nota);
       setCerrando(false);
       setNota("");
-      onCambio(h.id, estado, estado === "cerrado" ? { cerradoAt: new Date().toISOString(), notaCierre: nota.trim() } : { cerradoAt: null, notaCierre: "" });
+      onCambio(h.id, estado, estado === "cerrado" ? { cerradoAt: new Date().toISOString(), notaCierre: nota.trim(), cerradoPor: userNombre } : {});
     } catch (e) {
       setError(e.message || "No se pudo guardar el cambio");
     } finally {
       setOcupado(false);
     }
+  };
+
+  const reabrir = async () => {
+    const ok = await confirmar({
+      titulo: "¿Reabrir el hallazgo?",
+      mensaje: "Vuelve a quedar abierto. El último cierre (fecha, quién y nota) se conserva hasta que se cierre de nuevo.",
+      aceptar: "Reabrir",
+      peligro: false,
+    });
+    if (ok) cambiar("abierto");
   };
 
   return (
@@ -42,7 +58,8 @@ function Hallazgo({ h, puedeCerrar, userId, onCambio }) {
       <div style={{ fontSize: 12, color: "var(--card-desc, var(--muted))", marginTop: 8, display: "grid", gap: 2 }}>
         <span>{nombreModulo(h.moduloId, h.subId)} · {h.cliente || "Sin cliente"}{h.ubicacion ? ` · ${h.ubicacion}` : ""}</span>
         <span>Inspector: {h.inspector || "—"} · Responsable: {h.responsable || "Sin asignar"} · Vence: {formatearFecha(h.vence)}</span>
-        {h.estado === "cerrado" ? <span>Cerrado el {formatearFecha(h.cerradoAt)}{h.notaCierre ? ` · ${h.notaCierre}` : ""}</span> : null}
+        {h.estado === "cerrado" ? <span>Cerrado el {textoCierre(h)}</span> : null}
+        {h.estado === "abierto" && h.cerradoAt ? <span>Reabierto · último cierre el {textoCierre(h)}</span> : null}
       </div>
 
       {cerrando ? (
@@ -57,16 +74,17 @@ function Hallazgo({ h, puedeCerrar, userId, onCambio }) {
       ) : (
         <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
           {puedeCerrar && h.estado === "abierto" ? <button onClick={() => setCerrando(true)} style={boton(true)}>Cerrar hallazgo</button> : null}
-          {puedeCerrar && h.estado === "cerrado" ? <button onClick={() => cambiar("abierto")} disabled={ocupado} style={boton(false)}>Reabrir</button> : null}
+          {puedeCerrar && h.estado === "cerrado" ? <button onClick={reabrir} disabled={ocupado} style={boton(false)}>Reabrir</button> : null}
           <button onClick={() => navigate(rutaFormulario(h.moduloId, h.subId, h.inspeccionId))} style={boton(false)}>Ver inspección</button>
         </div>
       )}
       {error ? <Aviso>{error}</Aviso> : null}
+      {dialogo}
     </div>
   );
 }
 
-export default function Hallazgos({ hallazgos, puedeCerrar, userId, onCambio }) {
+export default function Hallazgos({ hallazgos, puedeCerrar, userId, userNombre, onCambio }) {
   const [estado, setEstado] = useState("abierto");
   const [severidad, setSeveridad] = useState("");
   const [modulo, setModulo] = useState("");
@@ -106,7 +124,7 @@ export default function Hallazgos({ hallazgos, puedeCerrar, userId, onCambio }) 
         <div style={{ ...tarjeta, color: "var(--card-desc, var(--muted))", fontSize: 13.5, textAlign: "center" }}>No hay hallazgos con estos filtros.</div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(300px,100%),1fr))", gap: 10 }}>
-          {visibles.map((h) => <Hallazgo key={h.id} h={h} puedeCerrar={puedeCerrar} userId={userId} onCambio={onCambio} />)}
+          {visibles.map((h) => <Hallazgo key={h.id} h={h} puedeCerrar={puedeCerrar} userId={userId} userNombre={userNombre} onCambio={onCambio} />)}
         </div>
       )}
     </div>

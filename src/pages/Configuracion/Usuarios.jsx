@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ROLES } from "../../data/permisos.js";
 import { actualizarUsuario, faltaMigracion, listarUsuarios, MENSAJE_MIGRACION } from "../../lib/panel.js";
 import AltaUsuario from "./AltaUsuario.jsx";
+import { useConfirmacion } from "../../components/Confirmacion.jsx";
 import { Aviso, Chip, boton, campo, tarjeta } from "../Panel/ui.jsx";
 
 export default function Usuarios({ userId }) {
@@ -10,6 +11,7 @@ export default function Usuarios({ userId }) {
   const [guardando, setGuardando] = useState(null);
   const [texto, setTexto] = useState("");
   const [agregando, setAgregando] = useState(false);
+  const [confirmar, dialogo] = useConfirmacion();
 
   const cargar = useCallback(
     () =>
@@ -34,6 +36,31 @@ export default function Usuarios({ userId }) {
     } finally {
       setGuardando(null);
     }
+  };
+
+  const nombreRol = (rol) => ROLES.find((r) => r.value === rol)?.label || rol;
+  const quien = (u) => u.nombre || u.email;
+
+  const cambiarRol = async (u, rol) => {
+    const ok = await confirmar({
+      titulo: `¿Cambiar el rol de ${quien(u)}?`,
+      mensaje: `Pasa de ${nombreRol(u.rol)} a ${nombreRol(rol)}.`,
+      aceptar: "Cambiar rol",
+      peligro: false,
+    });
+    if (ok) cambiar(u, { rol });
+  };
+
+  const cambiarBaja = async (u) => {
+    if (u.activo) {
+      const ok = await confirmar({
+        titulo: `¿Dar de baja a ${quien(u)}?`,
+        mensaje: "No va a poder entrar a la app. Sus inspecciones quedan guardadas y se puede reactivar después.",
+        aceptar: "Dar de baja",
+      });
+      if (!ok) return;
+    }
+    cambiar(u, { activo: !u.activo });
   };
 
   if (!usuarios) return error ? <Aviso>{error}</Aviso> : <div style={{ color: "var(--violet-150)", fontSize: 13.5 }}>Cargando usuarios…</div>;
@@ -74,13 +101,13 @@ export default function Usuarios({ userId }) {
                 aria-label={`Rol de ${u.nombre || u.email}`}
                 value={u.rol}
                 disabled={bloqueado || ultimoAdmin}
-                onChange={(e) => cambiar(u, { rol: e.target.value })}
+                onChange={(e) => cambiarRol(u, e.target.value)}
                 style={campo}
               >
                 {ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
               </select>
               <button
-                onClick={() => cambiar(u, { activo: !u.activo })}
+                onClick={() => cambiarBaja(u)}
                 disabled={bloqueado || (u.activo && ultimoAdmin)}
                 style={{ ...campo, cursor: bloqueado ? "default" : "pointer", fontWeight: 700 }}
               >
@@ -90,6 +117,7 @@ export default function Usuarios({ userId }) {
           );
         })}
       </div>
+      {dialogo}
     </div>
   );
 }

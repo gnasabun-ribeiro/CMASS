@@ -1,11 +1,34 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import Icon from "./Icon.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useConfirmacion } from "./Confirmacion.jsx";
+import { sincronizar } from "../lib/sync.js";
+import { contarColaDe } from "../lib/localDb.js";
 
 export default function TabBar() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const { logout, puede, rolListo } = useAuth();
+  const { logout, puede, rolListo, userId } = useAuth();
+  const [confirmar, dialogo] = useConfirmacion();
+
+  // Antes de salir se intenta subir lo pendiente; si algo propio no llegó, se avisa.
+  const salir = async () => {
+    if (navigator.onLine) await sincronizar().catch(() => {});
+    const pendientes = await contarColaDe(userId).catch(() => 0);
+    if (pendientes > 0) {
+      const ok = await confirmar({
+        titulo: "Hay cambios sin enviar",
+        mensaje:
+          pendientes === 1
+            ? "Un cambio todavía no llegó al servidor: queda guardado en este dispositivo y se envía cuando vuelvas a entrar con tu usuario."
+            : `${pendientes} cambios todavía no llegaron al servidor: quedan guardados en este dispositivo y se envían cuando vuelvas a entrar con tu usuario.`,
+        aceptar: "Salir igual",
+      });
+      if (!ok) return;
+    }
+    await logout();
+    navigate("/login");
+  };
 
   const isForm = pathname.includes("/form/");
   const isPendientes = pathname.startsWith("/pendientes");
@@ -25,10 +48,7 @@ export default function TabBar() {
       label: "Salir",
       icon: "logout",
       active: false,
-      onClick: () => {
-        logout();
-        navigate("/login");
-      },
+      onClick: salir,
     },
   ];
 
@@ -89,6 +109,7 @@ export default function TabBar() {
           </span>
         </button>
       ))}
+      {dialogo}
     </nav>
   );
 }

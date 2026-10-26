@@ -16,6 +16,15 @@ function leerCache() {
   }
 }
 
+// Al cerrar sesión: la lista tiene nombres y correos, no queda en el dispositivo.
+export function borrarCacheColaboradores() {
+  try {
+    localStorage.removeItem(CACHE_KEY);
+  } catch {
+    // almacenamiento bloqueado: no había copia
+  }
+}
+
 function guardarCache(lista) {
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify(lista));

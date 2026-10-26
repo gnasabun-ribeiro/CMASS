@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { SEVERIDADES } from "../../data/severidades.js";
 import ColaboradorInput from "../../components/ColaboradorInput.jsx";
+import { useConfirmacion } from "../../components/Confirmacion.jsx";
 import { useCelular } from "../../lib/useCelular.js";
 
 const fieldStyle = {
@@ -19,6 +20,11 @@ export default function PasoHallazgos({ hallazgos, onAgregar, onEliminar, colabo
   const [abierto, setAbierto] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [form, setForm] = useState({ titulo: "", severidad: "Medio", detalle: "", responsable: "", vence: "" });
+  const [confirmar, dialogo] = useConfirmacion();
+
+  const eliminar = async (h) => {
+    if (await confirmar({ titulo: "¿Eliminar el hallazgo?", mensaje: `"${h.titulo}" se borra de la inspección.`, aceptar: "Eliminar" })) onEliminar(h);
+  };
 
   const guardar = async () => {
     if (!form.titulo.trim() || guardando) return;
@@ -70,7 +76,7 @@ export default function PasoHallazgos({ hallazgos, onAgregar, onEliminar, colabo
               Vence: <strong style={{ color: "var(--ink)" }}>{h.vence}</strong>
             </span>
             <button
-              onClick={() => onEliminar(h)}
+              onClick={() => eliminar(h)}
               style={{ marginLeft: "auto", border: 0, background: "var(--danger-bg)", color: "var(--danger-fg)", fontWeight: 700, fontSize: 12, padding: "7px 12px", borderRadius: 10, cursor: "pointer" }}
             >
               Eliminar
@@ -165,6 +171,7 @@ export default function PasoHallazgos({ hallazgos, onAgregar, onEliminar, colabo
           + Agregar hallazgo
         </button>
       )}
+      {dialogo}
     </div>
   );
 }

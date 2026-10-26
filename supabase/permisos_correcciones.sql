@@ -42,7 +42,9 @@ end $$;
 -- hallazgo, y una policy no puede limitar columnas: eso lo hace este trigger. La app nunca
 -- edita los datos de un hallazgo (se borra y se vuelve a cargar), así que nadie más que el
 -- administrador los cambia, tampoco el dueño. Quién lo cerró sale de la sesión, no de lo
--- que mande la app. auth.uid() es null en el SQL Editor y en las Edge Functions: ahí se puede.
+-- que mande la app; al reabrir se conserva (fecha, nota y quién quedan como "último cierre",
+-- actualizado el 2026-10-26). auth.uid() es null en el SQL Editor y en las Edge Functions:
+-- ahí se puede.
 
 create or replace function public.proteger_datos_hallazgo()
 returns trigger
@@ -59,7 +61,7 @@ begin
       using errcode = '42501';
   end if;
   if new.estado is distinct from old.estado or new.cerrado_por is distinct from old.cerrado_por then
-    new.cerrado_por := case when new.estado = 'cerrado' then auth.uid() end;
+    new.cerrado_por := case when new.estado = 'cerrado' then auth.uid() else old.cerrado_por end;
   end if;
   return new;
 end;

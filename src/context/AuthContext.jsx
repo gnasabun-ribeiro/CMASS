@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabaseClient.js";
 import { ROL_POR_DEFECTO, puede } from "../data/permisos.js";
+import { borrarCopiasSincronizadas } from "../lib/localDb.js";
+import { borrarCacheColaboradores } from "../lib/colaboradores.js";
 
 const AuthContext = createContext(null);
 
@@ -13,6 +15,14 @@ const leerRolGuardado = (userId) => {
     return null;
   }
 };
+
+// Lo que se borra del dispositivo al cerrar sesión (ver localDb.js y colaboradores.js).
+async function limpiarDispositivo() {
+  borrarCacheColaboradores();
+  await borrarCopiasSincronizadas().catch(() => {});
+}
+
+const cerrarSesion = () => limpiarDispositivo().then(() => supabase.auth.signOut());
 
 export function nombreFromEmail(email) {
   const local = (email || "tecnico").split("@")[0];
@@ -76,7 +86,7 @@ export function AuthProvider({ children }) {
         }
       }
       // Usuario dado de baja: se cierra la sesión.
-      if (data?.activo === false) supabase.auth.signOut();
+      if (data?.activo === false) cerrarSesion();
     };
     cargar().catch(() => !cancelled && setPerfilListo(true));
     return () => {
@@ -98,7 +108,7 @@ export function AuthProvider({ children }) {
       rolListo: perfilListo || Boolean(profile?.rol),
       puede: (accion) => puede(rol, accion),
       login: (email, password) => supabase.auth.signInWithPassword({ email, password }),
-      logout: () => supabase.auth.signOut(),
+      logout: cerrarSesion,
       resetPassword: (email) => supabase.auth.resetPasswordForEmail(email),
       // Usuario recién dado de alta con contraseña temporal, o que llegó por el enlace de recuperación.
       debeCambiarClave: recuperando || Boolean(session?.user?.user_metadata?.debe_cambiar_clave),

@@ -70,6 +70,29 @@ export async function contarCola() {
   return (await getDb()).count("cola");
 }
 
+// Operaciones en cola hechas por `usuarioId` (las de antes de guardar el autor son del dueño).
+export async function contarColaDe(usuarioId) {
+  const db = await getDb();
+  let n = 0;
+  for (const op of await db.getAll("cola")) {
+    const autor = op.autor ?? (await db.get("inspecciones", op.inspeccionId))?.inspectorId;
+    if (autor === usuarioId) n++;
+  }
+  return n;
+}
+
+// Al cerrar sesión: borra las copias que ya están en el servidor (o que nunca tuvieron nada
+// que subir). Las que tienen cambios en cola quedan, para subirlas cuando su autor vuelva.
+export async function borrarCopiasSincronizadas() {
+  const db = await getDb();
+  const conCambios = new Set((await db.getAll("cola")).map((op) => op.inspeccionId));
+  const tx = db.transaction("inspecciones", "readwrite");
+  for (const id of await tx.store.getAllKeys()) {
+    if (!conCambios.has(id)) await tx.store.delete(id);
+  }
+  await tx.done;
+}
+
 // Borra la operación solo si nadie la reemplazó mientras se enviaba.
 export async function borrarOpSiIgual(op) {
   const db = await getDb();

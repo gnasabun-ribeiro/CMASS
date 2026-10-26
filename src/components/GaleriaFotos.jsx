@@ -1,10 +1,16 @@
 import Icon from "./Icon.jsx";
+import { useConfirmacion } from "./Confirmacion.jsx";
 
 // Fotos generales de la inspección: se sacan o eligen varias a la vez y se muestran como miniaturas.
 export default function GaleriaFotos({ fotos, subiendo = 0, max = 20, aviso = null, onAgregar, onQuitar }) {
   const lleno = fotos.length >= max;
   const ocupado = subiendo > 0;
   const habilitado = !lleno && !ocupado;
+  const [confirmar, dialogo] = useConfirmacion();
+
+  const quitar = async (f, i) => {
+    if (await confirmar({ titulo: `¿Quitar la foto ${i + 1}?`, mensaje: "Se borra de la inspección.", aceptar: "Quitar" })) onQuitar(f);
+  };
 
   return (
     <div style={{ borderRadius: 18, border: "1px solid var(--border)", background: "var(--violet-tint-2)", padding: 14, marginBottom: 14 }}>
@@ -72,7 +78,7 @@ export default function GaleriaFotos({ fotos, subiendo = 0, max = 20, aviso = nu
                 </div>
               )}
               <button
-                onClick={() => onQuitar(f)}
+                onClick={() => quitar(f, i)}
                 aria-label={`Quitar foto ${i + 1}`}
                 style={{
                   position: "absolute",
@@ -100,6 +106,7 @@ export default function GaleriaFotos({ fotos, subiendo = 0, max = 20, aviso = nu
           ))}
         </div>
       ) : null}
+      {dialogo}
     </div>
   );
 }

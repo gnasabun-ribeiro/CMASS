@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { iniciarSync } from "./lib/sync.js";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 import { listarCentrosDeCostos } from "./lib/centrosDeCostos.js";
+import { listarColaboradores } from "./lib/colaboradores.js";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import Login from "./pages/Login.jsx";
 import Home from "./pages/Home.jsx";
@@ -19,7 +20,9 @@ import CambiarClave from "./pages/CambiarClave.jsx";
 function PrecargaOffline() {
   const { isAuthenticated } = useAuth();
   useEffect(() => {
-    if (isAuthenticated && navigator.onLine) listarCentrosDeCostos().catch(() => {});
+    if (!isAuthenticated || !navigator.onLine) return;
+    listarCentrosDeCostos().catch(() => {});
+    listarColaboradores().catch(() => {}); // al salir se borra la copia: se vuelve a bajar al entrar
   }, [isAuthenticated]);
   return null;
 }

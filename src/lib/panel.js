@@ -18,7 +18,7 @@ export async function listarHallazgos() {
       : "inspeccion:inspecciones_obra!inner(id, cliente, ubicacion, estado, inspector:profiles(nombre))";
     const { data, error } = await supabase
       .from(t.hallazgos)
-      .select(`id, titulo, severidad, detalle, responsable, vence, estado, cerrado_at, nota_cierre, created_at, ${cabecera}`)
+      .select(`id, titulo, severidad, detalle, responsable, vence, estado, cerrado_at, nota_cierre, created_at, cerro:profiles!cerrado_por(nombre), ${cabecera}`)
       .eq("inspeccion.estado", "enviado")
       .order("created_at", { ascending: false });
     if (error) throw error;
@@ -32,6 +32,7 @@ export async function listarHallazgos() {
       estado: h.estado,
       cerradoAt: h.cerrado_at,
       notaCierre: h.nota_cierre || "",
+      cerradoPor: h.cerro?.nombre || "",
       creado: h.created_at,
       inspeccionId: h.inspeccion.id,
       moduloId: t.generico ? h.inspeccion.modulo_id : "obra",
@@ -47,12 +48,14 @@ export async function listarHallazgos() {
   return [...obra, ...resto].sort((a, b) => (a.creado < b.creado ? 1 : -1));
 }
 
+// Reabrir solo cambia el estado: fecha, nota y quién lo cerró quedan como "último cierre"
+// (se pisan si se vuelve a cerrar).
 export async function cambiarEstadoHallazgo(h, estado, userId, nota) {
   const t = h.tabla === "generico" ? TABLAS_GENERICAS : TABLAS_OBRA;
   const cambios =
     estado === "cerrado"
       ? { estado, cerrado_at: new Date().toISOString(), cerrado_por: userId, nota_cierre: nota?.trim() || null }
-      : { estado, cerrado_at: null, cerrado_por: null, nota_cierre: null };
+      : { estado };
   const { data, error } = await supabase.from(t.hallazgos).update(cambios).eq("id", h.id).select("id");
   if (error) throw error;
   // RLS no avisa cuando no deja: simplemente no actualiza ninguna fila.

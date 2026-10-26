@@ -27,6 +27,7 @@ import {
 import { useSync } from "../../lib/useSync.js";
 import { useCelular } from "../../lib/useCelular.js";
 import { correoDe, useColaboradores } from "../../lib/colaboradores.js";
+import { useConfirmacion } from "../../components/Confirmacion.jsx";
 
 const GENERALES_INICIALES = { cliente: "", ubicacion: "", grupoAuditado: "", fechaHora: "", tareaObservada: "" };
 
@@ -48,6 +49,7 @@ export default function Formulario() {
   const sync = useSync();
   const colaboradores = useColaboradores();
   const celular = useCelular();
+  const [confirmar, dialogo] = useConfirmacion();
 
   const modulo = findModulo(moduloId);
   const sub = isNested ? findSub(moduloId, subId) : null;
@@ -143,7 +145,7 @@ export default function Formulario() {
     }
     let cancelado = false;
     let promesa;
-    if (idParam) promesa = cargarInspeccion(idParam, moduloId, userId);
+    if (idParam) promesa = cargarInspeccion(idParam, moduloId);
     else promesa = nuevaRef.current ??= nuevaInspeccion(userId, moduloId, isNested ? subId : null);
     promesa
       .then((rec) => {
@@ -292,6 +294,18 @@ export default function Formulario() {
         return;
       }
       setAvisoCierre(null);
+      const yaEnviada = datosInsp.estado === "enviado"; // el administrador corrigiendo una enviada
+      const ok = await confirmar(
+        yaEnviada
+          ? { titulo: "¿Guardar la corrección?", mensaje: "La inspección ya estaba enviada: queda con estos cambios.", aceptar: "Guardar", peligro: false }
+          : {
+              titulo: "¿Cerrar y enviar la inspección?",
+              mensaje: "Después ya no se puede modificar: solo un administrador puede corregirla.",
+              aceptar: "Cerrar y enviar",
+              peligro: false,
+            }
+      );
+      if (!ok) return;
       setEnviando(true);
       try {
         if (!(await volcarGenerales())) return;
@@ -302,6 +316,14 @@ export default function Formulario() {
       } finally {
         setEnviando(false);
       }
+      // Se muestra en la pantalla a la que se vuelve (ver AppShell).
+      const aviso = yaEnviada
+        ? "Corrección guardada."
+        : sync.online
+          ? "Inspección enviada."
+          : "Inspección cerrada: se envía sola cuando vuelva la conexión.";
+      navigate(backTo, { state: { aviso } });
+      return;
     }
     navigate(backTo);
   };
@@ -600,6 +622,7 @@ export default function Formulario() {
           ) : null}
         </div>
       </div>
+      {dialogo}
     </AppShell>
   );
 }

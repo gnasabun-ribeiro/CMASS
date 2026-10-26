@@ -50,17 +50,25 @@ export async function nuevaInspeccion(inspectorId, moduloId, subId = null) {
   return rec;
 }
 
-// Devuelve la copia local; si no existe (ej. otro dispositivo) la baja del servidor.
-// Una inspección de otra persona que quedó guardada acá solo para mirarla puede estar vieja:
-// con conexión y sin cambios propios en cola se vuelve a bajar.
-export async function cargarInspeccion(id, moduloId, usuarioId) {
+// Devuelve la inspección para el formulario. La copia del dispositivo vale si tiene cambios
+// sin enviar, si nunca llegó al servidor o si no hay conexión; si no, se vuelve a bajar (otro
+// dispositivo o el administrador pueden haberla cambiado). Si la bajada falla, queda la local.
+export async function cargarInspeccion(id, moduloId) {
   const local = await obtenerInspeccion(id);
   if (local) {
-    const ajena = Boolean(usuarioId && local.inspectorId && local.inspectorId !== usuarioId);
-    if (!ajena || !navigator.onLine) return local;
+    if (!navigator.onLine || !local.enServidor) return local;
     const conCambios = (await listarCola()).some((op) => op.inspeccionId === id);
     if (conCambios) return local;
   }
+  try {
+    return await bajarInspeccion(id, moduloId);
+  } catch (err) {
+    if (local) return local;
+    throw err;
+  }
+}
+
+async function bajarInspeccion(id, moduloId) {
   const t = tablasDe(moduloId);
   const [d, firmas] = await Promise.all([cargarInspeccionRemota(t, id), listarFirmasObra(t, id)]);
   const rec = {

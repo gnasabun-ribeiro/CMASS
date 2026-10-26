@@ -10,7 +10,7 @@ import { Aviso, boton } from "./ui.jsx";
 
 export default function Panel() {
   const navigate = useNavigate();
-  const { puede, rolListo, userId } = useAuth();
+  const { puede, rolListo, userId, nombre } = useAuth();
   const [tab, setTab] = useState("resumen");
   const [hallazgos, setHallazgos] = useState(null);
   const [inspecciones, setInspecciones] = useState([]);
@@ -72,7 +72,7 @@ export default function Panel() {
       {error ? <Aviso>{error}</Aviso> : null}
       {hallazgos === null ? <div style={{ color: "var(--violet-150)", fontSize: 13.5 }}>Cargando…</div> : null}
       {tab === "resumen" && hallazgos ? <Resumen hallazgos={hallazgos} inspecciones={inspecciones} /> : null}
-      {tab === "hallazgos" && hallazgos ? <Hallazgos hallazgos={hallazgos} puedeCerrar={puede("cerrarHallazgos")} userId={userId} onCambio={alCambiar} /> : null}
+      {tab === "hallazgos" && hallazgos ? <Hallazgos hallazgos={hallazgos} puedeCerrar={puede("cerrarHallazgos")} userId={userId} userNombre={nombre} onCambio={alCambiar} /> : null}
     </AppShell>
   );
 }

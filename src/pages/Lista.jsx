@@ -34,7 +34,7 @@ function aRegistro(r) {
   };
 }
 
-// Copia local (guardada en el dispositivo): puede estar más nueva que la del servidor.
+// Copia local (guardada en el dispositivo): con cambios sin enviar, o sin conexión.
 function localARegistro(rec, pendiente) {
   const g = rec.generales;
   const f = new Date(g.fechaHora || rec.actualizadoEn || Date.now());
@@ -98,22 +98,26 @@ export default function Lista() {
   const [hasta, setHasta] = useState("");
 
   // Junta lo del servidor con lo guardado en el dispositivo (sin conexión solo se ve lo local).
-  // Si una inspección está en los dos lados, gana la copia local, que es la más nueva.
+  // La copia local gana solo si tiene cambios sin enviar, si nunca llegó al servidor o si no se
+  // pudo consultar su tabla; si no, vale la del servidor (otro dispositivo o el administrador
+  // pueden haberla cambiado, o borrado).
   useEffect(() => {
     if (!hayLista) return;
     let cancelado = false;
     (async () => {
-      const consultas = [];
-      if (!moduloId || moduloId === "obra") consultas.push(listarInspecciones(TABLAS_OBRA));
-      if (!moduloId || moduloId !== "obra") consultas.push(listarInspecciones(TABLAS_GENERICAS, { moduloId, subId: sub?.id }));
+      const consultas = []; // [esObra, promesa]
+      if (!moduloId || moduloId === "obra") consultas.push([true, listarInspecciones(TABLAS_OBRA)]);
+      if (!moduloId || moduloId !== "obra") consultas.push([false, listarInspecciones(TABLAS_GENERICAS, { moduloId, subId: sub?.id })]);
       const [partes, locales, cola] = await Promise.all([
-        Promise.all(consultas.map((c) => c.catch(() => null))),
+        Promise.all(consultas.map(([, c]) => c.catch(() => null))),
         listarInspeccionesLocales().catch(() => []),
         listarCola().catch(() => []),
       ]);
       if (cancelado) return;
       const sinConexion = partes.every((p) => p === null);
       const remotos = partes.filter(Boolean).flat();
+      const respondio = { obra: false, generico: false };
+      consultas.forEach(([esObra], i) => (respondio[esObra ? "obra" : "generico"] = partes[i] !== null));
       const pendientes = new Set(cola.map((op) => op.inspeccionId));
       const porId = new Map();
       // Descarta borradores vacíos del servidor (se crearon y nunca se completaron).
@@ -122,6 +126,7 @@ export default function Lista() {
         .filter((rec) => rec.inspectorId === userId && tieneContenido(rec))
         .filter((rec) => !moduloId || (rec.moduloId ?? "obra") === moduloId)
         .filter((rec) => !sub || rec.subId === sub.id)
+        .filter((rec) => pendientes.has(rec.id) || !rec.enServidor || !respondio[(rec.moduloId ?? "obra") === "obra" ? "obra" : "generico"])
         .forEach((rec) => porId.set(rec.id, localARegistro(rec, pendientes.has(rec.id))));
       const lista = [...porId.values()].sort((x, y) => y.fecha - x.fecha);
       setTodos(lista);
