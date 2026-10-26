@@ -44,7 +44,6 @@
   --accent-600: #d97706;
   --accent-tint: #fff8e8;
 
-  --card-decor: rgba(112, 28, 147, 0.09);
   --shadow-logo: 0 16px 34px -16px rgba(76, 29, 149, 0.75);
 
   --cta-gradient: var(--brand-gradient);
@@ -102,8 +101,6 @@
   --shadow-float: 0 14px 30px -18px rgba(28, 27, 25, 0.5);
   --shadow-cta: 0 16px 30px -12px rgba(244, 207, 71, 0.5);
   --shadow-logo: 0 16px 34px -16px rgba(28, 27, 25, 0.55);
-
-  --card-decor: rgba(244, 207, 71, 0.12);
 
   --cta-gradient: linear-gradient(160deg, #f7db78, #f4cf47);
   --on-cta: #1c1b19;

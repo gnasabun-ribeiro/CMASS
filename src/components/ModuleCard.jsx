@@ -18,8 +18,6 @@ const MEDIDAS = {
     gap: 14,
     radius: 26,
     minHeight: 226,
-    marca: 150,
-    marcaOffset: -20,
     icono: 64,
     iconoRadius: 20,
     iconoTamano: 32,
@@ -32,8 +30,6 @@ const MEDIDAS = {
     gap: 12,
     radius: 22,
     minHeight: 0,
-    marca: 118,
-    marcaOffset: -16,
     icono: "clamp(46px, 14.5vw, 56px)",
     iconoRadius: 16,
     iconoTamano: "50%",
@@ -92,20 +88,6 @@ export default function ModuleCard({ modulo, index = 0, onOpen, onRegistros }) {
         animationDelay: `${index * 0.045}s`,
       }}
     >
-      {/* Adorno: el ícono del módulo en grande y tenue en la esquina (antes era un círculo). */}
-      <span
-        style={{
-          position: "absolute",
-          right: m.marcaOffset,
-          top: m.marcaOffset,
-          lineHeight: 0,
-          color: "var(--card-decor)",
-          transform: "rotate(-12deg)",
-          pointerEvents: "none",
-        }}
-      >
-        <Icon name={modulo.icon} size={m.marca} strokeWidth={1.4} />
-      </span>
       {ripple ? (
         <span
           key={ripple.key}
