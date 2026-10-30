@@ -1,6 +1,12 @@
 import { useEffect, useMemo } from "react";
 import Icon from "../../components/Icon.jsx";
 import logoRibeiro from "../../assets/logo-ribeiro.png";
+import pictoBotiquin from "../../assets/top/botiquin.png";
+import pictoCalificador from "../../assets/top/calificador.png";
+import pictoCasco from "../../assets/top/casco.png";
+import pictoCuaderno from "../../assets/top/cuaderno.png";
+import pictoHerramientas from "../../assets/top/herramientas.png";
+import pictoPersonas from "../../assets/top/personas.png";
 import { ICONOS_TOP, MARCAS_TOP, agruparPorCategoria, marcaTop, respuestaTop, valorTop } from "../../data/checklist.js";
 import { useCelular } from "../../lib/useCelular.js";
 import { SelectorCliente } from "./PasoGenerales.jsx";
@@ -16,6 +22,23 @@ const LINEA_FINA = `1px solid ${TINTA}`;
 const RENGLON = 30; // alto de cada renglón de los textos largos
 
 const tarjetaStyle = { border: LINEA, borderRadius: 10, overflow: "hidden", background: "#fff", color: TINTA };
+
+// Pictograma de cada categoría (PNG negros con fondo transparente, 160 px, elegidos por la
+// usuaria). La que no tiene imagen usa el ícono de Icon.jsx (`icono` en CATEGORIAS_TOP).
+const PICTOGRAMAS = {
+  "Comportamiento de las personas": pictoPersonas,
+  "Elementos de Protección Personal": pictoCasco,
+  "Procedimientos de Trabajo": pictoCuaderno,
+  Herramientas: pictoHerramientas,
+  "Infraestructura y Equipamiento": pictoBotiquin,
+  "Equipos Viales, Pesados y Livianos": pictoCalificador,
+};
+
+function Pictograma({ categoria, size, strokeWidth }) {
+  const src = PICTOGRAMAS[categoria];
+  if (!src) return <Icon name={ICONOS_TOP[categoria]} size={size} strokeWidth={strokeWidth} />;
+  return <img src={src} alt="" width={size} height={size} style={{ display: "block" }} />;
+}
 
 // Campo sobre una línea, como en papel.
 const campoLinea = {
@@ -242,7 +265,7 @@ export function TopObservacion({ items, respuestas, comentarios = {}, onResponde
         <section key={b.categoria} aria-label={b.categoria} style={{ display: "flex", borderTop: bi ? LINEA : 0 }}>
           {!celular ? (
             <div aria-hidden="true" style={{ flex: "0 0 86px", display: "flex", alignItems: "center", justifyContent: "center", padding: 8 }}>
-              <Icon name={ICONOS_TOP[b.categoria]} size={50} strokeWidth={1.4} />
+              <Pictograma categoria={b.categoria} size={50} strokeWidth={1.4} />
             </div>
           ) : null}
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -250,7 +273,7 @@ export function TopObservacion({ items, respuestas, comentarios = {}, onResponde
               <h3 style={{ margin: 0, display: "flex", alignItems: "center", gap: 8, fontSize: celular ? 13.5 : 14.5, fontWeight: 800, lineHeight: 1.25, padding: "10px 10px 6px" }}>
                 {celular ? (
                   <span aria-hidden="true" style={{ display: "inline-flex", flex: "0 0 auto" }}>
-                    <Icon name={ICONOS_TOP[b.categoria]} size={26} strokeWidth={1.6} />
+                    <Pictograma categoria={b.categoria} size={26} strokeWidth={1.6} />
                   </span>
                 ) : null}
                 {bi + 1}) {b.categoria}

@@ -434,8 +434,8 @@ export const CHECKLIST_AMBIENTE = buildChecklist(CATEGORIAS_AMBIENTE);
 
 // Tarjeta de Observación Preventiva (TOP), RG 28-01 Rev. 0 — frente de la tarjeta impresa.
 // Cada categoría termina en "Otros", que se describe con texto libre (va en el comentario de
-// la respuesta). `icono` es el de Icon.jsx que la acompaña en pantalla, como el pictograma
-// de la tarjeta. En "Comportamiento de las personas" los ítems son desvíos: ahí marcar SI es
+// la respuesta). En pantalla, cada categoría lleva un pictograma como en la tarjeta (PNG en
+// PICTOGRAMAS de PasoTop.jsx); `icono` es el de Icon.jsx que se usa si no tiene. En "Comportamiento de las personas" los ítems son desvíos: ahí marcar SI es
 // lo inseguro (`siEsDesvio`, ver valorTop/marcaTop).
 const CATEGORIAS_TOP = [
   {
