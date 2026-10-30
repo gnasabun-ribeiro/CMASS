@@ -12,13 +12,7 @@ export default function Modulo() {
 
   return (
     <AppShell title={modulo.title} subtitle={modulo.desc} onBack={() => navigate(rutaVolver(modulo.id))}>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))",
-          gap: 12,
-        }}
-      >
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(260px,100%),1fr))", gap: "var(--space-3)" }}>
         {modulo.subs.map((sub, i) => (
           <SubItemCard
             key={sub.id}

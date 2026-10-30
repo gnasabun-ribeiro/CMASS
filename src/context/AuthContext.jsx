@@ -3,6 +3,8 @@ import { supabase } from "../lib/supabaseClient.js";
 import { ROL_POR_DEFECTO, puede } from "../data/permisos.js";
 import { borrarCopiasSincronizadas } from "../lib/localDb.js";
 import { borrarCacheColaboradores } from "../lib/colaboradores.js";
+import { borrarCopiaNotificaciones } from "../lib/notificaciones.js";
+import { desactivarAvisos } from "../lib/push.js";
 
 const AuthContext = createContext(null);
 
@@ -16,9 +18,13 @@ const leerRolGuardado = (userId) => {
   }
 };
 
-// Lo que se borra del dispositivo al cerrar sesión (ver localDb.js y colaboradores.js).
+// Lo que se borra del dispositivo al cerrar sesión (ver localDb.js, colaboradores.js,
+// notificaciones.js y push.js): si entra otra persona, no le llegan los avisos de la anterior.
 async function limpiarDispositivo() {
   borrarCacheColaboradores();
+  const { data } = await supabase.auth.getSession();
+  if (data.session?.user?.id) borrarCopiaNotificaciones(data.session.user.id);
+  await desactivarAvisos().catch(() => {});
   await borrarCopiasSincronizadas().catch(() => {});
 }
 

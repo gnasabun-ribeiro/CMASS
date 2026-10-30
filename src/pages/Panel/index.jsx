@@ -1,12 +1,35 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AppShell from "../../components/AppShell.jsx";
+import Button from "../../components/ui/Button.jsx";
+import { Skeleton } from "../../components/ui/EmptyState.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { faltaMigracion, listarHallazgos, listarInspeccionesEnviadas, MENSAJE_MIGRACION } from "../../lib/panel.js";
 import { hoyLocal } from "../../lib/fechas.js";
 import Hallazgos from "./Hallazgos.jsx";
 import Resumen from "./Resumen.jsx";
-import { Aviso, boton } from "./ui.jsx";
+import { Aviso, tarjeta } from "./ui.jsx";
+
+// Lugar reservado mientras carga (mismas proporciones que el Resumen: sin saltos al llegar).
+function Cargando() {
+  return (
+    <div aria-busy="true" aria-label="Cargando el panel" style={{ display: "grid", gap: "var(--space-3)" }}>
+      <div style={{ display: "flex", gap: "var(--space-3)", flexWrap: "wrap" }}>
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} style={{ ...tarjeta, flex: "1 1 150px", display: "grid", gap: "var(--space-2)" }}>
+            <Skeleton width={56} height={36} />
+            <Skeleton width="70%" height={12} />
+          </div>
+        ))}
+      </div>
+      <div style={{ ...tarjeta, display: "grid", gap: "var(--space-3)" }}>
+        {[0, 1, 2].map((i) => (
+          <Skeleton key={i} height={14} />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function Panel() {
   const navigate = useNavigate();
@@ -15,9 +38,11 @@ export default function Panel() {
   const [hallazgos, setHallazgos] = useState(null);
   const [inspecciones, setInspecciones] = useState([]);
   const [error, setError] = useState(null);
+  const [actualizando, setActualizando] = useState(false);
 
   const cargar = useCallback(() => {
     setError(null);
+    setActualizando(true);
     Promise.all([listarHallazgos(), listarInspeccionesEnviadas()])
       .then(([h, i]) => {
         setHallazgos(h);
@@ -26,7 +51,8 @@ export default function Panel() {
       .catch((e) => {
         setHallazgos([]);
         setError(faltaMigracion(e) ? MENSAJE_MIGRACION : navigator.onLine ? e.message : "El panel necesita conexión.");
-      });
+      })
+      .finally(() => setActualizando(false));
   }, []);
 
   const autorizado = rolListo && puede("verPanel");
@@ -57,22 +83,48 @@ export default function Panel() {
     { id: "hallazgos", label: "Hallazgos" },
   ];
 
-  // Los usuarios se administran desde la pestaña Configuración de la barra inferior.
+  // Los usuarios se administran desde la pestaña Configuración de la navegación.
   return (
     <AppShell title="Panel de seguimiento" subtitle="Hallazgos e inspecciones" onBack={() => navigate("/")}>
-      <div role="tablist" style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
-        {pestanas.map((p) => (
-          <button key={p.id} role="tab" aria-selected={tab === p.id} onClick={() => setTab(p.id)} style={boton(tab === p.id)}>
-            {p.label}
-          </button>
-        ))}
-        <button onClick={cargar} style={{ ...boton(false), marginLeft: "auto" }}>Actualizar</button>
+      <div className="sobre-fondo" style={{ display: "flex", gap: "var(--space-2)", marginBottom: "var(--space-4)", alignItems: "center" }}>
+        <div role="tablist" aria-label="Secciones del panel" className="fila-pills" style={{ flex: 1 }}>
+          {pestanas.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              role="tab"
+              id={`tab-${p.id}`}
+              aria-controls={`panel-${p.id}`}
+              aria-selected={tab === p.id}
+              tabIndex={tab === p.id ? 0 : -1}
+              className="pill"
+              onClick={() => setTab(p.id)}
+              onKeyDown={(e) => {
+                // Flechas entre pestañas (patrón ARIA tabs).
+                if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+                const i = pestanas.findIndex((x) => x.id === tab);
+                const otra = pestanas[(i + (e.key === "ArrowRight" ? 1 : pestanas.length - 1)) % pestanas.length];
+                setTab(otra.id);
+                document.getElementById(`tab-${otra.id}`)?.focus();
+              }}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+        <Button variant="surface" size="sm" icon="refresh" loading={actualizando && hallazgos !== null} onClick={cargar}>
+          Actualizar
+        </Button>
       </div>
 
       {error ? <Aviso>{error}</Aviso> : null}
-      {hallazgos === null ? <div style={{ color: "var(--violet-150)", fontSize: 13.5 }}>Cargando…</div> : null}
-      {tab === "resumen" && hallazgos ? <Resumen hallazgos={hallazgos} inspecciones={inspecciones} /> : null}
-      {tab === "hallazgos" && hallazgos ? <Hallazgos hallazgos={hallazgos} puedeCerrar={puede("cerrarHallazgos")} userId={userId} userNombre={nombre} onCambio={alCambiar} /> : null}
+      <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
+        {hallazgos === null ? <Cargando /> : null}
+        {tab === "resumen" && hallazgos ? <Resumen hallazgos={hallazgos} inspecciones={inspecciones} /> : null}
+        {tab === "hallazgos" && hallazgos ? (
+          <Hallazgos hallazgos={hallazgos} puedeCerrar={puede("cerrarHallazgos")} userId={userId} userNombre={nombre} onCambio={alCambiar} />
+        ) : null}
+      </div>
     </AppShell>
   );
 }

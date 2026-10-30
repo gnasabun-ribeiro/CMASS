@@ -1,267 +1,23 @@
-:root {
-  --violet-900: #4e0f6b;
-  --violet-800: #701c93;
-  --violet-700: #7e28a3;
-  --violet-600: #8b2fae;
-  --violet-500: #9a3fbf;
-  --violet-400: #b45fd8;
-  --violet-300: #d9a8ee;
-  --violet-150: #f1ddf9;
-  --violet-100: #f4e2fa;
-  --violet-75: #f8ecfc;
-  --violet-50: #f7e9fc;
-  --violet-25: #fbf2fd;
-  --violet-tint-2: #fcf6fd;
-
-  --border: #e7d2f0;
-  --ink: #1b1626;
-  --muted: #665e7a;
-  --muted-2: #6e6880;
-  --muted-3: #4b4459;
-  --muted-4: #635b72;
-
-  --success-bg: #e3f6ea;
-  --success-fg: #15803d;
-  --warn-bg: #fff2dc;
-  --warn-fg: #8a3d08;
-  --neutral-bg: #eeeaf4;
-  --neutral-fg: #4e4762;
-  --danger-bg: #fce7f1;
-  --danger-fg: #be185d;
-  --danger-border: #f5c3d9;
-  --warn-border: #ffdfa8;
-  --neutral-border: #e7d2f0;
-  --success-border: #a9e2bb;
-
-  --shadow-card: 0 20px 42px -16px rgba(36, 18, 70, 0.58);
-  --shadow-card-hover: 0 26px 44px -22px rgba(36, 18, 70, 0.55);
-  --shadow-panel: 0 12px 26px -22px rgba(36, 18, 70, 0.5);
-  --shadow-float: 0 14px 30px -18px rgba(36, 18, 70, 0.6);
-  --shadow-cta: 0 16px 30px -16px rgba(91, 33, 182, 0.85);
-
-  --accent-400: #fbbf24;
-  --accent-500: #f59e0b;
-  --accent-600: #d97706;
-  --accent-tint: #fff8e8;
-
-  --shadow-logo: 0 16px 34px -16px rgba(76, 29, 149, 0.75);
-
-  --cta-gradient: var(--brand-gradient);
-  --on-cta: #fff;
-  --active-bg: var(--violet-700);
-  --on-active: #fff;
-  /* Borde del estado activo en pills que van sobre el fondo de la app: el violeta activo casi
-     no se distinguía del degradé violeta. En Ribeiro el amarillo ya contrasta solo. */
-  --active-ring: 0 0 0 2px #fff;
-  --pulse-rgb: 167, 139, 250;
-
-  --card-bg: #fff;
-  --card-border: transparent;
-  --card-title: var(--ink);
-  --card-desc: var(--muted-4);
-  --card-accent-bg: var(--violet-50);
-  --card-accent: var(--violet-800);
-  /* Adorno de fondo de ModuleCard (uno por tema): resplandor en Default, puntos en Ribeiro
-     (`--card-decor-linea`), anillos en Turquesa (`--card-decor` + `--card-decor-linea`). */
-  --card-decor-glow: rgba(154, 63, 191, 0.38);
-
-  --app-gradient: linear-gradient(
-    165deg,
-    #8b2fae 0%,
-    #701c93 26%,
-    #5c1678 58%,
-    #3d0c56 100%
-  );
-  --brand-gradient: linear-gradient(160deg, var(--violet-600), var(--violet-900));
-
-  color-scheme: light;
-}
-
-/* Tema Ribeiro: mismo layout, paleta de src/styles/variables.css del portal Ribeiro real
-   (C:\Users\Geraldine Nasabun\SICER\ribeiro-app) — negro cálido + amarillo #F4CF47. */
-[data-tema="ribeiro"] {
-  --violet-900: #1c1b19;
-  --violet-800: #a06b00;
-  --violet-700: #b37f00;
-  --violet-600: #34322e;
-  --violet-500: #6b5a1a;
-  --violet-400: #f4cf47;
-  --violet-300: #f7db78;
-  --violet-150: #f8e9b0;
-  --violet-100: #faedbd;
-  --violet-75: #fbf1c9;
-  --violet-50: #fdf5da;
-  --violet-25: #fef9e8;
-  --violet-tint-2: #fffcf2;
-
-  --border: #e6e0d2;
-  --ink: #221f1b;
-  --muted: #635d55;
-  --muted-2: #6b6459;
-  --muted-3: #3a362f;
-  --muted-4: #524c43;
-
-  --shadow-card: 0 20px 42px -16px rgba(28, 27, 25, 0.5);
-  --shadow-card-hover: 0 26px 44px -22px rgba(28, 27, 25, 0.48);
-  --shadow-panel: 0 12px 26px -22px rgba(28, 27, 25, 0.42);
-  --shadow-float: 0 14px 30px -18px rgba(28, 27, 25, 0.5);
-  --shadow-cta: 0 16px 30px -12px rgba(244, 207, 71, 0.5);
-  --shadow-logo: 0 16px 34px -16px rgba(28, 27, 25, 0.55);
-
-  --cta-gradient: linear-gradient(160deg, #f7db78, #f4cf47);
-  --on-cta: #1c1b19;
-  --active-bg: #f4cf47;
-  --on-active: #1c1b19;
-  --active-ring: none;
-  --pulse-rgb: 244, 207, 71;
-
-  --card-bg: #201e1a;
-  --card-border: #322f28;
-  --card-title: #fff;
-  --card-desc: #a39c90;
-  --card-accent-bg: rgba(244, 207, 71, 0.12);
-  --card-accent: #f4cf47;
-  --card-decor-linea: rgba(244, 207, 71, 0.2);
-
-  --app-gradient: linear-gradient(
-    165deg,
-    #34322e 0%,
-    #2a2824 26%,
-    #201f1c 58%,
-    #121110 100%
-  );
-  --brand-gradient: linear-gradient(160deg, var(--violet-600), var(--violet-900));
-}
-
-[data-tema="ribeiro"] body {
-  background: #121110;
-}
-
-/* Tema Turquesa: el turquesa (#45c4c0) de los íconos animados de Flaticon (Magnific, "Basic Accent
-   Outline"). Cards blancas como Default; los tonos oscuros (texto, botones con texto blanco) son
-   turquesas más profundos para que lleguen al contraste AA. */
-[data-tema="turquesa"] {
-  --violet-900: #0b3d3f;
-  --violet-800: #0e6b6b;
-  --violet-700: #11807d;
-  --violet-600: #14918d;
-  --violet-500: #1fa8a3;
-  --violet-400: #45c4c0;
-  --violet-300: #93dfdc;
-  --violet-150: #d3f3f1;
-  --violet-100: #dcf5f3;
-  --violet-75: #e3f7f6;
-  --violet-50: #e9f9f8;
-  --violet-25: #f2fcfb;
-  --violet-tint-2: #f7fdfd;
-
-  --border: #cdeceb;
-  --ink: #142424;
-  --muted: #566b6b;
-  --muted-2: #5f7272;
-  --muted-3: #3f5150;
-  --muted-4: #546766;
-
-  --shadow-card: 0 20px 42px -16px rgba(6, 45, 46, 0.58);
-  --shadow-card-hover: 0 26px 44px -22px rgba(6, 45, 46, 0.55);
-  --shadow-panel: 0 12px 26px -22px rgba(6, 45, 46, 0.5);
-  --shadow-float: 0 14px 30px -18px rgba(6, 45, 46, 0.6);
-  --shadow-cta: 0 16px 30px -16px rgba(14, 107, 107, 0.85);
-  --shadow-logo: 0 16px 34px -16px rgba(6, 45, 46, 0.75);
-
-  --pulse-rgb: 69, 196, 192;
-
-  --card-decor: rgba(20, 145, 141, 0.1);
-  --card-decor-linea: rgba(20, 145, 141, 0.22);
-
-  /* Arranca en 700 (no en 600 como Default): con el turquesa más claro el texto blanco del
-     encabezado y de los CTA no llegaba al contraste mínimo. */
-  --app-gradient: linear-gradient(
-    165deg,
-    #0f7c79 0%,
-    #0c6664 26%,
-    #0a5150 58%,
-    #063536 100%
-  );
-  --brand-gradient: linear-gradient(160deg, var(--violet-700), var(--violet-900));
-}
-
-[data-tema="turquesa"] body {
-  background: #0a5150;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-html,
-body,
-#root {
-  min-height: 100%;
-}
-
-body {
-  margin: 0;
-  background: #5c1678;
-  font-family: "IBM Plex Sans", system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  color: var(--ink);
-}
-
-a {
-  color: var(--violet-800);
-  text-decoration: none;
-}
-
-button,
-input,
-select,
-textarea {
-  font-family: inherit;
-}
-
-button {
-  font-family: inherit;
-  transition: transform 0.2s cubic-bezier(0.34, 1.45, 0.64, 1), box-shadow 0.2s ease-out;
-}
-
-/* Sin el recuadro gris que pinta Android al tocar: cada botón ya tiene su propio estado presionado. */
-button,
-a,
-label,
-[role="button"] {
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* Los efectos de :hover van solo donde hay mouse: en el celular quedan "pegados" después de tocar
-   (el botón queda levantado hasta tocar otra cosa). */
-@media (hover: hover) {
-  button:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 10px 20px -10px rgba(36, 18, 70, 0.4) !important;
-  }
-}
-
-button:active {
-  transition-duration: 0.08s !important;
-  transform: scale(0.96) !important;
-  box-shadow: 0 3px 8px -4px rgba(36, 18, 70, 0.3) !important;
-}
-
-.heading {
-  font-family: "Plus Jakarta Sans", sans-serif;
-}
+/* Tokens (paleta por tema, modo oscuro, escalas), base y componentes. Lo de este archivo
+   es propio de las cards de Inicio / Inspecciones y de las animaciones de pantalla. */
+@import "./styles/tokens.css";
+@import "./styles/base.css";
+@import "./styles/componentes.css";
 
 .card-tap,
 .card-lift {
   transition: transform 0.3s cubic-bezier(0.34, 1.3, 0.64, 1), box-shadow 0.3s ease-out,
     border-color 0.15s ease-out, background-color 0.15s ease-out;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 @media (hover: hover) {
   .card-tap:hover {
     transform: translateY(-6px) scale(1.012) !important;
-    box-shadow: 0 30px 50px -22px rgba(36, 18, 70, 0.6) !important;
+    box-shadow: var(--shadow-card-hover) !important;
   }
 }
 
@@ -271,13 +27,19 @@ button:active {
   transform: scale(0.97) !important;
   border-color: var(--accent-600) !important;
   background: var(--accent-tint) !important;
-  box-shadow: 0 0 0 6px rgba(217, 119, 6, 0.25), 0 20px 40px -18px rgba(36, 18, 70, 0.55) !important;
+  box-shadow: 0 0 0 6px rgba(217, 119, 6, 0.25), var(--shadow-3) !important;
+}
+
+/* En oscuro la card no se aclara al tocarla: queda el borde ámbar. */
+[data-esquema="oscuro"] .card-tap:active,
+[data-esquema="oscuro"] .card-tap.is-pressed {
+  background: var(--card-bg) !important;
 }
 
 @media (hover: hover) {
   .card-lift:hover {
     transform: translateY(-5px) scale(1.01) !important;
-    box-shadow: 0 28px 46px -24px rgba(36, 18, 70, 0.55) !important;
+    box-shadow: var(--shadow-card-hover) !important;
   }
 
   /* Ribeiro: la card destacada al pasar el mouse, como en el portal real (círculo e ícono en amarillo sólido). */
@@ -386,6 +148,20 @@ button:active {
   filter: url(#icono-ribeiro);
 }
 
+/* Modo oscuro (cards oscuras también en Default y Turquesa): mismo truco que Ribeiro. */
+[data-esquema="oscuro"] .icono-animado {
+  mix-blend-mode: screen;
+  filter: url(#icono-default-oscuro);
+}
+
+[data-tema="turquesa"][data-esquema="oscuro"] .icono-animado {
+  filter: url(#icono-turquesa-oscuro);
+}
+
+[data-tema="ribeiro"][data-esquema="oscuro"] .icono-animado {
+  filter: url(#icono-ribeiro);
+}
+
 /* Card destacada (recuadro amarillo sólido): líneas oscuras. */
 @media (hover: hover) {
   [data-tema="ribeiro"] .card-tap:hover .icono-animado {
@@ -400,7 +176,7 @@ button:active {
 }
 
 /* En el celular las cards son más bajas: los anillos un poco más chicos. */
-@media (max-width: 480px) {
+@media (max-width: 639.98px) {
   [data-tema="turquesa"] .card-decor::before {
     right: -105px;
     top: -105px;
@@ -440,15 +216,6 @@ button:active {
 
 .icon-pulse {
   animation: iconPulse 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-::-webkit-scrollbar {
-  width: 9px;
-  height: 9px;
-}
-::-webkit-scrollbar-thumb {
-  background: var(--violet-300);
-  border-radius: 8px;
 }
 
 @keyframes enterFade {
@@ -491,9 +258,15 @@ button:active {
   animation: pop 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
-@media print {
-  .no-print {
-    display: none !important;
+/* Movimiento reducido: las pantallas y cards entran solo con un fundido. */
+@media (prefers-reduced-motion: reduce) {
+  .pop-in {
+    animation-name: enterFade;
+  }
+
+  .ripple,
+  .icon-pulse {
+    animation: none;
   }
 }
 

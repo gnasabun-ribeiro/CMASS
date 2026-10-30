@@ -2,16 +2,19 @@ import { useEffect, useMemo, useState } from "react";
 import { ROLES } from "../../data/permisos.js";
 import { buscarColaboradores } from "../../lib/colaboradores.js";
 import { crearUsuario, listarColaboradoresParaAlta } from "../../lib/usuarios.js";
-import { Aviso, boton, campo, tarjeta } from "../Panel/ui.jsx";
+import { Aviso, tarjeta, textoTarjeta } from "../Panel/ui.jsx";
+import Icon from "../../components/Icon.jsx";
+import Button from "../../components/ui/Button.jsx";
+import { Skeleton } from "../../components/ui/EmptyState.jsx";
+import { Field, Input } from "../../components/ui/Field.jsx";
+import { Select } from "../../components/ui/Select.jsx";
 
 const DOMINIO = "@ribeirosrl.com.ar";
 const MAX_SUGERENCIAS = 8;
 const texto = (s) => String(s || "").toLowerCase();
 const limpiar = (s) => String(s || "").trim().replace(/\s+/g, " ");
 
-const etiqueta = { display: "block", fontSize: 12.5, fontWeight: 600, marginBottom: 5 };
-const nota = { fontSize: 12.5, color: "var(--card-desc, var(--muted))" };
-const enlace = { border: 0, background: "transparent", padding: 0, color: "inherit", fontSize: 12.5, fontWeight: 700, textDecoration: "underline", cursor: "pointer" };
+const nota = textoTarjeta;
 
 // La persona se busca en la lista de colaboradores (DW). Si está y no tiene correo
 // corporativo, se le asigna uno; si no está, se cargan a mano nombre, apellido y correo
@@ -115,142 +118,189 @@ export default function AltaUsuario({ usuarios, onCreado, onCerrar }) {
 
   if (resultado) {
     return (
-      <div style={{ ...tarjeta, marginBottom: 14 }}>
-        <div className="heading" style={{ fontWeight: 800, fontSize: 15, marginBottom: 8 }}>Usuario creado</div>
-        <div style={{ fontSize: 13.5, marginBottom: 10, overflowWrap: "anywhere" }}>
+      <section className="en-card" style={{ ...tarjeta, marginBottom: "var(--space-4)", display: "grid", gap: "var(--space-3)" }}>
+        <h2 className="t-headline" style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
+          <span style={{ color: "var(--success-fg)", display: "inline-flex" }}>
+            <Icon name="checkCircle" size={20} />
+          </span>
+          Usuario creado
+        </h2>
+        <p className="t-callout" style={{ overflowWrap: "anywhere" }}>
           <b>{resultado.usuario.nombre}</b> ({resultado.usuario.correo}) ya puede ingresar.
-        </div>
-        <div style={{ ...nota, marginBottom: 4 }}>Contraseña temporal</div>
-        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-          <code style={{ fontSize: 18, fontWeight: 700, letterSpacing: ".05em", background: "rgba(127,127,127,.15)", padding: "8px 12px", borderRadius: 10, userSelect: "all" }}>
-            {resultado.claveTemporal}
-          </code>
-          <button onClick={copiar} style={boton(false)}>{copiado ? "Copiada" : "Copiar"}</button>
+        </p>
+        <div>
+          <div className="t-footnote" style={{ ...nota, marginBottom: "var(--space-1)" }}>
+            Contraseña temporal
+          </div>
+          <div style={{ display: "flex", gap: "var(--space-2)", alignItems: "center", flexWrap: "wrap" }}>
+            <code
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: "var(--text-headline)",
+                fontWeight: "var(--weight-bold)",
+                letterSpacing: ".05em",
+                background: "rgba(127,127,127,.15)",
+                padding: "var(--space-2) var(--space-3)",
+                borderRadius: "var(--radius-md)",
+                userSelect: "all",
+              }}
+            >
+              {resultado.claveTemporal}
+            </code>
+            <Button size="sm" icon={copiado ? "check" : undefined} onClick={copiar}>
+              {copiado ? "Copiada" : "Copiar"}
+            </Button>
+          </div>
         </div>
         <Aviso tipo="aviso">
           Se muestra una sola vez: pasásela a la persona por un canal privado. Al ingresar, la app le pide elegir una contraseña propia.
         </Aviso>
-        <div style={{ ...nota, marginBottom: 10 }}>
+        <p className="t-footnote" style={nota}>
           {manual
             ? "La persona no figura en la lista de colaboradores: el nombre y el correo quedan guardados solo en su usuario."
             : resultado.correoGuardadoEnColaboradores
               ? "El correo quedó guardado también en la lista de colaboradores."
               : "El correo ya figuraba en la lista de colaboradores."}
+        </p>
+        <div>
+          <Button variant="solid" onClick={onCerrar}>
+            Listo
+          </Button>
         </div>
-        <button onClick={onCerrar} style={boton(true)}>Listo</button>
-      </div>
+      </section>
     );
   }
 
   return (
-    <div style={{ ...tarjeta, marginBottom: 14 }}>
-      <div className="heading" style={{ fontWeight: 800, fontSize: 15, marginBottom: 10 }}>Agregar usuario</div>
+    <section className="en-card" style={{ ...tarjeta, marginBottom: "var(--space-4)", display: "grid", gap: "var(--space-3)" }}>
+      <h2 className="t-headline">Agregar usuario</h2>
 
       {manual ? (
-        <div style={{ display: "grid", gap: 10 }}>
-          <div style={nota}>
+        <div style={{ display: "grid", gap: "var(--space-3)" }}>
+          <p className="t-footnote" style={nota}>
             Datos de una persona que no está en la lista de colaboradores.{" "}
-            <button type="button" onClick={volverABuscar} style={enlace}>Volver a buscar en la lista</button>
-          </div>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <div style={{ flex: "1 1 180px" }}>
-              <label htmlFor="alta-nombre" style={etiqueta}>Nombre</label>
-              <input id="alta-nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} autoComplete="off" style={{ ...campo, width: "100%" }} />
-            </div>
-            <div style={{ flex: "1 1 180px" }}>
-              <label htmlFor="alta-apellido" style={etiqueta}>Apellido</label>
-              <input id="alta-apellido" value={apellido} onChange={(e) => setApellido(e.target.value)} autoComplete="off" style={{ ...campo, width: "100%" }} />
-            </div>
+            <button type="button" onClick={volverABuscar} className="link-btn">
+              Volver a buscar en la lista
+            </button>
+          </p>
+          <div className="form-grid" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(min(180px,100%),1fr))", gap: "var(--space-3)" }}>
+            <Field label="Nombre" id="alta-nombre">
+              <Input value={nombre} onChange={(e) => setNombre(e.target.value)} autoComplete="off" autoCapitalize="words" />
+            </Field>
+            <Field label="Apellido" id="alta-apellido">
+              <Input value={apellido} onChange={(e) => setApellido(e.target.value)} autoComplete="off" autoCapitalize="words" />
+            </Field>
           </div>
         </div>
       ) : (
-        <>
-          <label htmlFor="alta-busqueda" style={etiqueta}>Buscar en la lista de colaboradores</label>
-          <input
-            id="alta-busqueda"
-            value={busqueda}
-            onChange={(e) => {
-              setBusqueda(e.target.value);
-              setElegido(null);
-              setCorreo("");
-            }}
-            placeholder="Nombre y apellido"
-            autoComplete="off"
-            style={{ ...campo, width: "100%" }}
-          />
+        <div>
+          <Field label="Buscar en la lista de colaboradores" id="alta-busqueda">
+            <Input
+              type="search"
+              value={busqueda}
+              onChange={(e) => {
+                setBusqueda(e.target.value);
+                setElegido(null);
+                setCorreo("");
+              }}
+              placeholder="Nombre y apellido"
+              autoComplete="off"
+              aria-controls={!elegido && sugerencias.length ? "alta-sugerencias" : undefined}
+            />
+          </Field>
           {errorCarga ? <Aviso>{errorCarga}</Aviso> : null}
-          {!colaboradores && !errorCarga ? <div style={{ ...nota, marginTop: 6 }}>Cargando colaboradores…</div> : null}
+          {!colaboradores && !errorCarga ? (
+            <div aria-busy="true" style={{ display: "grid", gap: "var(--space-1-5)", marginTop: "var(--space-2)" }}>
+              <Skeleton height={40} />
+              <Skeleton height={40} />
+            </div>
+          ) : null}
 
           {!elegido && sugerencias.length > 0 ? (
-            <div role="listbox" style={{ display: "grid", gap: 4, marginTop: 8 }}>
-              {sugerencias.map((c) => (
-                <button
-                  key={c.clave}
-                  role="option"
-                  onClick={() => elegir(c)}
-                  disabled={yaTieneUsuario(c)}
-                  style={{ ...campo, textAlign: "left", cursor: yaTieneUsuario(c) ? "default" : "pointer", opacity: yaTieneUsuario(c) ? 0.6 : 1 }}
-                >
-                  <b>{c.etiqueta}</b>
-                  <span style={{ display: "block", fontSize: 12, color: "#6a6280" }}>
-                    {yaTieneUsuario(c) ? "Ya tiene usuario" : c.correo || "Sin correo corporativo"}
-                    {c.funcion ? ` · ${c.funcion}` : ""}
-                  </span>
-                </button>
-              ))}
+            <ul id="alta-sugerencias" role="listbox" aria-label="Colaboradores" style={{ listStyle: "none", margin: "var(--space-2) 0 0", padding: 0, display: "grid", gap: "var(--space-1)" }}>
+              {sugerencias.map((c) => {
+                const tiene = yaTieneUsuario(c);
+                return (
+                  <li key={c.clave} role="presentation">
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={false}
+                      aria-disabled={tiene || undefined}
+                      onClick={() => !tiene && elegir(c)}
+                      className="field"
+                      style={{ textAlign: "left", cursor: tiene ? "not-allowed" : "pointer", opacity: tiene ? 0.6 : 1, minHeight: "var(--touch-min)" }}
+                    >
+                      <b>{c.etiqueta}</b>
+                      <span className="t-caption" style={{ display: "block", color: "var(--text-tertiary)" }}>
+                        {tiene ? "Ya tiene usuario" : c.correo || "Sin correo corporativo"}
+                        {c.funcion ? ` · ${c.funcion}` : ""}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
               {coincidencias.length > MAX_SUGERENCIAS ? (
-                <div style={nota}>Hay {coincidencias.length - MAX_SUGERENCIAS} más: escribí más del nombre para encontrarla.</div>
+                <li className="t-footnote" style={nota}>
+                  Hay {coincidencias.length - MAX_SUGERENCIAS} más: escribí más del nombre para encontrarla.
+                </li>
               ) : null}
-            </div>
+            </ul>
           ) : null}
           {!elegido && busqueda.trim() && colaboradores && sugerencias.length === 0 ? (
-            <div style={{ ...nota, marginTop: 8 }}>No hay colaboradores con ese nombre.</div>
+            <p className="t-footnote" style={{ ...nota, marginTop: "var(--space-2)" }}>
+              No hay colaboradores con ese nombre.
+            </p>
           ) : null}
           {!elegido && (busqueda.trim() || errorCarga) ? (
-            <div style={{ ...nota, marginTop: 8 }}>
+            <p className="t-footnote" style={{ ...nota, marginTop: "var(--space-2)" }}>
               ¿No está en la lista?{" "}
-              <button type="button" onClick={cargarAMano} style={enlace}>Cargar nombre, apellido y correo</button>
-            </div>
+              <button type="button" onClick={cargarAMano} className="link-btn">
+                Cargar nombre, apellido y correo
+              </button>
+            </p>
           ) : null}
-        </>
+        </div>
       )}
 
       {elegido || manual ? (
-        <div style={{ marginTop: 12, display: "grid", gap: 10 }}>
-          <div>
-            <label htmlFor="alta-correo" style={etiqueta}>
-              Correo corporativo {elegido && !elegido.correo ? "(no tiene cargado: asignale uno, queda guardado en la lista)" : ""}
-            </label>
-            <input
-              id="alta-correo"
+        <div style={{ display: "grid", gap: "var(--space-3)" }}>
+          <Field
+            id="alta-correo"
+            label={`Correo corporativo${elegido && !elegido.correo ? " (no tiene cargado: asignale uno, queda guardado en la lista)" : ""}`}
+            error={correo && !correoValido ? `El correo tiene que terminar en ${DOMINIO}.` : correoRepetido ? "Ya hay un usuario con ese correo." : null}
+          >
+            <Input
               type="email"
+              inputMode="email"
+              autoCapitalize="none"
+              spellCheck={false}
               value={correo}
               readOnly={Boolean(elegido?.correo)}
               onChange={(e) => setCorreo(e.target.value)}
               placeholder={`nombre.apellido${DOMINIO}`}
-              style={{ ...campo, width: "100%" }}
             />
-            {correo && !correoValido ? <div style={{ fontSize: 12, color: "var(--danger-fg)", marginTop: 4, fontWeight: 600 }}>El correo tiene que terminar en {DOMINIO}.</div> : null}
-            {correoRepetido ? <div style={{ fontSize: 12, color: "var(--danger-fg)", marginTop: 4, fontWeight: 600 }}>Ya hay un usuario con ese correo.</div> : null}
-          </div>
-          <div>
-            <label htmlFor="alta-rol" style={etiqueta}>Rol</label>
-            <select id="alta-rol" value={rol} onChange={(e) => setRol(e.target.value)} style={{ ...campo, width: "100%" }}>
-              {ROLES.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
-            </select>
-            <div style={{ fontSize: 12, color: "var(--card-desc, var(--muted))", marginTop: 4 }}>{ROLES.find((r) => r.value === rol)?.desc}</div>
-          </div>
+          </Field>
+          <Field id="alta-rol" label="Rol" hint={ROLES.find((r) => r.value === rol)?.desc}>
+            <Select titulo="Rol" options={ROLES.map((r) => ({ value: r.value, label: r.label, description: r.desc }))} value={rol} onChange={setRol} />
+          </Field>
         </div>
       ) : null}
 
       {error ? <Aviso>{error}</Aviso> : null}
-      {textoFaltan ? <div style={{ ...nota, marginTop: 12, fontWeight: 600 }}>{textoFaltan}</div> : null}
-      <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
-        <button onClick={crear} disabled={!puedeCrear} style={{ ...boton(true), opacity: puedeCrear ? 1 : 0.5, cursor: puedeCrear ? "pointer" : "default" }}>
+      {textoFaltan ? (
+        <p className="t-footnote" style={{ ...nota, fontWeight: "var(--weight-semibold)" }}>
+          {textoFaltan}
+        </p>
+      ) : null}
+      <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap" }}>
+        <Button variant="solid" onClick={crear} disabled={!puedeCrear} loading={enviando}>
           {enviando ? "Creando…" : "Crear usuario"}
-        </button>
-        <button onClick={onCerrar} disabled={enviando} style={boton(false)}>Cancelar</button>
+        </Button>
+        <Button onClick={onCerrar} disabled={enviando}>
+          Cancelar
+        </Button>
       </div>
-    </div>
+    </section>
   );
 }

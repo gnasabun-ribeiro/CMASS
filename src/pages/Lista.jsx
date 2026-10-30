@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import AppShell from "../components/AppShell.jsx";
+import Banner from "../components/ui/Banner.jsx";
+import EmptyState, { Skeleton } from "../components/ui/EmptyState.jsx";
+import { Input } from "../components/ui/Field.jsx";
 import { ESTADOS, ESTADO_COLORS, hallazgosColor } from "../data/mockRegistros.js";
 import { findModulo, findSub, rutaFormulario, rutaVolver } from "../data/modulos.js";
 import { supabaseConfigured } from "../lib/supabaseClient.js";
@@ -9,7 +12,8 @@ import { TABLAS_GENERICAS, TABLAS_OBRA } from "../lib/tablas.js";
 import { listarCola, listarInspeccionesLocales } from "../lib/localDb.js";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useSync } from "../lib/useSync.js";
-import { useCelular } from "../lib/useCelular.js";
+import { BREAKPOINTS, useMediaQuery } from "../lib/breakpoints.js";
+import DetalleRegistro from "../components/DetalleRegistro.jsx";
 import { normalizar } from "../lib/texto.js";
 
 const MESES = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
@@ -75,7 +79,9 @@ export default function Lista() {
   const location = useLocation();
   const { userId } = useAuth();
   const sync = useSync();
-  const celular = useCelular();
+  // Desde 1024 px: lista a la izquierda y resumen del registro elegido a la derecha.
+  const dosPaneles = useMediaQuery(`(min-width: ${BREAKPOINTS.lg}px)`);
+  const [elegidoId, setElegidoId] = useState(null);
   const [filtro, setFiltro] = useState("Todos");
 
   const modulo = moduloId ? findModulo(moduloId) : null;
@@ -164,178 +170,156 @@ export default function Lista() {
   // /registros/<algo que no existe>: antes mostraba "Mis Registros" vacío.
   if ((moduloId && !(modulo?.form || modulo?.subs)) || (subId && !sub)) return <Navigate to="/registros" replace />;
 
+  const vacio =
+    estadoCarga === "error"
+      ? { icono: "cloudOff", titulo: "No se pudieron cargar los registros", texto: "Revisá la conexión. Lo guardado en este dispositivo se muestra igual." }
+      : todos.length && hayFiltros
+        ? { icono: "search", titulo: "Ningún registro coincide", texto: "Probá con otra búsqueda o con otras fechas." }
+        : { icono: "inbox", titulo: "Todavía no hay registros", texto: "Las inspecciones que cargues van a aparecer acá." };
+
+  const abrir = (r) => navigate(rutaFormulario(r.moduloId, r.subId, r.id), { state: { volverA: location.pathname } });
+  // En la computadora, tocar un registro muestra su resumen al lado; en celular y tablet lo abre.
+  const elegido = dosPaneles ? registros.find((r) => r.id === elegidoId) : null;
+
+  const lista = (
+    <>
+      {estadoCarga === "cargando" && registros.length === 0 ? (
+        <div aria-busy="true" aria-label="Cargando registros" style={{ display: "grid", gap: "var(--space-2)" }}>
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="panel panel--compacto" style={{ display: "flex", gap: "var(--space-3)", alignItems: "center", boxShadow: "var(--shadow-1)" }}>
+              <Skeleton width={52} height={52} radius="var(--radius-lg)" />
+              <div style={{ flex: 1, display: "grid", gap: "var(--space-2)" }}>
+                <Skeleton width="65%" height={14} />
+                <Skeleton width="40%" height={12} />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      <ul className="registros-lista">
+        {registros.map((r, i) => {
+          const estadoColor = ESTADO_COLORS[r.estado];
+          const estado = (
+            <span className="chip" style={{ background: estadoColor.bg, color: estadoColor.fg }}>
+              {r.estado}
+              {r.pendiente ? " · sin enviar" : ""}
+            </span>
+          );
+          const hallazgos = (
+            <span className="t-caption registro__hallazgos" style={{ color: "var(--text-tertiary)" }}>
+              <span className="registro__hallazgos-etiqueta">Hallazgos</span>
+              <strong className="heading tabular" style={{ color: hallazgosColor(r.hallazgos) }}>
+                {r.hallazgos}
+              </strong>
+            </span>
+          );
+          return (
+            <li key={r.id} className="pop-in" style={{ animationDelay: `${Math.min(i, 12) * 0.035}s` }}>
+              <button
+                type="button"
+                // volverA: al cerrar o salir del formulario se vuelve a esta lista (ver Formulario).
+                onClick={() => (dosPaneles ? setElegidoId(r.id) : abrir(r))}
+                aria-current={elegido?.id === r.id ? "true" : undefined}
+                className="panel panel--compacto registro"
+              >
+                <span className="registro__fecha" aria-hidden="true">
+                  <span className="heading tabular" style={{ fontWeight: "var(--weight-heavy)", fontSize: "var(--text-headline)", color: "var(--accent-text)" }}>
+                    {r.dia}
+                  </span>
+                  <span className="t-overline" style={{ marginTop: "var(--space-0-5)" }}>
+                    {r.mes}
+                  </span>
+                </span>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span className="t-headline" style={{ display: "block", fontSize: "var(--text-callout)", overflowWrap: "anywhere" }}>
+                    {r.titulo}
+                  </span>
+                  <span className="t-caption" style={{ display: "block", color: "var(--text-tertiary)", marginTop: "var(--space-0-5)", overflowWrap: "anywhere" }}>
+                    {r.detalle}
+                  </span>
+                  {/* Columna angosta (celular, o la lista al lado del resumen): estado y hallazgos
+                      van debajo del título; a la derecha no entraban. Lo decide el ancho de la
+                      lista (container query en componentes.css), no el de la pantalla. */}
+                  <span className="registro__abajo">
+                    {estado}
+                    {hallazgos}
+                  </span>
+                </span>
+                <span className="registro__derecha">
+                  {hallazgos}
+                  {estado}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      {registros.length === 0 && estadoCarga !== "cargando" ? (
+        <EmptyState
+          sobreFondo
+          {...vacio}
+          accion={
+            todos.length && hayFiltros ? (
+              <button type="button" className="btn btn--surface btn--sm" onClick={limpiarFiltros}>
+                Limpiar filtros
+              </button>
+            ) : null
+          }
+        />
+      ) : null}
+    </>
+  );
+
   return (
     <AppShell title={title} subtitle={subtitle} onBack={() => navigate(backTo)}>
-      <div style={{ background: "#fff", borderRadius: 22, padding: 13, display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 13, boxShadow: "var(--shadow-panel)" }}>
-        <input
+      <div className="panel panel--compacto" style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-2)", marginBottom: "var(--space-3)" }}>
+        <Input
+          type="search"
+          inputMode="search"
+          enterKeyHint="search"
+          aria-label="Buscar"
           placeholder="Buscar por cliente, ubicación o grupo…"
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
-          style={{ ...fieldStyle, flex: "2 1 220px" }}
+          style={{ flex: "2 1 220px", width: "auto" }}
         />
-        <input type="date" aria-label="Desde" value={desde} onChange={(e) => setDesde(e.target.value)} style={{ ...fieldStyle, flex: "1 1 140px" }} />
-        <input type="date" aria-label="Hasta" value={hasta} onChange={(e) => setHasta(e.target.value)} style={{ ...fieldStyle, flex: "1 1 140px" }} />
+        <Input type="date" aria-label="Desde" value={desde} onChange={(e) => setDesde(e.target.value)} style={{ flex: "1 1 140px", width: "auto" }} />
+        <Input type="date" aria-label="Hasta" value={hasta} onChange={(e) => setHasta(e.target.value)} style={{ flex: "1 1 140px", width: "auto" }} />
         {desde && hasta && desde > hasta ? (
-          <div role="alert" style={{ flex: "1 1 100%", fontSize: 12.5, fontWeight: 600, color: "var(--warn-fg)", background: "var(--warn-bg)", borderRadius: 10, padding: "7px 10px" }}>
+          <Banner tono="warning" alerta style={{ flex: "1 1 100%" }}>
             "Desde" es posterior a "Hasta": no puede haber registros en ese rango.
-          </div>
+          </Banner>
         ) : null}
       </div>
 
-      <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, marginBottom: 12 }}>
-        {ESTADOS.map((f) => {
-          const on = filtro === f;
-          return (
-            <button
-              key={f}
-              onClick={() => setFiltro(f)}
-              style={{
-                flex: "0 0 auto",
-                border: 0,
-                background: on ? "var(--active-bg)" : "#fff",
-                color: on ? "var(--on-active)" : "var(--muted-3)",
-                boxShadow: on ? "var(--active-ring)" : "none",
-                fontSize: 12.5,
-                fontWeight: 700,
-                padding: "10px 15px",
-                borderRadius: 20,
-                cursor: "pointer",
-                minHeight: 42,
-              }}
-            >
-              {f}
-            </button>
-          );
-        })}
+      <div className="fila-pills sobre-fondo" role="group" aria-label="Estado" style={{ marginBottom: "var(--space-3)" }}>
+        {ESTADOS.map((f) => (
+          <button key={f} type="button" className="pill" aria-pressed={filtro === f} onClick={() => setFiltro(f)}>
+            {f}
+          </button>
+        ))}
         {hayFiltros ? (
-          <button
-            onClick={limpiarFiltros}
-            style={{ flex: "0 0 auto", border: 0, background: "transparent", color: "#fff", textDecoration: "underline", fontSize: 12.5, fontWeight: 700, padding: "10px 8px", cursor: "pointer", minHeight: 42 }}
-          >
+          <button type="button" className="pill pill--texto" onClick={limpiarFiltros}>
             Limpiar filtros
           </button>
         ) : null}
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {registros.map((r, i) => {
-          const estadoColor = ESTADO_COLORS[r.estado];
-          const estado = (
-            <span
-              style={{
-                flex: "0 0 auto",
-                background: estadoColor.bg,
-                color: estadoColor.fg,
-                fontSize: 11.5,
-                fontWeight: 700,
-                padding: "6px 12px",
-                borderRadius: 20,
-                whiteSpace: "nowrap",
-              }}
-            >
-              {r.estado}
-              {r.pendiente ? " · sin enviar" : ""}
-            </span>
-          );
-          return (
-            <button
-              key={r.id}
-              // volverA: al cerrar o salir del formulario se vuelve a esta lista (ver Formulario).
-              onClick={() => navigate(rutaFormulario(r.moduloId, r.subId, r.id), { state: { volverA: location.pathname } })}
-              className="pop-in"
-              style={{
-                textAlign: "left",
-                border: 0,
-                width: "100%",
-                background: "#fff",
-                borderRadius: 20,
-                padding: celular ? 12 : 14,
-                display: "flex",
-                gap: celular ? 11 : 13,
-                alignItems: celular ? "flex-start" : "center",
-                flexWrap: "wrap",
-                cursor: "pointer",
-                boxShadow: "0 12px 24px -22px rgba(36,18,70,.5)",
-                animationDelay: `${i * 0.045}s`,
-              }}
-            >
-              <span
-                style={{
-                  width: 50,
-                  height: 50,
-                  flex: "0 0 50px",
-                  borderRadius: 16,
-                  background: "var(--violet-75)",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  lineHeight: 1,
-                }}
-              >
-                <span className="heading" style={{ fontWeight: 800, fontSize: 16, color: "var(--violet-800)" }}>
-                  {r.dia}
-                </span>
-                <span style={{ fontSize: 9.5, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--muted)", marginTop: 2 }}>
-                  {r.mes}
-                </span>
-              </span>
-              <span style={{ flex: celular ? 1 : "1 1 200px", minWidth: 0 }}>
-                <span className="heading" style={{ display: "block", fontWeight: 700, fontSize: 14.5, letterSpacing: "-.15px", overflowWrap: "anywhere" }}>
-                  {r.titulo}
-                </span>
-                <span style={{ display: "block", fontSize: 12, color: "var(--muted-2)", marginTop: 2, overflowWrap: "anywhere" }}>{r.detalle}</span>
-                {/* En el celular estado y hallazgos van debajo del título: a la derecha no entraban y
-                    caían sueltos a una segunda fila, debajo de la fecha. */}
-                {celular ? (
-                  <span style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginTop: 8 }}>
-                    {estado}
-                    <span style={{ fontSize: 12, color: "var(--muted)" }}>
-                      Hallazgos:{" "}
-                      <strong className="heading" style={{ fontSize: 14, color: hallazgosColor(r.hallazgos) }}>
-                        {r.hallazgos}
-                      </strong>
-                    </span>
-                  </span>
-                ) : null}
-              </span>
-              {!celular ? (
-                <>
-                  <span style={{ flex: "0 0 auto", textAlign: "center" }}>
-                    <span style={{ display: "block", fontSize: 10.5, color: "var(--muted)" }}>Hallazgos</span>
-                    <span className="heading" style={{ display: "block", fontWeight: 800, fontSize: 17, color: hallazgosColor(r.hallazgos) }}>
-                      {r.hallazgos}
-                    </span>
-                  </span>
-                  {estado}
-                </>
-              ) : null}
-            </button>
-          );
-        })}
-        {registros.length === 0 ? (
-          <div style={{ textAlign: "center", color: "var(--violet-150)", padding: "24px 0", fontSize: 13.5 }}>
-            {estadoCarga === "cargando"
-              ? "Cargando…"
-              : estadoCarga === "error"
-                ? "No se pudieron cargar los registros."
-                : todos.length && hayFiltros
-                  ? "Ningún registro coincide con los filtros."
-                  : "Todavía no hay registros para mostrar."}
-          </div>
-        ) : null}
-      </div>
+      {dosPaneles && registros.length ? (
+        <div className="dos-paneles">
+          <div className="dos-paneles__lista">{lista}</div>
+          <aside className="dos-paneles__detalle panel" aria-label="Resumen del registro">
+            {elegido ? (
+              <DetalleRegistro key={elegido.id} registro={elegido} onAbrir={() => abrir(elegido)} />
+            ) : (
+              <EmptyState icono="clipboard" titulo="Elegí un registro" texto="Acá vas a ver su resumen sin salir de la lista: datos, checklist, hallazgos y firma." />
+            )}
+          </aside>
+        </div>
+      ) : (
+        lista
+      )}
     </AppShell>
   );
 }
-
-const fieldStyle = {
-  border: "1px solid var(--border)",
-  borderRadius: 14,
-  padding: 12,
-  fontSize: 14,
-  background: "var(--violet-25)",
-  color: "var(--ink)",
-  minHeight: 48,
-  minWidth: 0,
-};

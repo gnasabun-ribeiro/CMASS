@@ -49,6 +49,24 @@ export const suscribir = (fn) => {
 };
 export const obtenerEstado = () => snapshot;
 
+// Aviso de lo que pasa en segundo plano (lo usa el centro de notificaciones): una inspección
+// que terminó de enviarse, o un error nuevo (no de conexión) al enviarla. Solo observa: no
+// cambia nada del envío.
+const oyentes = new Set();
+export const alSincronizar = (fn) => {
+  oyentes.add(fn);
+  return () => oyentes.delete(fn);
+};
+function avisar(evento) {
+  oyentes.forEach((fn) => {
+    try {
+      fn(evento);
+    } catch {
+      /* un oyente con error no frena el envío */
+    }
+  });
+}
+
 export async function refrescarEstado() {
   estado.pendientes = await contarCola();
   emitir();
@@ -164,10 +182,12 @@ export async function sincronizar() {
         await borrarOpSiIgual(op);
         delete estado.errores[op.inspeccionId];
         estado.ultimaSync = new Date();
+        if (op.tipo === "enviar") avisar({ tipo: "enviada", inspeccionId: op.inspeccionId, rec, uid });
       } catch (err) {
         if (esErrorDeRed(err)) break; // sin conexión: se reintenta más tarde, no es un error
         fallidas.add(op.inspeccionId);
         const mensaje = err?.message || String(err);
+        if (estado.errores[op.inspeccionId] !== mensaje) avisar({ tipo: "error", inspeccionId: op.inspeccionId, rec, uid, mensaje });
         estado.errores[op.inspeccionId] = mensaje;
         await marcarErrorOp(op, mensaje);
       }

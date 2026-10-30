@@ -5,26 +5,26 @@ export default function SubItemCard({ sub, index = 0, onNuevo, onRegistros }) {
     <div
       className="pop-in card-lift"
       style={{
-        border: "1px solid var(--card-border)",
+        border: "var(--hairline) solid var(--card-border)",
         background: "var(--card-bg)",
         color: "var(--card-title)",
-        borderRadius: 22,
-        padding: 15,
+        borderRadius: "var(--radius-xl)",
+        padding: "var(--space-4)",
         display: "flex",
         flexDirection: "column",
-        gap: 12,
-        boxShadow: "var(--shadow-panel)",
+        gap: "var(--space-3)",
+        boxShadow: "var(--shadow-2)",
         animationDelay: `${index * 0.045}s`,
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
         <span
           className="card-icon"
           style={{
-            width: 46,
-            height: 46,
-            flex: "0 0 46px",
-            borderRadius: 15,
+            width: 48,
+            height: 48,
+            flex: "0 0 48px",
+            borderRadius: "var(--radius-lg)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -33,48 +33,27 @@ export default function SubItemCard({ sub, index = 0, onNuevo, onRegistros }) {
             transition: "background .2s, color .2s",
           }}
         >
-          <Icon name={sub.icon} size={23} strokeWidth={1.6} />
+          <Icon name={sub.icon} size={24} />
         </span>
         <div style={{ minWidth: 0 }}>
-          <div className="heading card-title" style={{ fontWeight: 700, fontSize: 15, lineHeight: 1.25, letterSpacing: "-.2px", transition: "color .2s" }}>
+          <div className="t-headline card-title" style={{ transition: "color .2s", overflowWrap: "anywhere" }}>
             {sub.title}
           </div>
-          <div style={{ fontSize: 11.5, color: "var(--card-desc)", marginTop: 2 }}>{sub.meta}</div>
+          <div className="t-caption" style={{ color: "var(--card-desc)", marginTop: "var(--space-0-5)" }}>
+            {sub.meta}
+          </div>
         </div>
       </div>
-      <div style={{ display: "flex", gap: 8, marginTop: "auto" }}>
+      <div style={{ display: "flex", gap: "var(--space-2)", marginTop: "auto" }}>
         <button
+          type="button"
+          className="btn btn--solid"
+          style={{ flex: 1 }}
           onClick={(e) => e.detail <= 1 && onNuevo()} // un doble clic no navega dos veces
-          style={{
-            flex: 1,
-            border: 0,
-            background: "var(--active-bg)",
-            color: "var(--on-active)",
-            fontSize: 13,
-            fontWeight: 700,
-            padding: 12,
-            borderRadius: 14,
-            cursor: "pointer",
-            minHeight: 48,
-          }}
         >
           Nuevo
         </button>
-        <button
-          onClick={(e) => e.detail <= 1 && onRegistros()}
-          style={{
-            flex: 1,
-            border: 0,
-            background: "var(--violet-100)",
-            color: "var(--violet-800)",
-            fontSize: 13,
-            fontWeight: 700,
-            padding: 12,
-            borderRadius: 14,
-            cursor: "pointer",
-            minHeight: 48,
-          }}
-        >
+        <button type="button" className="btn btn--strong" style={{ flex: 1 }} onClick={(e) => e.detail <= 1 && onRegistros()}>
           Registros
         </button>
       </div>

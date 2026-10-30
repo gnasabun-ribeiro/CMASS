@@ -29,6 +29,10 @@ import { useSync } from "../../lib/useSync.js";
 import { useCelular } from "../../lib/useCelular.js";
 import { correoDe, useColaboradores } from "../../lib/colaboradores.js";
 import { useConfirmacion } from "../../components/Confirmacion.jsx";
+import Icon from "../../components/Icon.jsx";
+import Button from "../../components/ui/Button.jsx";
+import Banner from "../../components/ui/Banner.jsx";
+import { toast } from "../../components/ui/Toast.jsx";
 
 const GENERALES_INICIALES = { cliente: "", ubicacion: "", grupoAuditado: "", fechaHora: "", tareaObservada: "" };
 // Campos de la Tarjeta TOP que no están en Generales (columna `datos` de la cabecera). Detalle
@@ -281,20 +285,20 @@ export default function Formulario() {
   const totalItems = checklist.filter((i) => !i.otros || respuestas[i.codigo] != null).length;
 
   const resumen = [
-    { label: "Ítems respondidos", value: `${contestadas} / ${totalItems}`, color: "var(--violet-700)" },
+    { label: "Ítems respondidos", value: `${contestadas} / ${totalItems}`, color: "var(--accent-text)" },
     // La TOP no cuenta desvíos ni lleva hallazgos ni fotos (la tarjeta de papel no los tiene).
     ...(esTop
       ? []
       : [
           { label: "Cumple parcialmente", value: String(cumpleParcial), color: cumpleParcial ? "var(--warn-fg)" : "var(--success-fg)" },
           { label: "No cumple", value: String(noCumple), color: noCumple ? "var(--danger-fg)" : "var(--success-fg)" },
-          { label: "Hallazgos cargados", value: String(hallazgos.length), color: hallazgos.length ? "var(--warn-fg)" : "var(--ink)" },
-          { label: "Fotos adjuntas", value: String(fotos.length), color: "var(--ink)" },
+          { label: "Hallazgos cargados", value: String(hallazgos.length), color: hallazgos.length ? "var(--warn-fg)" : "var(--text-primary)" },
+          { label: "Fotos adjuntas", value: String(fotos.length), color: "var(--text-primary)" },
         ]),
     {
       label: "Guardado",
       value: persisteEnSupabase ? textoGuardado({ error: errorGuardado, guardadoEn, sync }) : "no se guarda (solo en pantalla)",
-      color: errorGuardado ? "var(--danger-fg)" : "var(--muted-4)",
+      color: errorGuardado ? "var(--danger-fg)" : "var(--text-secondary)",
       soloPantalla: true, // estado de la app, no va en el PDF
     },
   ];
@@ -345,6 +349,7 @@ export default function Formulario() {
       if (!ok) return;
       setEnviando(true);
       try {
+        await confirmarBorrados(); // un borrado con "Deshacer" pendiente se aplica antes de enviar
         if (!(await volcarGenerales())) return;
         await marcarEnviada(inspeccionId, userId); // queda en el dispositivo y sube apenas haya conexión
       } catch (err) {
@@ -367,6 +372,7 @@ export default function Formulario() {
 
   const guardarBorrador = async () => {
     volcarDetalles();
+    await confirmarBorrados();
     if (!(await volcarGenerales())) return;
     navigate(backTo);
   };
@@ -433,16 +439,66 @@ export default function Formulario() {
     else if (ilegibles.length) setErrorFotos(`No se pudieron agregar ${ilegibles.join(", ")}: no son imágenes que se puedan leer.`);
   };
 
-  const quitarFoto = async (foto) => {
-    try {
-      if (persisteEnSupabase) {
+  // Borrar con "Deshacer": desaparece al toque y se borra de verdad (en el dispositivo y en la
+  // cola de envío) recién cuando se va el aviso. Si mientras tanto se sale del formulario, se
+  // guarda como borrador o se envía, el borrado se confirma en ese momento (confirmarBorrados).
+  // Si la app se cierra en esos segundos, no se borra: es lo seguro.
+  const borradosRef = useRef(new Map()); // clave -> () => Promise (confirma el borrado)
+  const borrarConDeshacer = ({ clave, titulo, descripcion, sacar, devolver, borrar }) => {
+    sacar();
+    let deshecho = false;
+    const confirmarBorrado = () => {
+      if (deshecho || !borradosRef.current.has(clave)) return Promise.resolve();
+      borradosRef.current.delete(clave);
+      return borrar().catch((err) => {
+        devolver(); // no se pudo borrar: vuelve a la lista y se ve el error arriba
+        setErrorGuardado(err.message);
+      });
+    };
+    borradosRef.current.set(clave, confirmarBorrado);
+    toast.success(titulo, {
+      id: `borrar-${clave}`,
+      descripcion,
+      accion: {
+        label: "Deshacer",
+        onClick: () => {
+          deshecho = true;
+          borradosRef.current.delete(clave);
+          devolver();
+        },
+      },
+      onCerrar: confirmarBorrado,
+    });
+  };
+  // Aplica los pendientes y saca sus avisos (un "Deshacer" que ya no deshace confundiría).
+  const confirmarBorrados = () =>
+    Promise.all(
+      [...borradosRef.current.entries()].map(([clave, confirmarBorrado]) => {
+        const hecho = confirmarBorrado();
+        toast.dismiss(`borrar-${clave}`);
+        return hecho;
+      })
+    );
+  const confirmarBorradosRef = useRef(confirmarBorrados);
+  confirmarBorradosRef.current = confirmarBorrados;
+  useEffect(() => () => void confirmarBorradosRef.current(), []);
+
+  // Vuelve a poner el elemento en el lugar donde estaba.
+  const reinsertar = (lista, elemento, indice) => (lista.includes(elemento) ? lista : [...lista.slice(0, indice), elemento, ...lista.slice(indice)]);
+
+  const quitarFoto = (foto) => {
+    const indice = fotos.indexOf(foto);
+    borrarConDeshacer({
+      clave: `foto-${foto.id}`,
+      titulo: "Foto quitada",
+      sacar: () => setFotos((f) => f.filter((x) => x.id !== foto.id)),
+      devolver: () => setFotos((f) => reinsertar(f, foto, indice)),
+      borrar: async () => {
+        if (!persisteEnSupabase) return;
         await quitarFotoLocal(inspeccionId, userId, foto.id);
         marcarGuardado();
-      }
-      setFotos((f) => f.filter((x) => x.id !== foto.id));
-    } catch (err) {
-      setErrorGuardado(err.message);
-    }
+      },
+    });
   };
 
   // Devuelve false si falló el guardado (el formulario de hallazgo conserva lo escrito).
@@ -463,17 +519,20 @@ export default function Formulario() {
     }
   };
 
-  const eliminarHallazgo = async (h) => {
-    if (persisteEnSupabase && h.id) {
-      try {
+  const eliminarHallazgo = (h) => {
+    const indice = hallazgos.indexOf(h);
+    borrarConDeshacer({
+      clave: `hallazgo-${h.id ?? `${h.titulo}-${Date.now()}`}`,
+      titulo: "Hallazgo eliminado",
+      descripcion: h.titulo,
+      sacar: () => setHallazgos((list) => list.filter((x) => x !== h)),
+      devolver: () => setHallazgos((list) => reinsertar(list, h, indice)),
+      borrar: async () => {
+        if (!persisteEnSupabase || !h.id) return;
         await borrarHallazgoLocal(inspeccionId, userId, h.id);
         marcarGuardado();
-      } catch (err) {
-        setErrorGuardado(err.message);
-        return;
-      }
-    }
-    setHallazgos((list) => list.filter((x) => x !== h));
+      },
+    });
   };
 
   const pasos = useMemo(
@@ -487,113 +546,131 @@ export default function Formulario() {
     [paso, PASOS]
   );
 
+  // Borrador / Siguiente: fijos abajo, justo arriba de la navegación (ver AppShell).
+  const barraAcciones =
+    !soloLectura || (mostrarSiguiente && !(soloLectura && esUltimo)) ? (
+      <>
+        {!soloLectura ? (
+          <Button variant="surface" size="lg" onClick={guardarBorrador}>
+            Borrador
+          </Button>
+        ) : null}
+        {mostrarSiguiente && !(soloLectura && esUltimo) ? (
+          <Button variant="primary" size="lg" style={{ flex: 1 }} onClick={siguiente} loading={enviando} iconEnd={esUltimo ? undefined : "arrowRight"}>
+            {esUltimo ? "Cerrar y enviar" : "Siguiente"}
+          </Button>
+        ) : null}
+      </>
+    ) : null;
+
   return (
-    <AppShell title={title} subtitle="Formulario en 4 pasos" onBack={() => navigate(backTo)} padBottom="200px">
-      {soloLectura ? (
-        <div style={{ background: "var(--warn-bg)", color: "var(--warn-fg)", borderRadius: 16, padding: 12, marginBottom: 12, fontSize: 13, fontWeight: 600 }}>
-          Solo lectura: {datosInsp.estado === "enviado" ? "esta inspección ya fue enviada y solo un administrador puede corregirla." : "no podés modificar esta inspección."}
-        </div>
-      ) : null}
-      {cargando ? (
-        <div style={{ background: "#fff", borderRadius: 16, padding: 12, marginBottom: 12, fontSize: 13, color: "var(--muted)" }}>Cargando inspección…</div>
-      ) : null}
-      {errorGuardado ? (
-        <div style={{ background: "var(--danger-bg)", color: "var(--danger-fg)", borderRadius: 16, padding: 12, marginBottom: 12, fontSize: 13, fontWeight: 600 }}>
-          Error al guardar: {errorGuardado}
-        </div>
-      ) : null}
-      {persisteEnSupabase && errorEnvio ? (
-        <div style={{ background: "var(--danger-bg)", color: "var(--danger-fg)", borderRadius: 16, padding: 12, marginBottom: 12, fontSize: 13, fontWeight: 600 }}>
-          No se pudo enviar al servidor: {errorEnvio}. Está guardado en el dispositivo y se reintenta solo.
-        </div>
-      ) : null}
-      {persisteEnSupabase && !sync.online ? (
-        <div style={{ background: "var(--warn-bg)", color: "var(--warn-fg)", borderRadius: 16, padding: 12, marginBottom: 12, fontSize: 13, fontWeight: 600 }}>
-          Sin conexión: lo que cargues se guarda en el dispositivo y se envía solo cuando vuelva internet.
-        </div>
-      ) : null}
-      {avisoCierre ? (
-        <div style={{ background: "var(--warn-bg)", color: "var(--warn-fg)", borderRadius: 16, padding: 12, marginBottom: 12, fontSize: 13, fontWeight: 600 }}>{avisoCierre}</div>
-      ) : null}
-      {avisarDetalle && sinDetalle.length ? (
-        <div role="alert" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", background: "var(--warn-bg)", color: "var(--warn-fg)", borderRadius: 16, padding: 12, marginBottom: 12, fontSize: 13, fontWeight: 600 }}>
-          <span style={{ flex: "1 1 220px" }}>{avisoSinDetalle()}</span>
-          <button
-            onClick={() => irAlItem(sinDetalle[0].codigo)}
-            style={{ border: 0, background: "var(--warn-fg)", color: "#fff", fontWeight: 700, fontSize: 12.5, padding: "8px 12px", borderRadius: 12, cursor: "pointer", minHeight: 38 }}
+    <AppShell title={title} subtitle="Formulario en 4 pasos" onBack={() => navigate(backTo)} barraAcciones={barraAcciones}>
+      {/* Estado de la pantalla: avisos en línea que quedan mientras dure la situación. */}
+      <div className="app-stack" style={{ marginBottom: "var(--space-3)" }}>
+        {cargando ? (
+          <div role="status">
+            <Banner tono="neutral" icono="refresh">
+              Cargando inspección…
+            </Banner>
+          </div>
+        ) : null}
+        {soloLectura ? (
+          <Banner tono="warning" icono="eye" titulo="Solo lectura">
+            {datosInsp.estado === "enviado" ? "Esta inspección ya fue enviada y solo un administrador puede corregirla." : "No podés modificar esta inspección."}
+          </Banner>
+        ) : null}
+        {errorGuardado ? (
+          <Banner tono="danger" alerta titulo="Error al guardar">
+            {errorGuardado}
+          </Banner>
+        ) : null}
+        {persisteEnSupabase && errorEnvio ? (
+          <Banner tono="danger" titulo="No se pudo enviar al servidor">
+            {errorEnvio}. Está guardado en el dispositivo y se reintenta solo.
+          </Banner>
+        ) : null}
+        {persisteEnSupabase && !sync.online ? (
+          <Banner tono="warning" icono="cloudOff" titulo="Sin conexión">
+            Lo que cargues se guarda en el dispositivo y se envía solo cuando vuelva internet.
+          </Banner>
+        ) : null}
+        {avisoCierre ? (
+          <Banner tono="warning" alerta>
+            {avisoCierre}
+          </Banner>
+        ) : null}
+        {avisarDetalle && sinDetalle.length ? (
+          <Banner
+            tono="warning"
+            alerta
+            accion={
+              <Button variant="warning" size="sm" onClick={() => irAlItem(sinDetalle[0].codigo)}>
+                {sinDetalle[0].otros ? "Ir a “Otros”" : `Ir al ítem ${sinDetalle[0].codigo}`}
+              </Button>
+            }
           >
-            {sinDetalle[0].otros ? "Ir a “Otros”" : `Ir al ítem ${sinDetalle[0].codigo}`}
-          </button>
-        </div>
-      ) : null}
-      {!persisteEnSupabase ? (
-        <div style={{ background: "var(--warn-bg)", color: "var(--warn-fg)", borderRadius: 16, padding: 12, marginBottom: 12, fontSize: 13, fontWeight: 600 }}>
-          Sin conexión con el servidor configurada: lo que cargues se pierde al salir.
-        </div>
-      ) : null}
-      <div style={{ background: "#fff", borderRadius: 22, padding: celular ? 12 : 14, marginBottom: 12, boxShadow: "var(--shadow-panel)" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 9 }}>
-          <span className="heading" style={{ fontWeight: 700, fontSize: 14 }}>
+            {avisoSinDetalle()}
+          </Banner>
+        ) : null}
+        {!persisteEnSupabase ? (
+          <Banner tono="warning" titulo="No se guarda">
+            Sin conexión con el servidor configurada: lo que cargues se pierde al salir.
+          </Banner>
+        ) : null}
+      </div>
+
+      <div className="form-layout">
+      <section className="panel panel--compacto form-layout__pasos" aria-label="Pasos">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "var(--space-3)", marginBottom: "var(--space-2)" }}>
+          <h2 className="t-headline" style={{ fontSize: "var(--text-callout)" }}>
             Paso {paso + 1} de 4 · {PASOS[paso]}
-          </span>
-          <span style={{ fontSize: 12.5, color: "var(--muted)" }}>
+          </h2>
+          <span className="t-footnote tabular" style={{ color: "var(--text-tertiary)", whiteSpace: "nowrap" }}>
             {contestadas}/{totalItems} ítems
           </span>
         </div>
-        <div style={{ height: 9, background: "var(--border)", borderRadius: 20, overflow: "hidden", marginBottom: 11 }}>
+        {/* Lo que mide la barra es el checklist respondido (ver `avance`). */}
+        <div
+          role="progressbar"
+          aria-label="Checklist respondido"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={avance}
+          style={{ height: 8, background: "var(--accent-soft)", borderRadius: "var(--radius-full)", overflow: "hidden", marginBottom: "var(--space-3)" }}
+        >
           <div
             style={{
               height: "100%",
-              borderRadius: 20,
+              borderRadius: "var(--radius-full)",
               background: "var(--brand-gradient)",
-              transition: "width .45s cubic-bezier(.2,.8,.2,1)",
+              transition: "width .45s var(--ease-out)",
               width: `${avance}%`,
             }}
           />
         </div>
-        {/* En el celular los 4 pasos van en 4 columnas iguales con el número arriba del nombre:
-            en fila no entraban en 360 px y "4. Cierre" quedaba fuera de la pantalla. */}
-        <div
-          style={
-            celular
-              ? { display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 5 }
-              : { display: "flex", gap: 7, overflowX: "auto", paddingBottom: 2 }
-          }
-        >
+        {/* En el celular los 4 pasos van en 4 columnas iguales con el número arriba del nombre
+            (en fila no entraban en 360 px); desde 1280 px, en columna al costado. Ver .paso-btn. */}
+        <ol className="form-pasos__lista">
           {pasos.map((p) => (
-            <button
-              key={p.label}
-              onClick={() => setPaso(p.n - 1)}
-              aria-current={p.on ? "step" : undefined}
-              style={{
-                flex: "0 0 auto",
-                minWidth: 0,
-                border: 0,
-                background: p.on ? "var(--active-bg)" : p.done ? "var(--violet-150)" : "var(--violet-50)",
-                color: p.on ? "var(--on-active)" : p.done ? "var(--violet-800)" : "var(--muted)",
-                borderRadius: celular ? 14 : 20,
-                padding: celular ? "6px 2px" : "10px 15px",
-                cursor: "pointer",
-                minHeight: 44,
-                fontSize: celular ? 11 : 12.5,
-                fontWeight: 700,
-                lineHeight: 1.2,
-              }}
-            >
-              {celular ? (
-                <>
-                  <span style={{ display: "block", fontSize: 14, fontWeight: 800 }}>{p.n}</span>
-                  <span style={{ display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.label}</span>
-                </>
-              ) : (
-                `${p.n}. ${p.label}`
-              )}
-            </button>
+            <li key={p.label} style={{ minWidth: 0 }}>
+              <button
+                type="button"
+                onClick={() => setPaso(p.n - 1)}
+                aria-current={p.on ? "step" : undefined}
+                data-hecho={p.done || undefined}
+                className="paso-btn"
+              >
+                <span className="paso-btn__numero">{p.done && !p.on ? <Icon name="check" size={14} /> : `${p.n}${celular ? "" : "."}`}</span>
+                <span className="truncate" style={{ maxWidth: "100%" }}>
+                  {p.label}
+                </span>
+              </button>
+            </li>
           ))}
-        </div>
-      </div>
+        </ol>
+      </section>
 
-      <div className="app-screen" style={{ background: "#fff", borderRadius: 22, padding: celular ? 12 : 16, boxShadow: "0 12px 30px -24px rgba(36,18,70,.5)" }}>
+      <div className="app-screen panel" style={{ boxShadow: "var(--shadow-2)", padding: celular ? "var(--space-3)" : undefined }}>
         {/* fieldset disabled apaga todos los campos y botones de los pasos de una sola vez */}
         <fieldset disabled={soloLectura && paso !== 3} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
         {paso === 0 && esTop ? <TopDatos valores={generales} onCambiar={cambiarGeneral} onCambiarDato={cambiarDato} /> : null}
@@ -662,49 +739,6 @@ export default function Formulario() {
         ) : null}
         </fieldset>
       </div>
-
-      {/* Justo arriba de la TabBar (78 px + el área segura de los celulares con barra de gestos). */}
-      <div style={{ position: "fixed", left: 0, right: 0, bottom: "calc(78px + env(safe-area-inset-bottom))", padding: "0 14px", zIndex: 25, pointerEvents: "none" }}>
-        <div style={{ maxWidth: 1020, margin: "0 auto", display: "flex", gap: 9, pointerEvents: "auto" }}>
-          {!soloLectura ? <button
-            onClick={guardarBorrador}
-            style={{
-              border: 0,
-              background: "#fff",
-              color: "var(--violet-800)",
-              fontWeight: 700,
-              fontSize: 13.5,
-              padding: "15px 18px",
-              borderRadius: 18,
-              cursor: "pointer",
-              minHeight: 52,
-              boxShadow: "var(--shadow-float)",
-            }}
-          >
-            Borrador
-          </button> : null}
-          {mostrarSiguiente && !(soloLectura && esUltimo) ? (
-            <button
-              onClick={siguiente}
-              disabled={enviando}
-              style={{
-                flex: 1,
-                border: 0,
-                background: "var(--cta-gradient)",
-                color: "var(--on-cta)",
-                fontWeight: 700,
-                fontSize: 14.5,
-                padding: "15px 18px",
-                borderRadius: 18,
-                cursor: "pointer",
-                minHeight: 52,
-                boxShadow: "var(--shadow-cta)",
-              }}
-            >
-              {esUltimo ? "Cerrar y enviar" : "Siguiente"}
-            </button>
-          ) : null}
-        </div>
       </div>
       {dialogo}
     </AppShell>

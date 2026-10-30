@@ -16,7 +16,8 @@ export default function Inspecciones() {
   return (
     <AppShell title={GRUPO_INSPECCIONES.title} subtitle="Elegí el tipo de inspección" onBack={() => navigate("/")}>
       <FiltrosIconos />
-      <div style={celular ? GRILLA_CELULAR : { display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(340px,1fr))", gap: 18 }}>
+      {/* min(): entre 320 y 360 px una columna fija de 340 se salía de la pantalla. */}
+      <div style={celular ? GRILLA_CELULAR : { display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(340px,100%),1fr))", gap: "var(--space-5)" }}>
         {modulos.map((m, i) => (
           <ModuleCard
             key={m.id}

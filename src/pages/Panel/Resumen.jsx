@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { findModulo, findSub } from "../../data/modulos.js";
-import { Barra, Cifra, Titulo, tarjeta } from "./ui.jsx";
+import { Barra, Cifra, Titulo, tarjeta, textoTarjeta } from "./ui.jsx";
 
 const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
 
@@ -15,10 +15,14 @@ function contar(lista, clave) {
 
 function Fila({ nombre, valor, maximo, extra }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0" }}>
-      <div style={{ flex: "0 1 46%", minWidth: 0, fontSize: 13, fontWeight: 600, overflowWrap: "anywhere" }}>{nombre}</div>
+    <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", padding: "var(--space-1-5) 0" }}>
+      <div className="t-footnote" style={{ flex: "0 1 46%", minWidth: 0, fontWeight: "var(--weight-semibold)", overflowWrap: "anywhere" }}>
+        {nombre}
+      </div>
       <Barra parte={valor} maximo={maximo} />
-      <div style={{ width: 70, textAlign: "right", fontSize: 13, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{extra ?? valor}</div>
+      <div className="t-footnote tabular" style={{ width: 72, textAlign: "right", fontWeight: "var(--weight-bold)" }}>
+        {extra ?? valor}
+      </div>
     </div>
   );
 }
@@ -61,31 +65,44 @@ export default function Resumen({ hallazgos, inspecciones }) {
 
   return (
     <div>
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-        <Cifra valor={datos.abiertos} etiqueta="Hallazgos abiertos" tono={datos.abiertos ? "warn" : undefined} />
+      <div style={{ display: "flex", gap: "var(--space-3)", flexWrap: "wrap" }}>
+        <Cifra valor={datos.abiertos} etiqueta="Hallazgos abiertos" tono={datos.abiertos ? "warning" : undefined} />
         <Cifra valor={datos.cerrados} etiqueta="Hallazgos cerrados" tono="success" />
         <Cifra valor={datos.criticos} etiqueta="Críticos abiertos" tono={datos.criticos ? "danger" : undefined} />
         <Cifra valor={datos.vencidos} etiqueta="Abiertos vencidos" tono={datos.vencidos ? "danger" : undefined} />
       </div>
 
-      <Titulo>Hallazgos por módulo (abiertos / cerrados)</Titulo>
-      <div style={tarjeta}>
-        {datos.porModulo.length === 0 ? <Vacio /> : datos.porModulo.map(([nombre, v]) => (
-          <Fila key={nombre} nombre={nombre} valor={v.abiertos + v.cerrados} maximo={maxModulo} extra={`${v.abiertos} / ${v.cerrados}`} />
-        ))}
-      </div>
+      {/* En pantallas anchas los tres bloques van en columnas. */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(320px,100%),1fr))", columnGap: "var(--space-4)" }}>
+        <section>
+          <Titulo>Hallazgos por módulo (abiertos / cerrados)</Titulo>
+          <div style={tarjeta}>
+            {datos.porModulo.length === 0 ? <Vacio /> : datos.porModulo.map(([nombre, v]) => (
+              <Fila key={nombre} nombre={nombre} valor={v.abiertos + v.cerrados} maximo={maxModulo} extra={`${v.abiertos} / ${v.cerrados}`} />
+            ))}
+          </div>
+        </section>
 
-      <Titulo>Inspecciones enviadas por inspector</Titulo>
-      <div style={tarjeta}>
-        {datos.porInspector.length === 0 ? <Vacio /> : datos.porInspector.map(([nombre, n]) => <Fila key={nombre} nombre={nombre} valor={n} maximo={maxInspector} />)}
-      </div>
+        <section>
+          <Titulo>Inspecciones enviadas por inspector</Titulo>
+          <div style={tarjeta}>
+            {datos.porInspector.length === 0 ? <Vacio /> : datos.porInspector.map(([nombre, n]) => <Fila key={nombre} nombre={nombre} valor={n} maximo={maxInspector} />)}
+          </div>
+        </section>
 
-      <Titulo>Inspecciones enviadas por mes</Titulo>
-      <div style={tarjeta}>
-        {datos.meses.map((m) => <Fila key={m.clave} nombre={m.nombre} valor={m.n} maximo={maxMes} />)}
+        <section>
+          <Titulo>Inspecciones enviadas por mes</Titulo>
+          <div style={tarjeta}>
+            {datos.meses.map((m) => <Fila key={m.clave} nombre={m.nombre} valor={m.n} maximo={maxMes} />)}
+          </div>
+        </section>
       </div>
     </div>
   );
 }
 
-const Vacio = () => <div style={{ fontSize: 13, color: "var(--card-desc, var(--muted))" }}>Todavía no hay datos.</div>;
+const Vacio = () => (
+  <div className="t-footnote" style={textoTarjeta}>
+    Todavía no hay datos.
+  </div>
+);

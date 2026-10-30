@@ -1,87 +1,63 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
-
-const botonBase = {
-  border: 0,
-  fontWeight: 700,
-  fontSize: 13.5,
-  padding: "11px 16px",
-  borderRadius: 14,
-  cursor: "pointer",
-  minHeight: 44,
-};
+import { useCallback, useRef, useState } from "react";
+import Sheet from "./ui/Sheet.jsx";
+import Button from "./ui/Button.jsx";
 
 // Pregunta antes de una acción que no se deshace. Uso:
 //   const [confirmar, dialogo] = useConfirmacion();
 //   if (!(await confirmar({ titulo, mensaje, aceptar: "Eliminar" }))) return;
 // y se renderiza {dialogo} en el componente. No usa window.confirm: en la app instalada
-// en el celular se ve como un cartel del sistema y bloquea la pestaña. Se dibuja en <body>
-// (portal): dentro de la TabBar, su backdrop-filter lo dejaba encerrado en la barra.
+// en el celular se ve como un cartel del sistema y bloquea la pestaña. Es una hoja (Sheet):
+// desde abajo en el celular, centrada en pantallas grandes; se dibuja en <body> (portal).
+// `peligro` (por defecto) pinta el botón de aceptar en rojo: borrar, dar de baja, etc.
 export function useConfirmacion() {
   const [pedido, setPedido] = useState(null);
+  const [abierto, setAbierto] = useState(false);
   const pedidoRef = useRef(null);
+
   const confirmar = useCallback(
     (opciones) =>
       new Promise((resolver) => {
         pedidoRef.current?.resolver(false); // si había otra pregunta abierta, queda como "no"
         pedidoRef.current = { ...opciones, resolver };
         setPedido(pedidoRef.current);
+        setAbierto(true);
       }),
     []
   );
+
   const responder = useCallback((si) => {
     pedidoRef.current?.resolver(si);
     pedidoRef.current = null;
-    setPedido(null);
+    setAbierto(false); // el contenido se queda hasta que termina la animación de salida
   }, []);
-  const dialogo = pedido ? createPortal(<Dialogo {...pedido} onResponder={responder} />, document.body) : null;
+
+  const dialogo = <Dialogo {...pedido} abierto={abierto} onResponder={responder} />;
   return [confirmar, dialogo];
 }
 
-// `peligro` (por defecto) pinta el botón de aceptar en rojo: borrar, dar de baja, etc.
-function Dialogo({ titulo, mensaje, aceptar = "Aceptar", cancelar = "Cancelar", peligro = true, onResponder }) {
-  const cancelarRef = useRef(null);
-
-  useEffect(() => {
-    cancelarRef.current?.focus(); // con Enter no se confirma sin querer
-    const alTeclear = (e) => e.key === "Escape" && onResponder(false);
-    window.addEventListener("keydown", alTeclear);
-    return () => window.removeEventListener("keydown", alTeclear);
-  }, [onResponder]);
+function Dialogo({ abierto, titulo, mensaje, aceptar = "Aceptar", cancelar = "Cancelar", peligro = true, onResponder }) {
+  const cancelarRef = useRef(null); // con Enter no se confirma sin querer
 
   return (
-    <div
-      onClick={() => onResponder(false)}
-      style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(20,12,35,.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
-    >
-      <div
-        role="alertdialog"
-        aria-modal="true"
-        aria-labelledby="confirmacion-titulo"
-        aria-describedby={mensaje ? "confirmacion-mensaje" : undefined}
-        onClick={(e) => e.stopPropagation()}
-        style={{ background: "#fff", color: "var(--ink)", borderRadius: 20, padding: 18, width: "min(420px, 100%)", boxShadow: "var(--shadow-float)" }}
-      >
-        <div id="confirmacion-titulo" className="heading" style={{ fontWeight: 800, fontSize: 16, marginBottom: 6 }}>
-          {titulo}
-        </div>
-        {mensaje ? (
-          <div id="confirmacion-mensaje" style={{ fontSize: 13.5, color: "var(--muted-4)", lineHeight: 1.45 }}>
-            {mensaje}
-          </div>
-        ) : null}
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap", marginTop: 16 }}>
-          <button ref={cancelarRef} onClick={() => onResponder(false)} style={{ ...botonBase, background: "var(--violet-50)", color: "var(--violet-800)" }}>
+    <Sheet
+      abierto={abierto}
+      onCerrar={() => onResponder(false)}
+      role="alertdialog"
+      titulo={titulo}
+      descripcion={mensaje}
+      conCerrar={false}
+      focoInicial={cancelarRef}
+      ancho="420px"
+      pie={
+        <>
+          <Button ref={cancelarRef} variant="secondary" onClick={() => onResponder(false)}>
             {cancelar}
-          </button>
-          <button
-            onClick={() => onResponder(true)}
-            style={{ ...botonBase, ...(peligro ? { background: "var(--danger-fg)", color: "#fff" } : { background: "var(--active-bg)", color: "var(--on-active)" }) }}
-          >
+          </Button>
+          <Button variant={peligro ? "danger" : "solid"} onClick={() => onResponder(true)}>
             {aceptar}
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </>
+      }
+    />
   );
 }

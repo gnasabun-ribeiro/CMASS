@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
+import Button from "../components/ui/Button.jsx";
+import Banner from "../components/ui/Banner.jsx";
+import { Field, Input } from "../components/ui/Field.jsx";
 import logoRibeiro from "../assets/logo-ribeiro.png";
 
 // Mensaje según el motivo: antes cualquier falla (sin conexión, demasiados intentos) decía
@@ -14,6 +17,19 @@ function mensajeDeError(err) {
   return `No se pudo completar: ${err.message}`;
 }
 
+// Pantallas sin marco (Login, Cambiar contraseña): centradas sobre el degradé, respetando
+// las áreas seguras del celular (notch y barra de gestos).
+export const pantallaSuelta = {
+  minHeight: "100dvh",
+  background: "var(--app-gradient)",
+  display: "flex",
+  flexDirection: "column",
+  color: "var(--text-primary)",
+  paddingTop: "env(safe-area-inset-top)",
+  paddingLeft: "env(safe-area-inset-left)",
+  paddingRight: "env(safe-area-inset-right)",
+};
+
 export default function Login() {
   const { login, resetPassword, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
@@ -23,10 +39,14 @@ export default function Login() {
   const [resetEnviado, setResetEnviado] = useState(false);
   const [error, setError] = useState("");
   const [enviando, setEnviando] = useState(false);
+  const [enviandoReset, setEnviandoReset] = useState(false);
 
   const entrar = async (e) => {
     e.preventDefault();
-    if (!email.trim() || !pass) return;
+    if (!email.trim() || !pass) {
+      setError("Completá el correo y la contraseña."); // en vez del cartel del navegador
+      return;
+    }
     setError("");
     setEnviando(true);
     const { error: authError } = await login(email.trim(), pass);
@@ -45,7 +65,9 @@ export default function Login() {
       return;
     }
     setError("");
+    setEnviandoReset(true);
     const { error: resetError } = await resetPassword(email.trim());
+    setEnviandoReset(false);
     if (resetError) {
       setError(mensajeDeError(resetError));
       return;
@@ -57,220 +79,87 @@ export default function Login() {
   if (!loading && isAuthenticated) return <Navigate to={location.state?.from?.pathname || "/"} replace />;
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "var(--app-gradient)",
-        display: "flex",
-        flexDirection: "column",
-        color: "var(--ink)",
-      }}
-    >
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 22 }}>
-        <div className="pop-in" style={{ width: "100%", maxWidth: 430 }}>
-          <div style={{ textAlign: "center", marginBottom: 22 }}>
+    <div className="sobre-fondo" style={pantallaSuelta}>
+      <main style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "var(--space-6) var(--space-5)" }}>
+        <div className="pop-in" style={{ width: "100%", maxWidth: 420 }}>
+          <div style={{ textAlign: "center", marginBottom: "var(--space-6)" }}>
             <div
               style={{
-                width: 66,
-                height: 66,
-                margin: "0 auto 14px",
-                borderRadius: 21,
+                width: 64,
+                height: 64,
+                margin: "0 auto var(--space-4)",
+                borderRadius: "var(--radius-xl)",
                 background: "#000",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                overflow: "hidden",
                 boxShadow: "var(--shadow-logo)",
                 animation: "pulseRing 2.6s ease-out infinite",
               }}
             >
-              <img
-                src={logoRibeiro}
-                alt="Ribeiro"
-                width={66}
-                height={66}
-                style={{ objectFit: "contain", display: "block" }}
-              />
+              <img src={logoRibeiro} alt="Ribeiro" width={64} height={64} style={{ display: "block", objectFit: "contain" }} />
             </div>
-            <div
-              className="heading"
-              style={{
-                fontWeight: 800,
-                fontSize: 27,
-                letterSpacing: "-.6px",
-                lineHeight: 1.15,
-                color: "#fff",
-              }}
-            >
+            <h1 className="t-display" style={{ color: "var(--text-on-app)" }}>
               Inspecciones CMASS
-            </div>
-            <div style={{ fontSize: 13, color: "var(--violet-150)", marginTop: 4 }}>
+            </h1>
+            <p className="t-footnote" style={{ color: "var(--text-on-app-muted)", marginTop: "var(--space-1)" }}>
               Calidad · Medio Ambiente · Seguridad · Salud
-            </div>
+            </p>
           </div>
 
-          <form
-            onSubmit={entrar}
-            style={{
-              background: "#fff",
-              borderRadius: 24,
-              padding: 18,
-              boxShadow: "0 22px 50px -26px rgba(36,18,70,.45)",
-            }}
-          >
-            <div
-              style={{
-                fontSize: 11,
-                letterSpacing: ".12em",
-                textTransform: "uppercase",
-                color: "var(--muted)",
-                fontWeight: 600,
-                marginBottom: 11,
-              }}
-            >
-              Iniciar sesión
-            </div>
+          <form onSubmit={entrar} className="panel" style={{ display: "grid", gap: "var(--space-4)", boxShadow: "var(--shadow-4)", "--focus-color": "var(--violet-600)" }} noValidate>
+            <h2 className="t-overline">Iniciar sesión</h2>
 
-            <label style={{ display: "block", marginBottom: 11 }}>
-              <span style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--muted-3)", marginBottom: 6 }}>
-                Correo electrónico
-              </span>
-              <input
+            <Field label="Correo electrónico">
+              <Input
                 type="email"
+                inputMode="email"
+                autoComplete="username"
+                autoCapitalize="none"
+                spellCheck={false}
                 required
+                size="lg"
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
                   setResetEnviado(false);
                 }}
                 placeholder="tecnico@empresa.com"
-                style={inputStyle}
               />
-            </label>
+            </Field>
 
-            <label style={{ display: "block", marginBottom: 9 }}>
-              <span style={{ display: "block", fontSize: 12, fontWeight: 600, color: "var(--muted-3)", marginBottom: 6 }}>
-                Contraseña
-              </span>
-              <input
-                type="password"
-                required
-                value={pass}
-                onChange={(e) => setPass(e.target.value)}
-                placeholder="••••••••"
-                style={inputStyle}
-              />
-            </label>
-
-            <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 14 }}>
-              <button
-                type="button"
-                onClick={olvideContrasena}
-                style={{
-                  flex: "0 0 auto",
-                  whiteSpace: "nowrap",
-                  border: 0,
-                  background: "transparent",
-                  color: "var(--violet-800)",
-                  fontSize: 12.5,
-                  fontWeight: 700,
-                  padding: "8px 4px",
-                  cursor: "pointer",
-                  minHeight: 40,
-                }}
-              >
-                Olvidé mi contraseña
-              </button>
+            <div>
+              <Field label="Contraseña">
+                <Input type="password" autoComplete="current-password" required size="lg" value={pass} onChange={(e) => setPass(e.target.value)} placeholder="••••••••" />
+              </Field>
+              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "var(--space-1)" }}>
+                <Button variant="ghost" size="sm" onClick={olvideContrasena} loading={enviandoReset}>
+                  Olvidé mi contraseña
+                </Button>
+              </div>
             </div>
 
-            {resetEnviado ? (
-              <div
-                style={{
-                  background: "var(--violet-75)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 14,
-                  padding: 12,
-                  fontSize: 12.5,
-                  color: "var(--muted-3)",
-                  lineHeight: 1.5,
-                  marginBottom: 14,
-                }}
-              >
-                Te enviamos un enlace para restablecer la contraseña al correo indicado.
-              </div>
-            ) : null}
-
+            {resetEnviado ? <Banner tono="info">Te enviamos un enlace para restablecer la contraseña al correo indicado.</Banner> : null}
             {error ? (
-              <div
-                style={{
-                  background: "var(--danger-bg)",
-                  border: "1px solid var(--danger-border)",
-                  borderRadius: 14,
-                  padding: 12,
-                  fontSize: 12.5,
-                  color: "var(--danger-fg)",
-                  lineHeight: 1.5,
-                  marginBottom: 14,
-                }}
-              >
+              <Banner tono="danger" alerta>
                 {error}
-              </div>
+              </Banner>
             ) : null}
 
-            <button
-              type="submit"
-              disabled={enviando}
-              style={{
-                width: "100%",
-                border: 0,
-                borderRadius: 16,
-                background: "var(--cta-gradient)",
-                color: "var(--on-cta)",
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
-                fontWeight: 700,
-                fontSize: 15,
-                padding: 15,
-                cursor: enviando ? "default" : "pointer",
-                opacity: enviando ? 0.7 : 1,
-                minHeight: 54,
-                boxShadow: "var(--shadow-cta)",
-              }}
-            >
+            <Button type="submit" variant="primary" size="lg" block loading={enviando}>
               {enviando ? "Ingresando…" : "Ingresar"}
-            </button>
+            </Button>
           </form>
         </div>
-      </div>
+      </main>
       {/* Atribución que pide la licencia gratuita de Flaticon por los íconos animados de Inicio. */}
-      <div
-        style={{
-          textAlign: "center",
-          fontSize: 11.5,
-          color: "var(--violet-150)",
-          padding: "0 22px calc(14px + env(safe-area-inset-bottom))",
-        }}
+      <footer
+        className="t-caption"
+        style={{ textAlign: "center", color: "var(--text-on-app-muted)", padding: "0 var(--space-5) calc(var(--space-4) + env(safe-area-inset-bottom))" }}
       >
         Íconos animados creados por{" "}
-        <a
-          href="https://www.flaticon.com/free-animated-icons"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ color: "inherit", textDecoration: "underline" }}
-        >
+        <a href="https://www.flaticon.com/free-animated-icons" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>
           Magnific - Flaticon
         </a>
-      </div>
+      </footer>
     </div>
   );
 }
-
-const inputStyle = {
-  width: "100%",
-  border: "1.5px solid var(--border)",
-  borderRadius: 16,
-  padding: 15,
-  fontSize: 16,
-  background: "var(--violet-25)",
-  minHeight: 56,
-  outline: "none",
-  color: "var(--ink)",
-};

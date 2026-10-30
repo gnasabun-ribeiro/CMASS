@@ -1,54 +1,42 @@
 import Icon from "./Icon.jsx";
-import { useConfirmacion } from "./Confirmacion.jsx";
+import Banner from "./ui/Banner.jsx";
 
 // Fotos generales de la inspección: se sacan o eligen varias a la vez y se muestran como miniaturas.
+// `aviso`: archivos que no se pudieron leer como imagen (no es un error de guardado: va acá, junto a las fotos).
 export default function GaleriaFotos({ fotos, subiendo = 0, max = 20, aviso = null, onAgregar, onQuitar }) {
   const lleno = fotos.length >= max;
   const ocupado = subiendo > 0;
   const habilitado = !lleno && !ocupado;
-  const [confirmar, dialogo] = useConfirmacion();
 
-  const quitar = async (f, i) => {
-    if (await confirmar({ titulo: `¿Quitar la foto ${i + 1}?`, mensaje: "Se borra de la inspección.", aceptar: "Quitar" })) onQuitar(f);
-  };
+  // Quitar no pregunta: el aviso que aparece tiene "Deshacer" (ver borrarConDeshacer en Formulario).
+  const quitar = (f) => onQuitar(f);
 
   return (
-    <div style={{ borderRadius: 18, border: "1px solid var(--border)", background: "var(--violet-tint-2)", padding: 14, marginBottom: 14 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: fotos.length || ocupado ? 12 : 0 }}>
+    <section className="panel--inset" aria-label="Fotos de la inspección" style={{ marginBottom: "var(--space-4)" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", flexWrap: "wrap", marginBottom: fotos.length || ocupado || aviso ? "var(--space-3)" : 0 }}>
         <div style={{ flex: 1, minWidth: 160 }}>
-          <div style={{ fontSize: 11, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--muted)", fontWeight: 600 }}>
+          <h3 className="panel__titulo" style={{ marginBottom: 0 }}>
             Fotos de la inspección
-          </div>
-          <div style={{ fontSize: 12, color: "var(--muted-2)", marginTop: 2 }}>
+          </h3>
+          <div className="t-caption tabular" style={{ color: "var(--text-tertiary)", marginTop: "var(--space-0-5)" }} aria-live="polite">
             {fotos.length} de {max}
             {lleno ? " · límite alcanzado" : ""}
           </div>
         </div>
+        {/* El input va adentro del label: tocar el botón abre la cámara o la galería. */}
         <label
-          style={{
-            border: "1.5px dashed var(--violet-300)",
-            background: "#fff",
-            color: "var(--violet-800)",
-            fontSize: 12.5,
-            fontWeight: 700,
-            padding: "10px 14px",
-            borderRadius: 14,
-            cursor: habilitado ? "pointer" : "not-allowed",
-            opacity: habilitado ? 1 : 0.5,
-            minHeight: 46,
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-          }}
+          className="btn btn--outline"
+          aria-disabled={!habilitado || undefined}
+          style={{ borderStyle: "dashed", cursor: habilitado ? "pointer" : "not-allowed", opacity: habilitado ? 1 : 0.5 }}
         >
-          <Icon name="camera" size={16} strokeWidth={1.8} />
+          {ocupado ? <span className="spinner" aria-hidden="true" /> : <Icon name="camera" size={16} />}
           {ocupado ? "Procesando…" : "Agregar fotos"}
           <input
             type="file"
             accept="image/*"
             multiple
-            hidden
             disabled={!habilitado}
+            className="visually-hidden"
             onChange={(e) => {
               const archivos = [...(e.target.files || [])];
               e.target.value = "";
@@ -59,54 +47,76 @@ export default function GaleriaFotos({ fotos, subiendo = 0, max = 20, aviso = nu
       </div>
 
       {aviso ? (
-        <div role="alert" style={{ fontSize: 12.5, fontWeight: 600, color: "var(--danger-fg)", background: "var(--danger-bg)", borderRadius: 10, padding: "8px 11px", margin: fotos.length || ocupado ? "0 0 12px" : "12px 0 0" }}>
+        <Banner tono="danger" alerta style={{ marginBottom: fotos.length || ocupado ? "var(--space-3)" : 0 }}>
           {aviso}
-        </div>
+        </Banner>
       ) : null}
 
       {fotos.length || ocupado ? (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(96px,1fr))", gap: 10 }}>
+        <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(96px,1fr))", gap: "var(--space-2)" }}>
           {fotos.map((f, i) => (
-            <div key={f.id} style={{ position: "relative", aspectRatio: "1", borderRadius: 12, overflow: "hidden", border: "1px solid var(--border)", background: "var(--neutral-bg)" }}>
+            <li
+              key={f.id}
+              style={{ position: "relative", aspectRatio: "1", borderRadius: "var(--radius-md)", overflow: "hidden", border: "var(--hairline) solid var(--border)", background: "var(--neutral-bg)" }}
+            >
               {f.url ? (
-                <a href={f.url} target="_blank" rel="noreferrer">
-                  <img src={f.url} alt={`Foto ${i + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                <a href={f.url} target="_blank" rel="noreferrer" aria-label={`Ver foto ${i + 1}`} style={{ display: "block", height: "100%" }}>
+                  <img src={f.url} alt={`Foto ${i + 1}`} loading="lazy" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                 </a>
               ) : (
-                <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "var(--muted)", textAlign: "center", padding: 6 }}>
+                <div className="t-caption" style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text-tertiary)", textAlign: "center", padding: "var(--space-1-5)" }}>
                   Sin vista previa (sin conexión)
                 </div>
               )}
+              {/* Área táctil de 44 px; el círculo visible es más chico. */}
               <button
+                type="button"
                 onClick={() => quitar(f, i)}
                 aria-label={`Quitar foto ${i + 1}`}
+                className="sin-hover"
                 style={{
                   position: "absolute",
-                  top: 4,
-                  right: 4,
-                  width: 28,
-                  height: 28,
-                  borderRadius: "50%",
+                  top: 0,
+                  right: 0,
+                  width: "var(--touch-min)",
+                  height: "var(--touch-min)",
                   border: 0,
-                  background: "rgba(0,0,0,.65)",
-                  color: "#fff",
-                  fontSize: 16,
-                  lineHeight: 1,
-                  cursor: "pointer",
+                  padding: 0,
+                  background: "transparent",
+                  display: "flex",
+                  alignItems: "flex-start",
+                  justifyContent: "flex-end",
                 }}
               >
-                ×
+                <span
+                  aria-hidden="true"
+                  style={{
+                    margin: "var(--space-1)",
+                    width: 28,
+                    height: 28,
+                    borderRadius: "var(--radius-full)",
+                    background: "rgba(0,0,0,.65)",
+                    color: "#fff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Icon name="x" size={16} />
+                </span>
               </button>
-            </div>
+            </li>
           ))}
           {Array.from({ length: subiendo }).map((_, i) => (
-            <div key={`p${i}`} style={{ aspectRatio: "1", borderRadius: 12, border: "1px dashed var(--violet-300)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "var(--muted)" }}>
-              Procesando…
-            </div>
+            <li
+              key={`p${i}`}
+              className="skeleton"
+              aria-label="Procesando foto"
+              style={{ aspectRatio: "1", borderRadius: "var(--radius-md)" }}
+            />
           ))}
-        </div>
+        </ul>
       ) : null}
-      {dialogo}
-    </div>
+    </section>
   );
 }

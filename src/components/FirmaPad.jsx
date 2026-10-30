@@ -1,14 +1,10 @@
 import { useEffect, useRef, useState } from "react";
+import Button from "./ui/Button.jsx";
+import Banner from "./ui/Banner.jsx";
+import { toast } from "./ui/Toast.jsx";
 
-const botonBase = {
-  border: 0,
-  fontWeight: 700,
-  fontSize: 12.5,
-  padding: "9px 14px",
-  borderRadius: 12,
-  cursor: "pointer",
-  minHeight: 40,
-};
+// Recuadro de papel: blanco en cualquier tema o modo.
+const papel = { height: 112, borderRadius: "var(--radius-lg)", background: "var(--paper)" };
 
 // Recuadro para firmar con el dedo o el mouse. Si ya hay una firma guardada
 // (`firma.url`) la muestra y ofrece volver a firmar. Un trazo sin guardar se entrega
@@ -108,8 +104,11 @@ export default function FirmaPad({ firma, guardando, onGuardar, borrador, onBorr
       if (!blob) return;
       trazoRef.current = false; // guardada deja de ser borrador
       const ok = await onGuardar(blob);
-      if (ok === false) trazoRef.current = true; // no se guardó: el trazo sigue en el recuadro
-      else setRehaciendo(false);
+      if (ok === false) trazoRef.current = true; // no se guardó: el trazo sigue en el recuadro (el error se ve arriba)
+      else {
+        setRehaciendo(false);
+        toast.success("Firma guardada");
+      }
     }, "image/png");
   };
 
@@ -121,57 +120,47 @@ export default function FirmaPad({ firma, guardando, onGuardar, borrador, onBorr
   if (mostrarImagen) {
     return (
       <div>
-        <div style={{ height: 100, border: "1.5px solid var(--violet-300)", borderRadius: 14, background: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <img src={firma.url} alt="Firma" style={{ maxWidth: "100%", maxHeight: "100%" }} />
+        <div style={{ ...papel, border: "1.5px solid var(--accent-border)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <img src={firma.url} alt="Firma guardada" style={{ maxWidth: "100%", maxHeight: "100%" }} />
         </div>
-        <button onClick={() => setRehaciendo(true)} style={{ ...botonBase, marginTop: 8, background: "var(--violet-50)", color: "var(--violet-800)" }}>
+        <Button size="sm" onClick={() => setRehaciendo(true)} style={{ marginTop: "var(--space-2)" }}>
           Firmar de nuevo
-        </button>
+        </Button>
       </div>
     );
   }
 
   return (
     <div>
+      {/* Papel blanco en cualquier tema o modo: la firma se guarda con trazo negro. */}
       <canvas
         ref={canvasRef}
+        role="img"
+        aria-label="Recuadro para firmar con el dedo o el mouse"
         onPointerDown={empezar}
         onPointerMove={mover}
         onPointerUp={terminar}
         onPointerCancel={terminar}
-        style={{
-          width: "100%",
-          height: 100,
-          border: "1.5px dashed var(--violet-300)",
-          borderRadius: 14,
-          background: "#fff",
-          touchAction: "none",
-          cursor: "crosshair",
-          display: "block",
-        }}
+        style={{ ...papel, width: "100%", border: "1.5px dashed var(--accent-border-strong)", touchAction: "none", cursor: "crosshair", display: "block" }}
       />
       {hayTrazo ? (
-        <div style={{ fontSize: 12, fontWeight: 700, color: "var(--warn-fg)", background: "var(--warn-bg)", borderRadius: 10, padding: "6px 10px", marginTop: 8 }}>
+        <Banner tono="warning" style={{ marginTop: "var(--space-2)" }}>
           Todavía no está guardada: tocá "Guardar firma" para que quede en el informe.
-        </div>
+        </Banner>
       ) : (
-        <div style={{ fontSize: 11.5, color: "var(--muted-2)", marginTop: 6 }}>Firmá dentro del recuadro y tocá "Guardar firma"</div>
+        <div className="field-hint">Firmá dentro del recuadro y tocá "Guardar firma"</div>
       )}
-      <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
-        <button onClick={limpiar} disabled={!hayTrazo || guardando} style={{ ...botonBase, background: "var(--neutral-bg)", color: "var(--neutral-fg)", opacity: hayTrazo ? 1 : 0.5 }}>
+      <div style={{ display: "flex", gap: "var(--space-2)", marginTop: "var(--space-2)", flexWrap: "wrap" }}>
+        <Button variant="neutral" size="sm" onClick={limpiar} disabled={!hayTrazo || guardando}>
           Borrar
-        </button>
-        <button
-          onClick={guardar}
-          disabled={!hayTrazo || guardando}
-          style={{ ...botonBase, background: "var(--active-bg)", color: "var(--on-active)", opacity: hayTrazo && !guardando ? 1 : 0.5 }}
-        >
+        </Button>
+        <Button variant="solid" size="sm" onClick={guardar} disabled={!hayTrazo} loading={guardando}>
           {guardando ? "Guardando…" : "Guardar firma"}
-        </button>
+        </Button>
         {rehaciendo ? (
-          <button onClick={cancelar} disabled={guardando} style={{ ...botonBase, background: "transparent", color: "var(--muted)" }}>
+          <Button variant="ghost" size="sm" onClick={cancelar} disabled={guardando}>
             Cancelar
-          </button>
+          </Button>
         ) : null}
       </div>
     </div>

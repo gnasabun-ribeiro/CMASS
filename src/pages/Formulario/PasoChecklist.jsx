@@ -1,5 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Icon from "../../components/Icon.jsx";
+import Button from "../../components/ui/Button.jsx";
+import { Textarea } from "../../components/ui/Field.jsx";
 import { OPCIONES, agruparPorCategoria } from "../../data/checklist.js";
 import { useCelular } from "../../lib/useCelular.js";
 
@@ -38,158 +40,126 @@ export default function PasoChecklist({ items, respuestas, comentarios = {}, onR
   const esUltimo = indice === bloques.length - 1;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <button
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
+        <Button
+          variant={esPrimero ? "secondary" : "strong"}
+          icon="back"
           onClick={() => setBloqueActual((b) => Math.max(0, b - 1))}
           disabled={esPrimero}
           aria-label="Categoría anterior"
-          style={{
-            width: 40,
-            height: 40,
-            flex: "0 0 40px",
-            borderRadius: 14,
-            border: 0,
-            background: esPrimero ? "var(--violet-50)" : "var(--violet-150)",
-            color: esPrimero ? "var(--muted)" : "var(--violet-800)",
-            cursor: esPrimero ? "not-allowed" : "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Icon name="back" size={18} strokeWidth={2.1} />
-        </button>
+        />
 
-        <div style={{ flex: 1, textAlign: "center" }}>
-          <div style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600 }}>
+        <div style={{ flex: 1, minWidth: 0, textAlign: "center" }} aria-live="polite">
+          <div className="t-caption" style={{ color: "var(--text-tertiary)", fontWeight: "var(--weight-semibold)" }}>
             Página {indice + 1} de {bloques.length}
           </div>
-          <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--violet-800)" }}>{bloque.categoria}</div>
+          <h3 className="t-headline" style={{ fontSize: "var(--text-callout)", color: "var(--accent-text)", overflowWrap: "anywhere" }}>
+            {bloque.categoria}
+          </h3>
         </div>
 
-        <button
+        <Button
+          variant={esUltimo ? "secondary" : "strong"}
+          icon="arrowRight"
           onClick={() => setBloqueActual((b) => Math.min(bloques.length - 1, b + 1))}
           disabled={esUltimo}
           aria-label="Categoría siguiente"
-          style={{
-            width: 40,
-            height: 40,
-            flex: "0 0 40px",
-            borderRadius: 14,
-            border: 0,
-            background: esUltimo ? "var(--violet-50)" : "var(--violet-150)",
-            color: esUltimo ? "var(--muted)" : "var(--violet-800)",
-            cursor: esUltimo ? "not-allowed" : "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <span style={{ display: "inline-flex", transform: "rotate(180deg)" }}>
-            <Icon name="back" size={18} strokeWidth={2.1} />
-          </span>
-        </button>
+        />
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
+      <ol style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
         {bloque.items.map(({ codigo, categoria, texto }, i) => (
-          <div
+          <li
             key={codigo}
             className="pop-in"
             style={{
-              borderRadius: 18,
-              background: "var(--violet-tint-2)",
-              border: "1px solid var(--border)",
-              padding: celular ? 11 : 13,
+              borderRadius: "var(--radius-lg)",
+              background: "var(--surface-muted)",
+              border: "var(--hairline) solid var(--border)",
+              padding: celular ? "var(--space-3)" : "var(--space-4)",
               animationDelay: `${i * 0.045}s`,
             }}
           >
-            <div style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 11 }}>
-              <span
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: "var(--violet-800)",
-                  background: "var(--violet-150)",
-                  borderRadius: 8,
-                  padding: "4px 8px",
-                  flex: "0 0 auto",
-                }}
-              >
+            <div style={{ display: "flex", gap: "var(--space-3)", alignItems: "flex-start", marginBottom: "var(--space-3)" }}>
+              <span className="chip chip--accent tabular" style={{ borderRadius: "var(--radius-sm)", flex: "0 0 auto" }}>
                 {codigo}
               </span>
-              <span style={{ fontSize: 14, lineHeight: 1.45, fontWeight: 500 }}>{texto}</span>
+              <span id={`texto-${codigo}`} className="t-callout" style={{ fontWeight: "var(--weight-medium)" }}>
+                {texto}
+              </span>
             </div>
             {/* En el celular, grilla de 2×2 con botones parejos (en fila quedaban 2 arriba y 2 abajo de distinto ancho). */}
-            <div style={celular ? { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 } : { display: "flex", gap: 7, flexWrap: "wrap" }}>
+            <div
+              role="group"
+              aria-labelledby={`texto-${codigo}`}
+              style={celular ? { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "var(--space-2)" } : { display: "flex", gap: "var(--space-2)", flexWrap: "wrap" }}
+            >
               {OPCIONES.map((o) => {
                 const on = respuestas[codigo] === o.value;
                 return (
                   <button
                     key={o.value}
+                    type="button"
                     onClick={() => onResponder({ codigo, categoria, texto }, o.value)}
                     aria-pressed={on}
                     style={{
                       border: `1.5px solid ${on ? o.border : "var(--border)"}`,
-                      background: on ? o.bg : "#fff",
-                      color: on ? o.fg : "var(--muted-4)",
-                      fontSize: 12.5,
-                      fontWeight: 700,
-                      padding: celular ? "8px 6px" : "10px 16px",
-                      borderRadius: 14,
-                      cursor: "pointer",
-                      minHeight: 46,
+                      background: on ? o.bg : "var(--surface)",
+                      color: on ? o.fg : "var(--text-secondary)",
+                      fontSize: "var(--text-footnote)",
+                      fontWeight: "var(--weight-bold)",
+                      padding: celular ? "var(--space-2) var(--space-1-5)" : "var(--space-2) var(--space-4)",
+                      borderRadius: "var(--radius-lg)",
+                      minHeight: "var(--touch-min)",
                       lineHeight: 1.2,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "var(--space-1)",
                       // "Cumple parcialmente" no entra en media fila de 360 px: ahí puede pasar a dos líneas.
                       whiteSpace: celular ? "normal" : "nowrap",
                     }}
                   >
+                    {on ? <Icon name="check" size={14} /> : null}
                     {o.label}
                   </button>
                 );
               })}
             </div>
             {respuestas[codigo] === "parcial" ? (
-              <div style={{ marginTop: 10 }}>
-                <label htmlFor={`detalle-${codigo}`} style={{ display: "block", fontSize: 12.5, fontWeight: 700, color: "var(--warn-fg)", marginBottom: 5 }}>
+              <div style={{ marginTop: "var(--space-3)" }}>
+                <label htmlFor={`detalle-${codigo}`} className="field-label" style={{ color: "var(--warn-fg)" }}>
                   Detalle de lo que no cumple (obligatorio)
                 </label>
-                <textarea
+                <Textarea
                   id={`detalle-${codigo}`}
                   required
                   aria-required="true"
+                  aria-invalid={!comentarios[codigo]?.trim()}
+                  aria-describedby={!comentarios[codigo]?.trim() ? `falta-${codigo}` : undefined}
                   rows={3}
                   maxLength={1000}
                   value={comentarios[codigo] || ""}
                   onChange={(e) => onComentar({ codigo, categoria, texto }, e.target.value)}
                   onBlur={onComentarioListo}
                   placeholder="Qué se cumple y qué falta"
-                  style={{
-                    width: "100%",
-                    boxSizing: "border-box",
-                    font: "inherit",
-                    fontSize: 13.5,
-                    color: "var(--ink)",
-                    background: "#fff",
-                    border: `1.5px solid ${comentarios[codigo]?.trim() ? "var(--border)" : "var(--danger-border)"}`,
-                    borderRadius: 12,
-                    padding: "9px 11px",
-                    resize: "vertical",
-                  }}
+                  style={{ background: "var(--surface)" }}
                 />
                 {!comentarios[codigo]?.trim() ? (
-                  <div style={{ fontSize: 11.5, color: "var(--danger-fg)", fontWeight: 600, marginTop: 4 }}>Escribí el detalle para poder cerrar la inspección.</div>
+                  <div id={`falta-${codigo}`} className="field-error">
+                    Escribí el detalle para poder cerrar la inspección.
+                  </div>
                 ) : null}
               </div>
             ) : null}
-          </div>
+          </li>
         ))}
-      </div>
+      </ol>
 
       {/* Pasa a otra fila en vez de desplazarse: centrado y con scroll, las primeras páginas quedaban
           cortadas a la izquierda sin forma de llegar (Trailers tiene 12 secciones). */}
-      <div style={{ display: "flex", gap: 7, flexWrap: "wrap", justifyContent: "center" }}>
+      <nav aria-label="Categorías del checklist" style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap", justifyContent: "center" }}>
         {bloques.map((b, i) => {
           const respondidas = b.items.filter((it) => respuestas[it.codigo] != null).length;
           const completo = respondidas === b.items.length;
@@ -197,27 +167,29 @@ export default function PasoChecklist({ items, respuestas, comentarios = {}, onR
           return (
             <button
               key={b.categoria}
+              type="button"
               onClick={() => setBloqueActual(i)}
               aria-label={`${b.categoria} (${respondidas}/${b.items.length})`}
+              aria-current={on ? "page" : undefined}
               title={b.categoria}
+              className="tabular"
               style={{
                 flex: "0 0 auto",
-                width: 40,
-                height: 40,
+                width: "var(--touch-min)",
+                height: "var(--touch-min)",
                 border: 0,
-                background: on ? "var(--active-bg)" : completo ? "var(--violet-150)" : "var(--violet-50)",
-                color: on ? "var(--on-active)" : completo ? "var(--violet-800)" : "var(--muted)",
-                borderRadius: 14,
-                cursor: "pointer",
-                fontSize: 13.5,
-                fontWeight: 700,
+                background: on ? "var(--accent)" : completo ? "var(--accent-soft-strong)" : "var(--accent-soft)",
+                color: on ? "var(--on-accent)" : completo ? "var(--accent-text)" : "var(--text-tertiary)",
+                borderRadius: "var(--radius-lg)",
+                fontSize: "var(--text-callout)",
+                fontWeight: "var(--weight-bold)",
               }}
             >
               {i + 1}
             </button>
           );
         })}
-      </div>
+      </nav>
     </div>
   );
 }

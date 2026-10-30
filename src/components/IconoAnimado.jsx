@@ -25,6 +25,9 @@ const FILTROS = {
   "icono-default": ["#4e0f6b", "#ffffff", "#b45fd8"], // --violet-900 / --violet-400
   "icono-ribeiro": ["#f3efe6", "#000000", "#f4cf47"], // blanco cálido / amarillo Ribeiro
   "icono-ribeiro-destacado": ["#1c1b19", "#ffffff", "#6b5a1a"], // sobre el recuadro amarillo sólido
+  // Modo oscuro (card oscura, se mezcla con `screen` como Ribeiro): líneas claras.
+  "icono-default-oscuro": ["#f3e8fa", "#000000", "#c98ce6"], // lila claro / --violet-400 aclarado
+  "icono-turquesa-oscuro": ["#e9f7f6", "#000000", "#45c4c0"], // blanco verdoso / --violet-400
 };
 
 // Se dibuja una vez en cada pantalla que usa IconoAnimado (Home, Inspecciones); index.css los aplica según el tema.

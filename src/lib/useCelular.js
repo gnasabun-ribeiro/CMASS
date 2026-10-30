@@ -1,19 +1,8 @@
-import { useEffect, useState } from "react";
+import { CONSULTA_CELULAR, useMediaQuery } from "./breakpoints.js";
 
-// Pantalla de celular (hasta 480 px de ancho, ej. Galaxy A55 = 360 px): las cards y los
-// pasos del formulario se compactan para que no se corten.
-const CONSULTA = "(max-width: 480px)";
-
+// Pantalla de celular (menos de 640 px de ancho, el breakpoint `sm`; ej. Galaxy A55 = 360 px):
+// las cards y los pasos del formulario se compactan para que no se corten. Los estilos son
+// inline y no pueden llevar media queries: por eso este hook.
 export function useCelular() {
-  const [celular, setCelular] = useState(() => window.matchMedia(CONSULTA).matches);
-
-  useEffect(() => {
-    const mq = window.matchMedia(CONSULTA);
-    const cambiar = () => setCelular(mq.matches);
-    cambiar();
-    mq.addEventListener("change", cambiar);
-    return () => mq.removeEventListener("change", cambiar);
-  }, []);
-
-  return celular;
+  return useMediaQuery(CONSULTA_CELULAR);
 }

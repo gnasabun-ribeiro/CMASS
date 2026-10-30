@@ -36,4 +36,15 @@ export const ICONS = {
   botiquin: "M4 8h16v12H4zM9 8V5h6v3M12 11v6M9 14h6",
   tacho: "M4 7h16M10 7V4h4v3M6 7l1 14h10l1-14M10 11v6M14 11v6",
   check: "M5 12l5 5L20 7",
+  // Interfaz (toasts, selectores, notificaciones)
+  bell: "M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 003.4 0",
+  x: "M18 6L6 18M6 6l12 12",
+  chevronDown: "M6 9l6 6 6-6",
+  search: "M11 4a7 7 0 100 14 7 7 0 000-14zM20 20l-4-4",
+  info: "M12 3a9 9 0 100 18 9 9 0 000-18zM12 16v-4.5M12 8h.01",
+  checkCircle: "M12 3a9 9 0 100 18 9 9 0 000-18zM8 12.5l2.7 2.7L16 9.8",
+  alertCircle: "M12 3a9 9 0 100 18 9 9 0 000-18zM12 7.5v5M12 16h.01",
+  xCircle: "M12 3a9 9 0 100 18 9 9 0 000-18zM9.2 9.2l5.6 5.6M14.8 9.2l-5.6 5.6",
+  inbox: "M3 13l3-8h12l3 8v6a1 1 0 01-1 1H4a1 1 0 01-1-1zM3 13h5l1.5 3h5L16 13h5",
+  cloudOff: "M3 3l18 18M8.5 8.6A5 5 0 007 18h10M19.5 16.2A4 4 0 0017 9h-1a6.97 6.97 0 00-3.6-3.9",
 };

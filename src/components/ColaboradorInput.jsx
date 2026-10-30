@@ -1,70 +1,119 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { correoDe, filtrarColaboradores, sinCorreoCorporativo } from "../lib/colaboradores.js";
 
 // Campo de texto con sugerencias de colaboradores (nombre y apellido). Sigue siendo
 // texto libre, pero si el texto coincide con un colaborador se muestra su correo:
 // es el que recibe el informe al cerrar la inspección (ver registrarDestinatarios).
-export default function ColaboradorInput({ value, onChange, onBlur, colaboradores, placeholder, maxLength, style }) {
+// Teclado: ↑ ↓ recorren las sugerencias, Enter elige, Escape las cierra.
+export default function ColaboradorInput({ value, onChange, onBlur, colaboradores, placeholder, maxLength, id, className = "field", style }) {
   const [abierto, setAbierto] = useState(false);
+  const [activa, setActiva] = useState(-1);
+  const auto = useId();
+  const idLista = `${id || auto}-sugerencias`;
+  const idAviso = `${id || auto}-correo`;
   const sugerencias = abierto ? filtrarColaboradores(colaboradores, value).slice(0, 6) : [];
   const correo = correoDe(colaboradores, value);
   const faltaCorreo = sinCorreoCorporativo(colaboradores, value);
   const hayTexto = value.trim().length > 0;
 
+  const elegir = (c) => {
+    onChange(c.etiqueta);
+    setAbierto(false);
+    setActiva(-1);
+  };
+
   return (
     <div style={{ position: "relative", flex: 1, minWidth: 0 }}>
       <input
+        id={id}
+        role="combobox"
+        aria-autocomplete="list"
+        aria-expanded={sugerencias.length > 0}
+        aria-controls={sugerencias.length ? idLista : undefined}
+        aria-activedescendant={activa >= 0 && sugerencias[activa] ? `${idLista}-${activa}` : undefined}
+        aria-describedby={hayTexto ? idAviso : undefined}
         placeholder={placeholder}
         maxLength={maxLength}
         value={value}
         autoComplete="off"
+        autoCapitalize="words"
+        className={className}
         onChange={(e) => {
           onChange(e.target.value);
           setAbierto(true);
+          setActiva(-1);
         }}
         onFocus={() => setAbierto(true)}
         onBlur={() => {
           setAbierto(false);
           onBlur?.();
         }}
+        onKeyDown={(e) => {
+          if (!sugerencias.length) return;
+          if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+            e.preventDefault();
+            const paso = e.key === "ArrowDown" ? 1 : -1;
+            setActiva((a) => (a + paso + sugerencias.length) % sugerencias.length);
+          } else if (e.key === "Enter" && activa >= 0) {
+            e.preventDefault();
+            elegir(sugerencias[activa]);
+          } else if (e.key === "Escape") {
+            setAbierto(false);
+          }
+        }}
         style={style}
       />
       {sugerencias.length > 0 ? (
-        <div
+        <ul
+          id={idLista}
+          role="listbox"
+          aria-label="Colaboradores"
+          className="listbox"
           style={{
             position: "absolute",
             left: 0,
             right: 0,
             top: "100%",
-            marginTop: 4,
-            zIndex: 30,
-            background: "#fff",
-            border: "1px solid var(--border)",
-            borderRadius: 12,
-            boxShadow: "var(--shadow-float)",
-            overflow: "hidden",
+            marginTop: "var(--space-1)",
+            zIndex: "var(--z-dropdown)",
+            background: "var(--surface-raised)",
+            border: "var(--hairline) solid var(--border)",
+            borderRadius: "var(--radius-lg)",
+            boxShadow: "var(--shadow-4)",
           }}
         >
           {sugerencias.map((c, i) => (
-            <button
+            <li
               key={`${c.correo}-${i}`}
-              type="button"
+              id={`${idLista}-${i}`}
+              role="option"
+              aria-selected={i === activa}
+              data-activa={i === activa || undefined}
+              className="opcion"
               // onMouseDown: elegir antes de que el input pierda el foco y cierre la lista
               onMouseDown={(e) => {
                 e.preventDefault();
-                onChange(c.etiqueta);
-                setAbierto(false);
+                elegir(c);
               }}
-              style={{ display: "block", width: "100%", textAlign: "left", border: 0, background: "#fff", padding: "9px 12px", cursor: "pointer", minHeight: 44 }}
+              onPointerMove={() => i !== activa && setActiva(i)}
+              style={{ minHeight: "var(--touch-min)" }}
             >
-              <span style={{ display: "block", fontSize: 13.5, color: "var(--ink)", fontWeight: 600 }}>{c.etiqueta}</span>
-              <span style={{ display: "block", fontSize: 11.5, color: "var(--muted)" }}>{c.correo || "sin correo cargado"}</span>
-            </button>
+              <span className="opcion__texto">
+                <span className="opcion__etiqueta" style={{ fontWeight: "var(--weight-semibold)" }}>
+                  {c.etiqueta}
+                </span>
+                <span className="opcion__descripcion">{c.correo || "sin correo cargado"}</span>
+              </span>
+            </li>
           ))}
-        </div>
+        </ul>
       ) : null}
       {hayTexto ? (
-        <div style={{ fontSize: 11.5, marginTop: 5, color: correo ? "var(--success-fg)" : faltaCorreo ? "var(--warn-fg)" : "var(--muted)" }}>
+        <div
+          id={idAviso}
+          className="t-caption"
+          style={{ marginTop: "var(--space-1-5)", color: correo ? "var(--success-fg)" : faltaCorreo ? "var(--warn-fg)" : "var(--text-tertiary)" }}
+        >
           {correo
             ? `El informe se enviará a ${correo}`
             : faltaCorreo

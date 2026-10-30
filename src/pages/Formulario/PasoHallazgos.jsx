@@ -1,36 +1,28 @@
 import { useState } from "react";
 import { SEVERIDADES } from "../../data/severidades.js";
 import ColaboradorInput from "../../components/ColaboradorInput.jsx";
-import { useConfirmacion } from "../../components/Confirmacion.jsx";
+import Icon from "../../components/Icon.jsx";
+import Button from "../../components/ui/Button.jsx";
+import { Field, Input, Textarea } from "../../components/ui/Field.jsx";
+import { toast } from "../../components/ui/Toast.jsx";
 import { useCelular } from "../../lib/useCelular.js";
 
-const fieldStyle = {
-  width: "100%",
-  border: "1px solid var(--border)",
-  borderRadius: 12,
-  padding: 10,
-  fontSize: 13.5,
-  background: "#fff",
-  color: "var(--ink)",
-  minHeight: 42,
-};
+const VACIO = { titulo: "", severidad: "Medio", detalle: "", responsable: "", vence: "" };
 
 export default function PasoHallazgos({ hallazgos, onAgregar, onEliminar, colaboradores = [] }) {
   const celular = useCelular();
   const [abierto, setAbierto] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [faltaTitulo, setFaltaTitulo] = useState(false);
-  const [form, setForm] = useState({ titulo: "", severidad: "Medio", detalle: "", responsable: "", vence: "" });
-  const [confirmar, dialogo] = useConfirmacion();
-
-  const eliminar = async (h) => {
-    if (await confirmar({ titulo: "¿Eliminar el hallazgo?", mensaje: `"${h.titulo}" se borra de la inspección.`, aceptar: "Eliminar" })) onEliminar(h);
-  };
+  const [form, setForm] = useState(VACIO);
+  // Eliminar no pregunta: el aviso que aparece tiene "Deshacer" (ver borrarConDeshacer en Formulario).
+  const eliminar = (h) => onEliminar(h);
 
   const guardar = async () => {
     if (guardando) return;
     if (!form.titulo.trim()) {
       setFaltaTitulo(true); // antes no pasaba nada y no se entendía por qué
+      document.getElementById("hallazgo-titulo")?.focus();
       return;
     }
     setGuardando(true);
@@ -42,8 +34,9 @@ export default function PasoHallazgos({ hallazgos, onAgregar, onEliminar, colabo
         responsable: form.responsable.trim(),
         vence: form.vence,
       });
-      if (ok === false) return; // falló el guardado: se conserva lo escrito
-      setForm({ titulo: "", severidad: "Medio", detalle: "", responsable: "", vence: "" });
+      if (ok === false) return; // falló el guardado: se conserva lo escrito (el error se ve arriba)
+      toast.success("Hallazgo guardado", { descripcion: form.titulo.trim() });
+      setForm(VACIO);
       setAbierto(false);
     } finally {
       setGuardando(false);
@@ -51,147 +44,156 @@ export default function PasoHallazgos({ hallazgos, onAgregar, onEliminar, colabo
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
-      {hallazgos.map((h, i) => (
-        <div
-          key={h.id ?? `${h.titulo}-${i}`}
-          className="pop-in"
-          style={{
-            borderRadius: 18,
-            background: "#fff8fb",
-            border: "1px solid #f7dce7",
-            padding: 14,
-            animationDelay: `${i * 0.045}s`,
-          }}
-        >
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", alignItems: "center", marginBottom: 8 }}>
-            <span className="heading" style={{ fontWeight: 700, fontSize: 14.5 }}>
-              {h.titulo}
-            </span>
-            <span style={{ background: h.sevBg, color: h.sevFg, fontSize: 11, fontWeight: 700, padding: "4px 11px", borderRadius: 20 }}>
-              {h.severidad}
-            </span>
-          </div>
-          <div style={{ fontSize: 13, color: "var(--muted-4)", lineHeight: 1.5, marginBottom: 10 }}>{h.detalle}</div>
-          <div style={{ display: "flex", gap: 14, flexWrap: "wrap", fontSize: 12, color: "var(--muted)", alignItems: "center" }}>
-            <span>
-              Responsable: <strong style={{ color: "var(--ink)" }}>{h.responsable}</strong>
-            </span>
-            <span>
-              Vence: <strong style={{ color: "var(--ink)" }}>{h.vence}</strong>
-            </span>
-            <button
-              onClick={() => eliminar(h)}
-              style={{ marginLeft: "auto", border: 0, background: "var(--danger-bg)", color: "var(--danger-fg)", fontWeight: 700, fontSize: 12, padding: "7px 12px", borderRadius: 10, cursor: "pointer" }}
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
+      {hallazgos.length ? (
+        <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: "var(--space-3)" }}>
+          {hallazgos.map((h, i) => (
+            <li
+              key={h.id ?? `${h.titulo}-${i}`}
+              className="pop-in"
+              style={{
+                borderRadius: "var(--radius-lg)",
+                background: "var(--hallazgo-bg)",
+                border: "var(--hairline) solid var(--hallazgo-border)",
+                padding: "var(--space-4)",
+                animationDelay: `${i * 0.045}s`,
+              }}
             >
-              Eliminar
-            </button>
-          </div>
-        </div>
-      ))}
+              <div style={{ display: "flex", justifyContent: "space-between", gap: "var(--space-3)", flexWrap: "wrap", alignItems: "center", marginBottom: "var(--space-2)" }}>
+                <h3 className="t-headline" style={{ fontSize: "var(--text-callout)", overflowWrap: "anywhere" }}>
+                  {h.titulo}
+                </h3>
+                <span className="chip" style={{ background: h.sevBg, color: h.sevFg }}>
+                  {h.severidad}
+                </span>
+              </div>
+              {h.detalle ? (
+                <p className="t-footnote" style={{ color: "var(--text-secondary)", marginBottom: "var(--space-3)", overflowWrap: "anywhere", whiteSpace: "pre-wrap" }}>
+                  {h.detalle}
+                </p>
+              ) : null}
+              <div className="t-caption" style={{ display: "flex", gap: "var(--space-2) var(--space-4)", flexWrap: "wrap", color: "var(--text-tertiary)", alignItems: "center" }}>
+                <span>
+                  Responsable: <strong style={{ color: "var(--text-primary)" }}>{h.responsable}</strong>
+                </span>
+                <span>
+                  Vence: <strong style={{ color: "var(--text-primary)" }}>{h.vence}</strong>
+                </span>
+                <Button variant="danger-soft" size="sm" icon="tacho" onClick={() => eliminar(h)} style={{ marginLeft: "auto" }}>
+                  Eliminar
+                </Button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : null}
 
       {abierto ? (
-        <div style={{ borderRadius: 18, border: "1.5px dashed var(--violet-400)", background: "var(--violet-25)", padding: 14, display: "flex", flexDirection: "column", gap: 9 }}>
-          <input
-            placeholder="Título del hallazgo"
-            maxLength={120}
-            value={form.titulo}
-            onChange={(e) => {
-              setForm({ ...form, titulo: e.target.value });
-              setFaltaTitulo(false);
-            }}
-            aria-invalid={faltaTitulo}
-            style={faltaTitulo ? { ...fieldStyle, borderColor: "var(--danger-fg)" } : fieldStyle}
-          />
-          {faltaTitulo ? (
-            <div role="alert" style={{ fontSize: 12.5, fontWeight: 600, color: "var(--danger-fg)", marginTop: -3 }}>
-              Escribí un título para el hallazgo.
-            </div>
-          ) : null}
-          <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
-            {SEVERIDADES.map((s) => (
-              <button
-                key={s.value}
-                onClick={() => setForm({ ...form, severidad: s.value })}
-                style={{
-                  border: 0,
-                  background: form.severidad === s.value ? s.bg : "#fff",
-                  color: form.severidad === s.value ? s.fg : "var(--muted-4)",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  padding: "8px 13px",
-                  borderRadius: 12,
-                  cursor: "pointer",
-                }}
-              >
-                {s.value}
-              </button>
-            ))}
-          </div>
-          <textarea
-            rows={2}
-            placeholder="Detalle…"
-            maxLength={1000}
-            value={form.detalle}
-            onChange={(e) => setForm({ ...form, detalle: e.target.value })}
-            style={{ ...fieldStyle, resize: "vertical" }}
-          />
-          {/* En el celular uno debajo del otro: lado a lado no se leía el responsable ni la fecha. */}
-          <div style={celular ? { display: "grid", gap: 9 } : { display: "flex", gap: 9, alignItems: "flex-start" }}>
-            <ColaboradorInput
-              placeholder="Responsable (nombre y apellido)"
+        <section
+          aria-label="Nuevo hallazgo"
+          style={{
+            borderRadius: "var(--radius-lg)",
+            border: "1.5px dashed var(--accent-border-strong)",
+            background: "var(--surface-muted)",
+            padding: "var(--space-4)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "var(--space-3)",
+          }}
+        >
+          <Field label="Título" id="hallazgo-titulo" error={faltaTitulo ? "Escribí un título para el hallazgo." : null}>
+            <Input
+              placeholder="Título del hallazgo"
               maxLength={120}
-              value={form.responsable}
-              onChange={(v) => setForm({ ...form, responsable: v })}
-              colaboradores={colaboradores}
-              style={fieldStyle}
+              value={form.titulo}
+              onChange={(e) => {
+                setForm({ ...form, titulo: e.target.value });
+                setFaltaTitulo(false);
+              }}
             />
-            <input
-              type="date"
-              aria-label="Vence"
-              value={form.vence}
-              onChange={(e) => setForm({ ...form, vence: e.target.value })}
-              style={{ ...fieldStyle, flex: 1, minWidth: 0 }}
-            />
+          </Field>
+          <div>
+            <div id="hallazgo-severidad" className="field-label">
+              Severidad
+            </div>
+            <div role="group" aria-labelledby="hallazgo-severidad" style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap" }}>
+              {SEVERIDADES.map((s) => {
+                const on = form.severidad === s.value;
+                return (
+                  <button
+                    key={s.value}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => setForm({ ...form, severidad: s.value })}
+                    style={{
+                      border: `1.5px solid ${on ? s.fg : "var(--border)"}`,
+                      background: on ? s.bg : "var(--surface)",
+                      color: on ? s.fg : "var(--text-secondary)",
+                      fontSize: "var(--text-footnote)",
+                      fontWeight: "var(--weight-bold)",
+                      padding: "0 var(--space-4)",
+                      minHeight: "var(--touch-min)",
+                      borderRadius: "var(--radius-lg)",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "var(--space-1)",
+                    }}
+                  >
+                    {on ? <Icon name="check" size={14} /> : null}
+                    {s.value}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <button
+          <Field label="Detalle" id="hallazgo-detalle">
+            <Textarea rows={2} placeholder="Qué se observó…" maxLength={1000} value={form.detalle} onChange={(e) => setForm({ ...form, detalle: e.target.value })} />
+          </Field>
+          {/* En el celular uno debajo del otro: lado a lado no se leía el responsable ni la fecha. */}
+          <div style={celular ? { display: "grid", gap: "var(--space-3)" } : { display: "grid", gridTemplateColumns: "minmax(0,2fr) minmax(0,1fr)", gap: "var(--space-3)", alignItems: "start" }}>
+            <div>
+              <label htmlFor="hallazgo-responsable" className="field-label">
+                Responsable
+              </label>
+              <ColaboradorInput
+                id="hallazgo-responsable"
+                placeholder="Nombre y apellido"
+                maxLength={120}
+                value={form.responsable}
+                onChange={(v) => setForm({ ...form, responsable: v })}
+                colaboradores={colaboradores}
+              />
+            </div>
+            <Field label="Vence" id="hallazgo-vence">
+              <Input type="date" value={form.vence} onChange={(e) => setForm({ ...form, vence: e.target.value })} />
+            </Field>
+          </div>
+          <div style={{ display: "flex", gap: "var(--space-2)" }}>
+            <Button
+              variant="neutral"
+              style={{ flex: 1 }}
               onClick={() => {
                 setAbierto(false);
                 setFaltaTitulo(false);
               }}
-              style={{ flex: 1, border: 0, background: "var(--neutral-bg)", color: "var(--neutral-fg)", fontWeight: 700, fontSize: 13, padding: 11, borderRadius: 12, cursor: "pointer" }}
             >
               Cancelar
-            </button>
-            <button
-              onClick={guardar}
-              disabled={guardando}
-              style={{ flex: 1, border: 0, background: "var(--active-bg)", color: "var(--on-active)", fontWeight: 700, fontSize: 13, padding: 11, borderRadius: 12, cursor: "pointer" }}
-            >
+            </Button>
+            <Button variant="solid" style={{ flex: 1 }} onClick={guardar} loading={guardando}>
               {guardando ? "Guardando…" : "Guardar hallazgo"}
-            </button>
+            </Button>
           </div>
-        </div>
+        </section>
       ) : (
         <button
+          type="button"
           onClick={() => setAbierto(true)}
-          style={{
-            border: "1.5px dashed var(--violet-400)",
-            background: "var(--violet-25)",
-            color: "var(--violet-800)",
-            fontWeight: 700,
-            fontSize: 13.5,
-            padding: 15,
-            borderRadius: 18,
-            cursor: "pointer",
-            minHeight: 52,
-          }}
+          className="btn btn--lg"
+          style={{ border: "1.5px dashed var(--accent-border-strong)", background: "var(--surface-muted)", color: "var(--accent-text)" }}
         >
           + Agregar hallazgo
         </button>
       )}
-      {dialogo}
     </div>
   );
 }

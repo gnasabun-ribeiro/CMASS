@@ -6,8 +6,8 @@ export default defineConfig({
   plugins: [
     react(),
     // PWA: la app se instala en el celular y abre sin conexión. El service worker
-    // guarda el "cascarón" (HTML/JS/CSS/imágenes) y las fuentes; los datos de
-    // Supabase NO se cachean acá: los maneja la base local (ver src/lib/localDb.js).
+    // guarda el "cascarón" (HTML/JS/CSS/imágenes y la fuente Inter). Los
+    // datos de Supabase NO se cachean acá: los maneja la base local (ver src/lib/localDb.js).
     VitePWA({
       registerType: "autoUpdate",
       includeAssets: ["apple-touch-icon.png"],
@@ -16,9 +16,18 @@ export default defineConfig({
         short_name: "CMASS",
         description: "Inspecciones de seguridad e higiene",
         lang: "es",
+        id: "/",
         start_url: "/",
         scope: "/",
         display: "standalone",
+        display_override: ["standalone", "minimal-ui"],
+        categories: ["business", "productivity"],
+        // Accesos directos al mantener apretado el ícono de la app instalada.
+        shortcuts: [
+          { name: "Mis Registros", short_name: "Registros", url: "/registros", icons: [{ src: "icon-192.png", sizes: "192x192", type: "image/png" }] },
+          { name: "Pendientes de enviar", short_name: "Pendientes", url: "/pendientes", icons: [{ src: "icon-192.png", sizes: "192x192", type: "image/png" }] },
+          { name: "Panel de seguimiento", short_name: "Panel", url: "/panel", icons: [{ src: "icon-192.png", sizes: "192x192", type: "image/png" }] },
+        ],
         orientation: "portrait",
         theme_color: "#701C93",
         background_color: "#701C93",
@@ -30,28 +39,26 @@ export default defineConfig({
       },
       workbox: {
         // gif: íconos animados de Inicio e Inspecciones (src/data/iconosAnimados.js).
-        globPatterns: ["**/*.{js,css,html,png,gif,svg,ico,webmanifest}"],
+        // woff2: la fuente Inter (src/styles/tokens.css), para que se vea igual sin conexión.
+        globPatterns: ["**/*.{js,css,html,png,gif,svg,ico,webmanifest,woff2}"],
         navigateFallback: "/index.html",
+        // Avisos del navegador con la app cerrada (Web Push): ver public/push-sw.js.
+        importScripts: ["push-sw.js"],
         cleanupOutdatedCaches: true,
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: "StaleWhileRevalidate",
-            options: { cacheName: "google-fonts-css" },
-          },
-          {
-            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "google-fonts-files",
-              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-        ],
       },
     }),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        // React y Supabase en archivos aparte: cambian poco, quedan en caché entre versiones de la app.
+        manualChunks: {
+          react: ["react", "react-dom", "react-router-dom"],
+          supabase: ["@supabase/supabase-js"],
+        },
+      },
+    },
+  },
   server: {
     host: true,
   },

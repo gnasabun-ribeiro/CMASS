@@ -3,9 +3,13 @@ import { useNavigate } from "react-router-dom";
 import AppShell from "../components/AppShell.jsx";
 import { findModulo, findSub, rutaFormulario } from "../data/modulos.js";
 import { listarCola, obtenerInspeccion } from "../lib/localDb.js";
-import { sincronizar } from "../lib/sync.js";
+import { obtenerEstado, sincronizar } from "../lib/sync.js";
 import { useSync } from "../lib/useSync.js";
 import { useCelular } from "../lib/useCelular.js";
+import Icon from "../components/Icon.jsx";
+import Button from "../components/ui/Button.jsx";
+import EmptyState from "../components/ui/EmptyState.jsx";
+import { toast } from "../components/ui/Toast.jsx";
 
 const ETIQUETA_TIPO = {
   crear: "creación",
@@ -68,76 +72,92 @@ export default function Pendientes() {
   const estadoConexion = sync.online ? "Conectado" : "Sin conexión";
   const botonInactivo = sync.sincronizando || !sync.online || sync.pendientes === 0;
 
+  // Antes no avisaba nada al terminar: ahora queda claro si se envió todo o qué falló.
+  const sincronizarAhora = () =>
+    toast
+      .promise(sincronizar(), {
+        loading: "Sincronizando…",
+        success: () => {
+          const { pendientes, errores } = obtenerEstado();
+          if (pendientes === 0) return "Todo enviado";
+          const conError = Object.keys(errores).length;
+          return {
+            titulo: `${pendientes} ${pendientes === 1 ? "cambio quedó" : "cambios quedaron"} sin enviar`,
+            descripcion: conError ? "Hay errores: revisalos en la lista." : "Se reintenta solo en unos segundos.",
+          };
+        },
+        error: (e) => ({ titulo: "No se pudo sincronizar", descripcion: e?.message }),
+      })
+      .catch(() => {});
+
   return (
     <AppShell title="Pendientes" subtitle={subtitulo} onBack={() => navigate("/")}>
-      <div
+      <section
+        className="sobre-fondo"
         style={{
-          borderRadius: 24,
-          padding: 17,
+          borderRadius: "var(--radius-xl)",
+          padding: "var(--space-5)",
           background: "var(--brand-gradient)",
-          color: "var(--violet-150)",
+          color: "var(--text-on-app)",
           display: "flex",
-          gap: 13,
+          gap: "var(--space-4)",
           alignItems: "center",
           flexWrap: "wrap",
-          marginBottom: 15,
-          boxShadow: "0 20px 40px -24px rgba(36,18,70,.8)",
+          marginBottom: "var(--space-4)",
+          boxShadow: "var(--shadow-3)",
         }}
       >
         <div style={{ flex: 1, minWidth: 190 }}>
-          <div className="heading" style={{ fontWeight: 800, fontSize: 17, color: "#fff", letterSpacing: "-.3px" }}>
+          <h2 className="t-headline" style={{ fontWeight: "var(--weight-heavy)" }}>
             {sync.pendientes === 0 ? "Sin registros pendientes" : `${sync.pendientes} ${sync.pendientes === 1 ? "cambio" : "cambios"} sin sincronizar`}
-          </div>
-          <div style={{ fontSize: 12.5, color: "var(--violet-150)", marginTop: 3 }}>
+          </h2>
+          <p className="t-footnote" style={{ color: "var(--text-on-app-muted)", marginTop: "var(--space-1)", display: "flex", alignItems: "center", gap: "var(--space-1-5)" }}>
+            <Icon name={sync.online ? "checkCircle" : "cloudOff"} size={16} />
             {estadoConexion}
             {sync.ultimaSync ? ` · Última sincronización: ${formatoHora(sync.ultimaSync)}` : ""}
-          </div>
+          </p>
         </div>
-        <button
-          onClick={sincronizar}
+        <Button
+          variant="surface"
+          size="lg"
+          icon="refresh"
+          loading={sync.sincronizando}
           disabled={botonInactivo}
-          style={{
-            width: celular ? "100%" : undefined, // en el celular cae debajo del texto: a todo el ancho
-            border: 0,
-            background: "var(--violet-400)",
-            color: "var(--ink)",
-            fontWeight: 800,
-            fontSize: 13.5,
-            padding: "14px 20px",
-            borderRadius: 16,
-            cursor: botonInactivo ? "not-allowed" : "pointer",
-            opacity: botonInactivo ? 0.55 : 1,
-            minHeight: 50,
-          }}
+          onClick={sincronizarAhora}
+          style={{ width: celular ? "100%" : undefined }} // en el celular cae debajo del texto: a todo el ancho
         >
           {sync.sincronizando ? "Sincronizando…" : "Sincronizar ahora"}
-        </button>
-      </div>
+        </Button>
+      </section>
 
       {grupos.length === 0 ? (
-        <div style={{ textAlign: "center", color: "var(--violet-150)", padding: "24px 0", fontSize: 13.5 }}>No hay nada por enviar.</div>
+        <EmptyState sobreFondo icono="checkCircle" titulo="No hay nada por enviar" texto="Todo lo que cargaste ya llegó al servidor." />
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(280px,100%),1fr))", gap: 10 }}>
+        <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(280px,100%),1fr))", gap: "var(--space-2)" }}>
           {grupos.map((g) => (
-            <button
-              key={g.id}
-              onClick={() => navigate(g.ruta)}
-              style={{
-                textAlign: "left",
-                border: 0,
-                background: "#fff",
-                borderRadius: 18,
-                padding: "13px 15px",
-                cursor: "pointer",
-                boxShadow: "0 10px 22px -20px rgba(36,18,70,.5)",
-              }}
-            >
-              <div style={{ fontWeight: 600, fontSize: 13.5 }}>{g.titulo}</div>
-              <div style={{ fontSize: 11.5, color: "var(--muted)", marginTop: 2 }}>{g.detalle || "Pendiente de creación"}</div>
-              {g.error ? <div style={{ fontSize: 11.5, color: "var(--danger-fg)", marginTop: 4, fontWeight: 600 }}>Error: {g.error}</div> : null}
-            </button>
+            <li key={g.id}>
+              <button
+                type="button"
+                onClick={() => navigate(g.ruta)}
+                className="panel panel--compacto"
+                style={{ width: "100%", height: "100%", textAlign: "left", border: 0, boxShadow: "var(--shadow-1)", color: "var(--text-primary)" }}
+              >
+                <span className="t-callout" style={{ display: "block", fontWeight: "var(--weight-semibold)", overflowWrap: "anywhere" }}>
+                  {g.titulo}
+                </span>
+                <span className="t-caption" style={{ display: "block", color: "var(--text-tertiary)", marginTop: "var(--space-0-5)" }}>
+                  {g.detalle || "Pendiente de creación"}
+                </span>
+                {g.error ? (
+                  <span className="t-caption" style={{ display: "flex", gap: "var(--space-1)", color: "var(--danger-fg)", marginTop: "var(--space-1)", fontWeight: "var(--weight-semibold)", overflowWrap: "anywhere" }}>
+                    <Icon name="alertCircle" size={16} />
+                    Error: {g.error}
+                  </span>
+                ) : null}
+              </button>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </AppShell>
   );

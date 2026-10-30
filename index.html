@@ -4,16 +4,33 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#701C93" />
+    <meta name="color-scheme" content="light dark" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="CMASS" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <title>Inspecciones CMASS</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
-      rel="stylesheet"
-    />
+    <!-- Tema y modo (claro/oscuro) antes de dibujar: sin el destello del tema por defecto.
+         Mismas claves y reglas que src/context/ThemeContext.jsx. -->
+    <script>
+      try {
+        var tema = localStorage.getItem("cmass:tema") || "default";
+        var modo = localStorage.getItem("cmass:modo") || "auto";
+        var oscuro = modo === "oscuro" || (modo === "auto" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.dataset.tema = tema;
+        document.documentElement.dataset.esquema = oscuro ? "oscuro" : "claro";
+        // Forma de la navegación: misma cuenta que src/lib/navegacion.js.
+        var nav = localStorage.getItem("cmass:nav");
+        document.documentElement.dataset.nav = !window.matchMedia("(min-width: 768px)").matches
+          ? "barra"
+          : nav === "compacta" || nav === "expandida"
+            ? nav
+            : window.matchMedia("(min-width: 1024px)").matches
+              ? "expandida"
+              : "compacta";
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

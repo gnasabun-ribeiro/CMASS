@@ -8,35 +8,36 @@ export const GRILLA_CELULAR = {
   display: "grid",
   gridTemplateColumns: "minmax(0, 1fr)",
   gridAutoRows: "1fr",
-  gap: 14,
+  gap: "var(--space-4)",
 };
 
 // Medidas de la card. En el celular, la misma card que en la computadora pero con tamaños en vw,
-// para que mantenga la proporción en cualquier celular (360 px → título de ~17 px, ícono de ~52 px).
+// para que mantenga la proporción en cualquier celular (360 px → título de ~17 px, ícono de ~52 px;
+// elegido por la usuaria, por eso no usa la escala tipográfica fija).
 const MEDIDAS = {
   escritorio: {
-    padding: 22,
-    gap: 14,
-    radius: 26,
-    minHeight: 226,
+    padding: "var(--space-6)",
+    gap: "var(--space-4)",
+    radius: "var(--radius-2xl)",
+    minHeight: 228,
     icono: 64,
-    iconoRadius: 20,
+    iconoRadius: "var(--radius-xl)",
     iconoTamano: 32,
-    titulo: 19.5,
-    descripcion: 13.5,
-    cta: 13.5,
+    titulo: "var(--text-title)",
+    descripcion: "var(--text-callout)",
+    cta: "var(--text-callout)",
   },
   celular: {
     padding: "clamp(16px, 5vw, 20px)",
-    gap: 12,
-    radius: 22,
+    gap: "var(--space-3)",
+    radius: "var(--radius-xl)",
     minHeight: 0,
     icono: "clamp(46px, 14.5vw, 56px)",
-    iconoRadius: 16,
+    iconoRadius: "var(--radius-lg)",
     iconoTamano: "50%",
     titulo: "clamp(15.5px, 4.7vw, 18.5px)",
     descripcion: "clamp(12px, 3.6vw, 13.5px)",
-    cta: 13,
+    cta: "var(--text-footnote)",
   },
 };
 
@@ -132,7 +133,7 @@ export default function ModuleCard({ modulo, index = 0, onOpen, onRegistros, ico
             justifyContent: "center",
             background: "var(--card-accent-bg)",
             color: "var(--card-accent)",
-            boxShadow: "0 8px 18px -10px rgba(36,18,70,.5)",
+            boxShadow: "var(--shadow-1)",
             transition: "background .2s, color .2s",
           }}
         >
@@ -140,24 +141,10 @@ export default function ModuleCard({ modulo, index = 0, onOpen, onRegistros, ico
             // La primera vuelta, en cascada después de la animación de entrada de las cards (pop-in).
             <IconoAnimado icono={iconoAnimado} reproducir={reproducir} demora={450 + index * 120} />
           ) : (
-            <Icon name={modulo.icon} size={m.iconoTamano} strokeWidth={1.5} />
+            <Icon name={modulo.icon} size={m.iconoTamano} />
           )}
         </span>
-        {modulo.badge ? (
-          <span
-            style={{
-              background: "var(--violet-50)",
-              color: "var(--violet-800)",
-              fontSize: 12,
-              fontWeight: 700,
-              borderRadius: 20,
-              padding: "5px 12px",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {modulo.badge}
-          </span>
-        ) : null}
+        {modulo.badge ? <span className="chip chip--accent">{modulo.badge}</span> : null}
       </span>
 
       <span style={{ position: "relative", flex: 1, display: "block" }}>
@@ -165,25 +152,24 @@ export default function ModuleCard({ modulo, index = 0, onOpen, onRegistros, ico
           className="heading card-title"
           style={{
             display: "block",
-            fontWeight: 800,
+            fontWeight: "var(--weight-heavy)",
             fontSize: m.titulo,
-            lineHeight: 1.2,
-            letterSpacing: "-.35px",
+            lineHeight: "var(--leading-title)",
+            letterSpacing: "var(--tracking-title)",
             transition: "color .2s",
           }}
         >
           {modulo.title}
         </span>
         <span
+          // En el celular, a lo sumo dos líneas: así ninguna card queda mucho más alta que las demás.
+          className={celular ? "clamp-2" : undefined}
           style={{
+            display: celular ? undefined : "block",
             fontSize: m.descripcion,
             color: "var(--card-desc)",
-            lineHeight: 1.5,
-            marginTop: 6,
-            // En el celular, a lo sumo dos líneas: así ninguna card queda mucho más alta que las demás.
-            ...(celular
-              ? { display: "-webkit-box", WebkitBoxOrient: "vertical", WebkitLineClamp: 2, overflow: "hidden" }
-              : { display: "block" }),
+            lineHeight: "var(--leading-body)",
+            marginTop: "var(--space-1-5)",
           }}
         >
           {modulo.desc}
@@ -196,34 +182,25 @@ export default function ModuleCard({ modulo, index = 0, onOpen, onRegistros, ico
           display: "flex",
           flexWrap: "wrap",
           alignItems: "center",
-          gap: 9,
+          gap: "var(--space-2)",
           color: "var(--card-accent)",
           fontSize: m.cta,
-          fontWeight: 700,
+          fontWeight: "var(--weight-bold)",
         }}
       >
-        <span style={{ display: "flex", alignItems: "center", gap: 7, flex: 1, whiteSpace: "nowrap" }}>
+        <span style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", flex: 1, whiteSpace: "nowrap" }}>
           {modulo.cta}
-          <Icon name="arrowRight" size={16} strokeWidth={2.2} />
+          <Icon name="arrowRight" size={16} />
         </span>
         {hasList ? (
           <button
+            type="button"
+            className="btn btn--secondary btn--sm"
             onClick={(e) => {
               e.stopPropagation();
               if (e.detail <= 1) onRegistros();
             }}
-            style={{
-              flexShrink: 0,
-              border: 0,
-              background: "var(--violet-50)",
-              color: "var(--violet-800)",
-              fontSize: 12.5,
-              fontWeight: 700,
-              padding: "10px 15px",
-              borderRadius: 13,
-              cursor: "pointer",
-              minHeight: 44,
-            }}
+            style={{ flexShrink: 0, minHeight: "var(--touch-min)" }}
           >
             Registros
           </button>

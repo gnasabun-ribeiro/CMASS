@@ -1,81 +1,61 @@
-// Piezas visuales compartidas por las pestañas del panel (mismas variables CSS que el resto de la app).
+import Banner from "../../components/ui/Banner.jsx";
+
+// Piezas visuales compartidas por las pestañas del panel y por Configuración (mismos tokens que
+// el resto de la app). Las tarjetas usan las variables de card: en el tema Ribeiro son oscuras.
 export const tarjeta = {
-  background: "var(--card-bg, #fff)",
-  border: "1px solid var(--card-border, transparent)",
-  borderRadius: 18,
-  padding: "14px 16px",
-  boxShadow: "0 10px 22px -20px rgba(36,18,70,.5)",
-  color: "var(--card-title, var(--ink))", // en el tema Ribeiro las tarjetas son oscuras
+  background: "var(--card-bg)",
+  border: "var(--hairline) solid var(--card-border)",
+  borderRadius: "var(--radius-xl)",
+  padding: "var(--space-4)",
+  boxShadow: "var(--shadow-1)",
+  color: "var(--card-title)",
 };
 
-// `tono` (warn | ok | danger) pinta el número con los colores semánticos, que no cambian entre
-// temas y por eso van sobre su propio fondo, legible tanto en tarjeta clara como oscura.
+export const textoTarjeta = { color: "var(--card-desc)" };
+
+// `tono` (warning | success | danger) pinta el número con los colores semánticos, que no cambian
+// entre temas y por eso van sobre su propio fondo, legible tanto en tarjeta clara como oscura.
 export function Cifra({ valor, etiqueta, tono }) {
-  const chip = tono ? { background: `var(--${tono}-bg)`, color: `var(--${tono}-fg)`, borderRadius: 10, padding: "0 10px" } : null;
+  const chip = tono ? { background: `var(--${tono === "warning" ? "warn" : tono}-bg)`, color: `var(--${tono === "warning" ? "warn" : tono}-fg)`, borderRadius: "var(--radius-md)", padding: "0 var(--space-3)" } : null;
   return (
-    <div style={{ ...tarjeta, flex: "1 1 140px" }}>
-      <div className="heading" style={{ display: "inline-block", fontWeight: 800, fontSize: 28, lineHeight: 1.3, fontVariantNumeric: "tabular-nums", ...chip }}>
+    <div style={{ ...tarjeta, flex: "1 1 150px" }}>
+      <div className="heading tabular" style={{ display: "inline-block", fontWeight: "var(--weight-heavy)", fontSize: "var(--text-display)", lineHeight: 1.25, ...chip }}>
         {valor}
       </div>
-      <div style={{ fontSize: 12.5, color: "var(--card-desc, var(--muted))", marginTop: 4, fontWeight: 600 }}>{etiqueta}</div>
+      <div className="t-footnote" style={{ ...textoTarjeta, marginTop: "var(--space-1)", fontWeight: "var(--weight-semibold)" }}>
+        {etiqueta}
+      </div>
     </div>
   );
 }
 
 export function Titulo({ children }) {
-  return (
-    <h2 className="heading" style={{ fontSize: 15, fontWeight: 800, margin: "20px 2px 10px", color: "var(--violet-150)" }}>
-      {children}
-    </h2>
-  );
+  return <h2 className="titulo-seccion">{children}</h2>;
 }
 
 // Barra de proporción: `parte` sobre `maximo`.
-export function Barra({ parte, maximo, color = "var(--violet-700)" }) {
+export function Barra({ parte, maximo, color = "var(--accent)" }) {
   const pct = maximo > 0 ? Math.max(parte > 0 ? 3 : 0, (parte / maximo) * 100) : 0;
   return (
-    <div style={{ height: 8, borderRadius: 4, background: "var(--violet-50)", overflow: "hidden", flex: 1, minWidth: 60 }}>
-      <div style={{ width: `${pct}%`, height: "100%", background: color, borderRadius: 4 }} />
+    <div style={{ height: 8, borderRadius: "var(--radius-full)", background: "var(--accent-soft)", overflow: "hidden", flex: 1, minWidth: 60 }}>
+      <div style={{ width: `${pct}%`, height: "100%", background: color, borderRadius: "var(--radius-full)" }} />
     </div>
   );
 }
 
 export function Chip({ children, bg, fg }) {
   return (
-    <span style={{ background: bg, color: fg, fontSize: 11.5, fontWeight: 700, padding: "3px 9px", borderRadius: 20, whiteSpace: "nowrap" }}>
+    <span className="chip" style={{ background: bg, color: fg }}>
       {children}
     </span>
   );
 }
 
-export const boton = (activo) => ({
-  border: 0,
-  background: activo ? "var(--active-bg)" : "var(--violet-50)",
-  color: activo ? "var(--on-active)" : "var(--violet-800)",
-  boxShadow: activo ? "var(--active-ring)" : "none", // se distingue sobre el fondo violeta
-  fontSize: 12.5,
-  fontWeight: 700,
-  padding: "8px 14px",
-  borderRadius: 20,
-  cursor: "pointer",
-  minHeight: 38,
-});
-
-export const campo = {
-  border: "1px solid var(--border)",
-  borderRadius: 10,
-  padding: "8px 10px",
-  fontSize: 13,
-  color: "var(--ink)",
-  background: "#fff",
-  minHeight: 38,
-};
-
+// tipo: "error" (rojo) | "aviso" (ámbar).
 export function Aviso({ children, tipo = "error" }) {
-  const c = tipo === "error" ? { bg: "var(--danger-bg)", fg: "var(--danger-fg)" } : { bg: "var(--warn-bg)", fg: "var(--warn-fg)" };
   return (
-    <div role="alert" style={{ background: c.bg, color: c.fg, borderRadius: 14, padding: "11px 14px", fontSize: 13, fontWeight: 600, margin: "10px 0" }}>
+    <Banner tono={tipo === "error" ? "danger" : "warning"} alerta style={{ margin: "var(--space-3) 0" }}>
       {children}
-    </div>
+    </Banner>
   );
 }

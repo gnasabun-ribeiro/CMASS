@@ -2,8 +2,11 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 const ThemeContext = createContext(null);
 
+// Las mismas claves y reglas las usa el script de index.html para pintar el tema antes de
+// que cargue React.
 const TEMA_KEY = "cmass:tema";
-const TEMA_COLOR = { default: "#701C93", ribeiro: "#1C1B19", turquesa: "#0F7C79" };
+const MODO_KEY = "cmass:modo";
+const CONSULTA_OSCURO = "(prefers-color-scheme: dark)";
 
 export const TEMAS = [
   { value: "default", label: "Default" },
@@ -11,17 +14,56 @@ export const TEMAS = [
   { value: "turquesa", label: "Turquesa" },
 ];
 
+// Automático sigue al sistema (prefers-color-scheme).
+export const MODOS = [
+  { value: "auto", label: "Auto" },
+  { value: "claro", label: "Claro" },
+  { value: "oscuro", label: "Oscuro" },
+];
+
+const leer = (clave, porDefecto) => {
+  try {
+    return localStorage.getItem(clave) || porDefecto;
+  } catch {
+    return porDefecto;
+  }
+};
+
+const guardar = (clave, valor) => {
+  try {
+    localStorage.setItem(clave, valor);
+  } catch {
+    /* sin almacenamiento: vale para esta sesión */
+  }
+};
+
 export function ThemeProvider({ children }) {
-  const [tema, setTema] = useState(() => localStorage.getItem(TEMA_KEY) || "default");
+  const [tema, setTema] = useState(() => leer(TEMA_KEY, "default"));
+  const [modo, setModo] = useState(() => leer(MODO_KEY, "auto"));
+  const [sistemaOscuro, setSistemaOscuro] = useState(() => window.matchMedia(CONSULTA_OSCURO).matches);
 
   useEffect(() => {
-    document.documentElement.dataset.tema = tema;
-    localStorage.setItem(TEMA_KEY, tema);
-    const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute("content", TEMA_COLOR[tema] || TEMA_COLOR.default);
-  }, [tema]);
+    const mq = window.matchMedia(CONSULTA_OSCURO);
+    const cambiar = () => setSistemaOscuro(mq.matches);
+    mq.addEventListener("change", cambiar);
+    return () => mq.removeEventListener("change", cambiar);
+  }, []);
 
-  const value = useMemo(() => ({ tema, setTema }), [tema]);
+  const esquema = modo === "oscuro" || (modo === "auto" && sistemaOscuro) ? "oscuro" : "claro";
+
+  useEffect(() => {
+    const raiz = document.documentElement;
+    raiz.dataset.tema = tema;
+    raiz.dataset.esquema = esquema;
+    guardar(TEMA_KEY, tema);
+    guardar(MODO_KEY, modo);
+    // Color de la barra del navegador / sistema: sale de --theme-color del tema y modo.
+    const meta = document.querySelector('meta[name="theme-color"]');
+    const color = getComputedStyle(raiz).getPropertyValue("--theme-color").trim();
+    if (meta && color) meta.setAttribute("content", color);
+  }, [tema, modo, esquema]);
+
+  const value = useMemo(() => ({ tema, setTema, modo, setModo, esquema }), [tema, modo, esquema]);
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
