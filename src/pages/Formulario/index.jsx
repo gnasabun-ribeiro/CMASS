@@ -7,7 +7,7 @@ import PasoChecklist from "./PasoChecklist.jsx";
 import PasoHallazgos from "./PasoHallazgos.jsx";
 import PasoCierre from "./PasoCierre.jsx";
 import { TopDatos, TopDetalle, TopObservacion } from "./PasoTop.jsx";
-import { getChecklist, respuestaTop } from "../../data/checklist.js";
+import { getChecklist } from "../../data/checklist.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { supabaseConfigured } from "../../lib/supabaseClient.js";
 import { armarHallazgo } from "../../data/severidades.js";
@@ -282,17 +282,22 @@ export default function Formulario() {
 
   const resumen = [
     { label: "Ítems respondidos", value: `${contestadas} / ${totalItems}`, color: "var(--violet-700)" },
-    esTop ? null : { label: "Cumple parcialmente", value: String(cumpleParcial), color: cumpleParcial ? "var(--warn-fg)" : "var(--success-fg)" },
-    { label: esTop ? "Desvíos observados" : "No cumple", value: String(noCumple), color: noCumple ? "var(--danger-fg)" : "var(--success-fg)" },
-    esTop ? null : { label: "Hallazgos cargados", value: String(hallazgos.length), color: hallazgos.length ? "var(--warn-fg)" : "var(--ink)" },
-    { label: "Fotos adjuntas", value: String(fotos.length), color: "var(--ink)" },
+    // La TOP no cuenta desvíos ni lleva hallazgos ni fotos (la tarjeta de papel no los tiene).
+    ...(esTop
+      ? []
+      : [
+          { label: "Cumple parcialmente", value: String(cumpleParcial), color: cumpleParcial ? "var(--warn-fg)" : "var(--success-fg)" },
+          { label: "No cumple", value: String(noCumple), color: noCumple ? "var(--danger-fg)" : "var(--success-fg)" },
+          { label: "Hallazgos cargados", value: String(hallazgos.length), color: hallazgos.length ? "var(--warn-fg)" : "var(--ink)" },
+          { label: "Fotos adjuntas", value: String(fotos.length), color: "var(--ink)" },
+        ]),
     {
       label: "Guardado",
       value: persisteEnSupabase ? textoGuardado({ error: errorGuardado, guardadoEn, sync }) : "no se guarda (solo en pantalla)",
       color: errorGuardado ? "var(--danger-fg)" : "var(--muted-4)",
       soloPantalla: true, // estado de la app, no va en el PDF
     },
-  ].filter(Boolean);
+  ];
 
   // Se puede mirar pero no tocar: inspección de otra persona (si no sos administrador),
   // inspección ya enviada (solo el administrador la corrige) o rol de solo lectura.
@@ -622,8 +627,9 @@ export default function Formulario() {
           <PasoCierre resumen={resumen} titulo={title} generales={generales} checklist={checklist} respuestas={respuestas} comentarios={comentarios} hallazgos={hallazgos}
             {...(esTop && {
               formato: "top",
-              respuestaVisible: respuestaTop,
+              conFotos: false,
               conHallazgos: false,
+              conChecklist: false,
               secciones: [
                 {
                   titulo: "Datos de quien completa la TOP",

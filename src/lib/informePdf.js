@@ -345,13 +345,12 @@ function dorsoTarjeta(doc, generales, y) {
   return doc.lastAutoTable.finalY;
 }
 
-// `logo`: dataUrl PNG (sin conexión puede faltar: sale sin logo).
-export function construirTarjetaTopPDF({ generales, checklist, respuestas, comentarios = {}, fotos = [], firmas = {}, logo }) {
+// `logo`: dataUrl PNG (sin conexión puede faltar: sale sin logo). Sin fotos: la tarjeta no las tiene.
+export function construirTarjetaTopPDF({ generales, checklist, respuestas, comentarios = {}, firmas = {}, logo }) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   frenteTarjeta(doc, checklist, respuestas, comentarios, encabezadoTarjeta(doc, logo, 40));
   doc.addPage();
-  let y = dorsoTarjeta(doc, generales, encabezadoTarjeta(doc, logo, 40)) + 24;
-  y = agregarFotos(doc, fotos, y);
+  const y = dorsoTarjeta(doc, generales, encabezadoTarjeta(doc, logo, 40)) + 24;
   agregarFirmas(doc, firmas, y);
   return doc;
 }

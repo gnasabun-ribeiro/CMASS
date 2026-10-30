@@ -22,9 +22,6 @@ const panelTituloStyle = {
   marginBottom: 11,
 };
 
-// Cómo se muestra una respuesta (la TOP pasa la suya: SI / NO / N/A).
-const respuestaComun = (_item, valor) => OPCIONES.find((o) => o.value === valor) || null;
-
 const ROLES_FIRMA = [
   { rol: "inspector", titulo: "Inspector CMASS" },
 ];
@@ -51,8 +48,10 @@ export default function PasoCierre({
   guardandoFirma = {},
   soloLectura = false,
   formato, // "top": el PDF sale con el formato de la tarjeta impresa
-  respuestaVisible = respuestaComun,
+  // La TOP no lleva fotos, hallazgos ni resumen del checklist (la tarjeta de papel no los tiene).
+  conFotos = true,
   conHallazgos = true,
+  conChecklist = true,
   secciones = [], // [{ titulo, filas: [[etiqueta, valor]] } | { titulo, texto }]: datos propios del módulo
 }) {
   const bloques = useMemo(() => agruparPorCategoria(checklist), [checklist]);
@@ -81,7 +80,9 @@ export default function PasoCierre({
     <div>
       {/* El PDF queda fuera: se puede descargar aunque la inspección sea de solo lectura. */}
       <fieldset disabled={soloLectura} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
-      <GaleriaFotos fotos={fotos} subiendo={subiendoFotos} max={maxFotos} aviso={errorFotos} onAgregar={onAgregarFotos} onQuitar={onQuitarFoto} />
+      {conFotos ? (
+        <GaleriaFotos fotos={fotos} subiendo={subiendoFotos} max={maxFotos} aviso={errorFotos} onAgregar={onAgregarFotos} onQuitar={onQuitarFoto} />
+      ) : null}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(260px,100%),1fr))", gap: 12, marginBottom: 14 }}>
         {ROLES_FIRMA.map(({ rol, titulo: tituloRol }) => (
@@ -167,7 +168,7 @@ export default function PasoCierre({
         </div>
       )}
 
-      <div style={panelStyle}>
+      {conChecklist ? <div style={panelStyle}>
         <div style={panelTituloStyle}>Resumen del checklist</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           {bloques.map((b) => (
@@ -175,14 +176,12 @@ export default function PasoCierre({
               <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--violet-800)", marginBottom: 7 }}>{b.categoria}</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
                 {b.items.map((item) => {
-                  // Un "Otros" sin marcar ni escribir no es una respuesta pendiente: se omite.
-                  if (item.otros && !respuestas[item.codigo] && !comentarios[item.codigo]?.trim()) return null;
-                  const opcion = respuestaVisible(item, respuestas[item.codigo]);
+                  const opcion = OPCIONES.find((o) => o.value === respuestas[item.codigo]);
                   return (
                     <div key={item.codigo} style={{ display: "flex", gap: 9, alignItems: "flex-start", fontSize: 12.5 }}>
                       <span style={{ flex: "0 0 auto", fontWeight: 700, color: "var(--violet-700)", minWidth: 26 }}>{item.codigo}</span>
                       <span style={{ flex: 1, color: "var(--ink)", lineHeight: 1.4 }}>
-                        {item.otros ? `Otros: ${comentarios[item.codigo]?.trim() || "—"}` : item.texto}
+                        {item.texto}
                         {respuestas[item.codigo] === "parcial" ? (
                           <span style={{ display: "block", marginTop: 3, color: comentarios[item.codigo]?.trim() ? "var(--warn-fg)" : "var(--danger-fg)", fontWeight: 600 }}>
                             Detalle: {comentarios[item.codigo]?.trim() || "falta completarlo"}
@@ -210,7 +209,7 @@ export default function PasoCierre({
             </div>
           ))}
         </div>
-      </div>
+      </div> : null}
 
 
       {ROLES_FIRMA.some(({ rol }) => !firmas[rol]) ? (

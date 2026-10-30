@@ -6,11 +6,11 @@ import { useCelular } from "../../lib/useCelular.js";
 import { SelectorCliente } from "./PasoGenerales.jsx";
 
 // Pasos 1 a 3 de la Tarjeta TOP con el formato de la tarjeta impresa (RG 28-01): encabezado
-// con logo y código, bandas amarillas, casilleros SI / NO / N/A y renglones. El amarillo y el
-// negro son los de la tarjeta en todos los temas; las respuestas marcadas llevan los colores
-// semánticos de siempre (verde seguro, rojo desvío).
+// con logo y código, bandas de títulos, casilleros SI / NO / N/A y renglones. Las bandas van en
+// el tono suave del tema (lila en Default; en papel son amarillas); el negro es fijo y las
+// respuestas marcadas llevan los colores semánticos de siempre (verde seguro, rojo desvío).
 const TINTA = "#1b1b1b";
-const AMARILLO = "#ffe500";
+const FONDO_BANDA = "var(--violet-300)";
 const LINEA = `2px solid ${TINTA}`;
 const LINEA_FINA = `1px solid ${TINTA}`;
 const RENGLON = 30; // alto de cada renglón de los textos largos
@@ -96,7 +96,7 @@ function Banda({ children, htmlFor, chica, style }) {
       htmlFor={htmlFor}
       style={{
         display: "block",
-        background: AMARILLO,
+        background: FONDO_BANDA,
         color: TINTA,
         fontWeight: 800,
         fontSize: chica ? 11.5 : 13,
