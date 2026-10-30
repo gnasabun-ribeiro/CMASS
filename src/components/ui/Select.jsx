@@ -18,6 +18,7 @@ import { normalizar } from "../../lib/texto.js";
    <MultiSelect> varias, como chips que se quitan con ×.   onChange(values[], opcion)
 
    Props comunes: value / defaultValue (controlado o no), onChange, options, placeholder,
+   icono (solo Select: ícono fijo adelante del valor),
    name (input oculto para enviar un <form>; MultiSelect manda uno por valor), id (para
    <label htmlFor> o <Field>), disabled, invalid (o aria-invalid), size (sm | md | lg),
    variant ("papel": renglón de la Tarjeta TOP), titulo (título de la hoja del celular),
@@ -407,6 +408,7 @@ export function Select({
   size,
   variant,
   titulo,
+  icono, // ícono fijo adelante del valor (ej. "palette" en el selector de tema)
   className,
   style,
   "aria-label": ariaLabel,
@@ -525,7 +527,11 @@ export function Select({
         onClick={() => (abierto ? cerrar() : abrir())}
         onKeyDown={alTeclear}
       >
-        {elegida?.icon ? <Icon name={elegida.icon} size={16} /> : null}
+        {icono || elegida?.icon ? (
+          <span style={{ display: "inline-flex", color: "var(--text-tertiary)" }} aria-hidden="true">
+            <Icon name={icono || elegida.icon} size={16} />
+          </span>
+        ) : null}
         <span className="select-trigger__valor" data-vacio={!elegida || undefined}>
           {elegida ? elegida.label : placeholder}
         </span>

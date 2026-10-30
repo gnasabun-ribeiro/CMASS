@@ -7,7 +7,8 @@ import { enGrupoInspecciones, GRUPO_INSPECCIONES, MODULOS } from "../data/modulo
 import { ICONOS_ANIMADOS } from "../data/iconosAnimados.js";
 import { FiltrosIconos } from "../components/IconoAnimado.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
-import { MODOS, TEMAS, useTheme } from "../context/ThemeContext.jsx";
+import { TEMAS, useTheme } from "../context/ThemeContext.jsx";
+import Button from "../components/ui/Button.jsx";
 import { useCelular } from "../lib/useCelular.js";
 
 const COLUMNAS_KEY = "cmass:home:columnas";
@@ -27,26 +28,11 @@ function gridColumnas(valor) {
   return "repeat(auto-fill,minmax(min(340px,100%),1fr))";
 }
 
-// Control segmentado sobre fondo de card: legible sobre el degradé en cualquier tema.
-function Segmentado({ etiqueta, opciones, valor, onCambiar }) {
-  return (
-    <div className="segmented" role="group" aria-label={etiqueta}>
-      <span className="segmented__label" aria-hidden="true">
-        {etiqueta}
-      </span>
-      {opciones.map((o) => (
-        <button key={o.value} type="button" className="segmented__item" aria-pressed={valor === o.value} onClick={() => onCambiar(o.value)}>
-          {o.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 export default function Home() {
   const navigate = useNavigate();
   const { nombre, email, puede } = useAuth();
-  const { tema, setTema, modo, setModo } = useTheme();
+  const { tema, setTema, esquema, alternarEsquema } = useTheme();
+  const oscuro = esquema === "oscuro";
   const celular = useCelular();
   const [columnas, setColumnas] = useState(() => localStorage.getItem(COLUMNAS_KEY) || "auto");
 
@@ -72,14 +58,23 @@ export default function Home() {
     // En el celular el nombre ya ocupa dos líneas: el subtítulo queda solo con el correo.
     <AppShell title={`¡Hola, ${nombre}!`} subtitle={celular ? email : `Inspecciones CMASS · ${email}`}>
       <FiltrosIconos />
+      {/* Tema (desplegable) y claro / oscuro (sol o luna): una sola fila chica, también en el celular. */}
       <div
         className="sobre-fondo"
         style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", alignItems: "center", gap: "var(--space-2)", marginBottom: "var(--space-4)" }}
       >
-        <Segmentado etiqueta="Tema" opciones={TEMAS} valor={tema} onCambiar={setTema} />
-        <Segmentado etiqueta="Modo" opciones={MODOS} valor={modo} onCambiar={setModo} />
+        <Select aria-label="Tema" titulo="Tema" icono="palette" size="sm" options={TEMAS} value={tema} onChange={setTema} style={{ width: "auto", minWidth: 136 }} />
+        <Button
+          variant="surface"
+          size="sm"
+          icon={oscuro ? "sun" : "moon"}
+          aria-label="Modo oscuro"
+          aria-pressed={oscuro}
+          title={oscuro ? "Pasar a modo claro" : "Pasar a modo oscuro"}
+          onClick={alternarEsquema}
+        />
         {/* En el celular el selector de columnas no se ve: siempre una card por fila. */}
-        <div className="columnas-selector" style={{ alignItems: "center", gap: "var(--space-2)" }}>
+        <div className="columnas-selector" style={{ alignItems: "center", gap: "var(--space-2)", marginLeft: "var(--space-2)" }}>
           <span id="columnas-etiqueta" className="t-footnote" style={{ fontWeight: "var(--weight-semibold)", color: "var(--text-on-app-muted)" }}>
             Cards por fila
           </span>

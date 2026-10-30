@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { flushSync } from "react-dom";
 
 const ThemeContext = createContext(null);
 
@@ -14,13 +15,8 @@ export const TEMAS = [
   { value: "turquesa", label: "Turquesa" },
 ];
 
-// Automático sigue al sistema (prefers-color-scheme).
-export const MODOS = [
-  { value: "auto", label: "Auto" },
-  { value: "claro", label: "Claro" },
-  { value: "oscuro", label: "Oscuro" },
-];
-
+// modo: "auto" (sigue al sistema, prefers-color-scheme; es el valor inicial), "claro" u
+// "oscuro". En Inicio un botón con sol / luna pasa de claro a oscuro y viceversa.
 const leer = (clave, porDefecto) => {
   try {
     return localStorage.getItem(clave) || porDefecto;
@@ -37,9 +33,20 @@ const guardar = (clave, valor) => {
   }
 };
 
+// Cambio de colores con un fundido suave (View Transitions) donde el navegador lo permite y
+// la persona no pidió reducir el movimiento; si no, el cambio es directo.
+function conFundido(cambio) {
+  const reducir = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (!document.startViewTransition || reducir || document.visibilityState !== "visible") return cambio();
+  const transicion = document.startViewTransition(() => flushSync(cambio));
+  // Si el navegador la cancela (ej. la pestaña se oculta en el medio), el cambio igual se aplicó.
+  transicion.ready.catch(() => {});
+  transicion.finished.catch(() => {});
+}
+
 export function ThemeProvider({ children }) {
-  const [tema, setTema] = useState(() => leer(TEMA_KEY, "default"));
-  const [modo, setModo] = useState(() => leer(MODO_KEY, "auto"));
+  const [tema, setTemaInterno] = useState(() => leer(TEMA_KEY, "default"));
+  const [modo, setModoInterno] = useState(() => leer(MODO_KEY, "auto"));
   const [sistemaOscuro, setSistemaOscuro] = useState(() => window.matchMedia(CONSULTA_OSCURO).matches);
 
   useEffect(() => {
@@ -51,7 +58,8 @@ export function ThemeProvider({ children }) {
 
   const esquema = modo === "oscuro" || (modo === "auto" && sistemaOscuro) ? "oscuro" : "claro";
 
-  useEffect(() => {
+  // useLayoutEffect: se aplica dentro del flushSync del fundido (antes de la "foto" nueva).
+  useLayoutEffect(() => {
     const raiz = document.documentElement;
     raiz.dataset.tema = tema;
     raiz.dataset.esquema = esquema;
@@ -63,7 +71,11 @@ export function ThemeProvider({ children }) {
     if (meta && color) meta.setAttribute("content", color);
   }, [tema, modo, esquema]);
 
-  const value = useMemo(() => ({ tema, setTema, modo, setModo, esquema }), [tema, modo, esquema]);
+  const setTema = useCallback((valor) => conFundido(() => setTemaInterno(valor)), []);
+  const setModo = useCallback((valor) => conFundido(() => setModoInterno(valor)), []);
+  const alternarEsquema = useCallback(() => setModo(esquema === "oscuro" ? "claro" : "oscuro"), [esquema, setModo]);
+
+  const value = useMemo(() => ({ tema, setTema, modo, setModo, esquema, alternarEsquema }), [tema, setTema, modo, setModo, esquema, alternarEsquema]);
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }

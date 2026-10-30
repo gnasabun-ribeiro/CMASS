@@ -1258,48 +1258,20 @@ textarea.field {
   display: none;
 }
 
-/* Control segmentado (Tema / Modo en Inicio). Sobre fondo de card: legible en cualquier tema. */
-.segmented {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-0-5);
-  max-width: 100%;
-  padding: var(--space-1);
-  border-radius: var(--radius-full);
-  background: var(--card-bg);
-  border: var(--hairline) solid var(--card-border);
-  box-shadow: var(--shadow-2);
+/* Campos y selectores sueltos sobre el degradé (ej. Tema y "Cards por fila" en Inicio):
+   fondo de tarjeta, legible en cualquier tema y modo. */
+.sobre-fondo .field,
+.sobre-fondo .btn--surface {
+  background: var(--surface);
+  border-color: var(--border); /* en oscuro recorta el control contra el fondo casi negro */
+  box-shadow: var(--shadow-1);
 }
 
-.segmented__label {
-  padding: 0 var(--space-2) 0 var(--space-3);
-  font-size: var(--text-caption);
-  font-weight: var(--weight-semibold);
-  color: var(--card-desc);
-  white-space: nowrap;
-}
-
-.segmented__item {
-  min-height: var(--control-h-sm);
-  padding: 0 var(--space-3);
-  border: 0;
-  border-radius: var(--radius-full);
-  background: transparent;
-  color: var(--card-accent);
-  font-size: var(--text-footnote);
-  font-weight: var(--weight-bold);
-  white-space: nowrap;
-}
-
-@media (pointer: coarse) {
-  .segmented__item {
-    min-height: var(--touch-min);
-  }
-}
-
-.segmented__item[aria-pressed="true"] {
-  background: var(--accent);
-  color: var(--on-accent);
+/* Cambio de tema o de claro / oscuro: fundido corto de toda la pantalla (ThemeContext). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 280ms;
+  animation-timing-function: var(--ease-out);
 }
 
 .badge {
