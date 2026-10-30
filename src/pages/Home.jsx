@@ -6,7 +6,7 @@ import { enGrupoInspecciones, GRUPO_INSPECCIONES, MODULOS } from "../data/modulo
 import { ICONOS_ANIMADOS } from "../data/iconosAnimados.js";
 import { FiltrosIconos } from "../components/IconoAnimado.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
-import { FONDOS, TEMAS, useTheme } from "../context/ThemeContext.jsx";
+import { TEMAS, useTheme } from "../context/ThemeContext.jsx";
 import { useCelular } from "../lib/useCelular.js";
 
 const COLUMNAS_KEY = "cmass:home:columnas";
@@ -29,7 +29,7 @@ function gridColumnas(valor) {
 export default function Home() {
   const navigate = useNavigate();
   const { nombre, email, puede } = useAuth();
-  const { tema, setTema, fondo, setFondo } = useTheme();
+  const { tema, setTema } = useTheme();
   const celular = useCelular();
   const [columnas, setColumnas] = useState(
     () => localStorage.getItem(COLUMNAS_KEY) || "auto"
@@ -60,42 +60,6 @@ export default function Home() {
       {/* Selector segmentado sobre fondo de card: "Tema" en gris sobre el degradé violeta no se leía,
           y la opción activa (violeta) se perdía contra el fondo. */}
       <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: 8, marginBottom: 12 }}>
-        {/* PROVISORIO: para comparar los adornos de fondo de las cards; se quita cuando se elija uno. */}
-        <label
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 2,
-            padding: 4,
-            borderRadius: 22,
-            background: "var(--card-bg)",
-            border: "1px solid var(--card-border)",
-            boxShadow: "var(--shadow-panel)",
-          }}
-        >
-          <span style={{ fontSize: 12.5, fontWeight: 600, color: "var(--card-desc)", padding: "0 6px 0 10px" }}>Fondo</span>
-          <select
-            value={fondo}
-            onChange={(e) => setFondo(e.target.value)}
-            style={{
-              border: 0,
-              background: "var(--active-bg)",
-              color: "var(--on-active)",
-              fontSize: 12.5,
-              fontWeight: 700,
-              padding: "7px 10px",
-              borderRadius: 18,
-              cursor: "pointer",
-              minHeight: 34,
-            }}
-          >
-            {FONDOS.map((f) => (
-              <option key={f.value} value={f.value}>
-                {f.label}
-              </option>
-            ))}
-          </select>
-        </label>
         <div
           role="group"
           aria-label="Tema"

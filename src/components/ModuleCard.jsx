@@ -98,7 +98,7 @@ export default function ModuleCard({ modulo, index = 0, onOpen, onRegistros, ico
         animationDelay: `${index * 0.045}s`,
       }}
     >
-      {/* Adorno de fondo: lo dibuja index.css según el `data-fondo` de <html>. */}
+      {/* Adorno de fondo: lo dibuja index.css, uno distinto por tema. */}
       <span className="card-decor" aria-hidden="true" />
       {ripple ? (
         <span
