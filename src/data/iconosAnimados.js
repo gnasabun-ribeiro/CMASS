@@ -26,13 +26,16 @@ import top from "../assets/iconos/top.gif";
 import topFijo from "../assets/iconos/top-fijo.png";
 import trailers from "../assets/iconos/trailers.gif";
 import trailersFijo from "../assets/iconos/trailers-fijo.png";
+import visita from "../assets/iconos/visita.gif";
+import visitaFijo from "../assets/iconos/visita-fijo.png";
 
-// Clave: id del módulo (o del grupo) en data/modulos.js. "visita" todavía no tiene: usa el de Icon.jsx.
+// Clave: id del módulo (o del grupo) en data/modulos.js.
 export const ICONOS_ANIMADOS = {
   // Inicio
   inspecciones: { animado: inspecciones, fijo: inspeccionesFijo, ms: 2420 },
   simulacro: { animado: simulacro, fijo: simulacroFijo, ms: 2420 },
-  top: { animado: top, fijo: topFijo, ms: 3160 },
+  visita: { animado: visita, fijo: visitaFijo, ms: 3160 },
+  top: { animado: top, fijo: topFijo, ms: 3000 },
   registros: { animado: registros, fijo: registrosFijo, ms: 2000 },
   pendientes: { animado: pendientes, fijo: pendientesFijo, ms: 3600 },
   panel: { animado: panel, fijo: panelFijo, ms: 2000 },
