@@ -7,6 +7,7 @@ import pictoCasco from "../../assets/iconos/top/casco.png";
 import pictoCuaderno from "../../assets/iconos/top/cuaderno.png";
 import pictoBotiquin from "../../assets/iconos/top/kit-medico.png";
 import pictoPersonas from "../../assets/iconos/top/personas.png";
+import pictoReciclaje from "../../assets/iconos/top/recycle-bin.png";
 import { ICONOS_TOP, MARCAS_TOP, agruparPorCategoria, marcaTop, respuestaTop, valorTop } from "../../data/checklist.js";
 import { useCelular } from "../../lib/useCelular.js";
 import { SelectorCliente } from "./PasoGenerales.jsx";
@@ -25,13 +26,14 @@ const tarjetaStyle = { border: LINEA, borderRadius: 10, overflow: "hidden", back
 
 // Pictograma de cada categoría (PNG negros de Flaticon con fondo transparente, elegidos por la
 // usuaria; achicados a 160 px de los de 512 px de originales/iconos/top/, con el mismo nombre).
-// La que no tiene imagen usa el ícono de Icon.jsx (`icono` en CATEGORIAS_TOP).
+// Si se agrega una categoría sin imagen, usa el ícono de Icon.jsx (`icono` en CATEGORIAS_TOP).
 const PICTOGRAMAS = {
   "Comportamiento de las personas": pictoPersonas,
   "Elementos de Protección Personal": pictoCasco,
   "Procedimientos de Trabajo": pictoCuaderno,
   Herramientas: pictoHerramientas,
   "Infraestructura y Equipamiento": pictoBotiquin,
+  "Entorno de Trabajo": pictoReciclaje,
   "Equipos Viales, Pesados y Livianos": pictoCalificador,
 };
 
