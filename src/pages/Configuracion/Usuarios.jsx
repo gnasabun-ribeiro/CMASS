@@ -4,6 +4,7 @@ import { actualizarUsuario, faltaMigracion, listarUsuarios, MENSAJE_MIGRACION } 
 import AltaUsuario from "./AltaUsuario.jsx";
 import { useConfirmacion } from "../../components/Confirmacion.jsx";
 import Button from "../../components/ui/Button.jsx";
+import Icon from "../../components/Icon.jsx";
 import EmptyState, { Skeleton } from "../../components/ui/EmptyState.jsx";
 import { Input } from "../../components/ui/Field.jsx";
 import { Select } from "../../components/ui/Select.jsx";
@@ -97,7 +98,8 @@ export default function Usuarios({ userId }) {
       {agregando ? (
         <AltaUsuario usuarios={usuarios} onCreado={cargar} onCerrar={() => setAgregando(false)} />
       ) : (
-        <Button variant="solid" icon="users" onClick={() => setAgregando(true)} style={{ marginBottom: "var(--space-3)" }}>
+        // Sobre el degradé de fondo: botón claro (el violeta sólido no se distinguía del fondo).
+        <Button variant="surface" icon="users" onClick={() => setAgregando(true)} style={{ marginBottom: "var(--space-3)" }}>
           Agregar usuario
         </Button>
       )}
@@ -112,8 +114,11 @@ export default function Usuarios({ userId }) {
         style={{ marginBottom: "var(--space-3)", background: "var(--surface)" }}
       />
       <details className="t-footnote" style={{ color: "var(--text-on-app-muted)", marginBottom: "var(--space-3)" }}>
-        <summary style={{ cursor: "pointer", fontWeight: "var(--weight-semibold)", minHeight: "var(--touch-min)", display: "flex", alignItems: "center" }}>
+        <summary className="desplegable" style={{ cursor: "pointer", fontWeight: "var(--weight-semibold)", minHeight: "var(--touch-min)", display: "flex", alignItems: "center", gap: "var(--space-1-5)" }}>
           Qué puede hacer cada rol
+          <span className="desplegable__flecha" aria-hidden="true">
+            <Icon name="chevronDown" size={16} />
+          </span>
         </summary>
         <div style={{ display: "grid", gap: "var(--space-1)", paddingTop: "var(--space-1)" }}>
           {ROLES.map((r) => (

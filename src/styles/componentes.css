@@ -750,6 +750,24 @@
   outline-offset: 2px;
 }
 
+/* <summary> de un <details>: sin el triángulo del navegador, con una flecha que gira al abrir. */
+.desplegable {
+  list-style: none;
+}
+
+.desplegable::-webkit-details-marker {
+  display: none;
+}
+
+.desplegable__flecha {
+  display: inline-flex;
+  transition: transform var(--duration-base) var(--ease-out);
+}
+
+details[open] > .desplegable .desplegable__flecha {
+  transform: rotate(180deg);
+}
+
 /* Botón con pinta de enlace (dentro de un texto). */
 .link-btn {
   border: 0;
