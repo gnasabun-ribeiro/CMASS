@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import Icon from "./Icon.jsx";
+import IconoAnimado from "./IconoAnimado.jsx";
 import { useCelular } from "../lib/useCelular.js";
 
 // Grilla de las cards en el celular: una por fila y todas de la misma altura (la de la más alta).
@@ -39,10 +40,13 @@ const MEDIDAS = {
   },
 };
 
-export default function ModuleCard({ modulo, index = 0, onOpen, onRegistros }) {
+// `iconoAnimado` (data/iconosAnimados.js, lo pasan Home e Inspecciones): reemplaza al ícono de línea. Cuándo se
+// anima lo decide IconoAnimado; desde acá solo se le avisa al pasar el mouse.
+export default function ModuleCard({ modulo, index = 0, onOpen, onRegistros, iconoAnimado }) {
   const hasList = Boolean(modulo.form);
   const [pressed, setPressed] = useState(false);
   const [ripple, setRipple] = useState(null);
+  const [reproducir, setReproducir] = useState(0);
   const cardRef = useRef(null);
   const celular = useCelular();
   const m = celular ? MEDIDAS.celular : MEDIDAS.escritorio;
@@ -65,6 +69,7 @@ export default function ModuleCard({ modulo, index = 0, onOpen, onRegistros }) {
       ref={cardRef}
       // e.detail > 1: segundo clic de un doble clic (navegaba dos veces y "Atrás" no volvía).
       onClick={(e) => e.detail <= 1 && handleOpen(e)}
+      onMouseEnter={iconoAnimado ? () => setReproducir((n) => n + 1) : undefined}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
@@ -93,6 +98,8 @@ export default function ModuleCard({ modulo, index = 0, onOpen, onRegistros }) {
         animationDelay: `${index * 0.045}s`,
       }}
     >
+      {/* Adorno de fondo: lo dibuja index.css según el `data-fondo` de <html>. */}
+      <span className="card-decor" aria-hidden="true" />
       {ripple ? (
         <span
           key={ripple.key}
@@ -129,7 +136,12 @@ export default function ModuleCard({ modulo, index = 0, onOpen, onRegistros }) {
             transition: "background .2s, color .2s",
           }}
         >
-          <Icon name={modulo.icon} size={m.iconoTamano} strokeWidth={1.5} />
+          {iconoAnimado ? (
+            // La primera vuelta, en cascada después de la animación de entrada de las cards (pop-in).
+            <IconoAnimado icono={iconoAnimado} reproducir={reproducir} demora={450 + index * 120} />
+          ) : (
+            <Icon name={modulo.icon} size={m.iconoTamano} strokeWidth={1.5} />
+          )}
         </span>
         {modulo.badge ? (
           <span

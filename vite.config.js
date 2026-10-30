@@ -29,7 +29,8 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,png,svg,ico,webmanifest}"],
+        // gif: íconos animados de Inicio e Inspecciones (src/data/iconosAnimados.js).
+        globPatterns: ["**/*.{js,css,html,png,gif,svg,ico,webmanifest}"],
         navigateFallback: "/index.html",
         cleanupOutdatedCaches: true,
         runtimeCaching: [

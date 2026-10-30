@@ -240,6 +240,25 @@ export default function Login() {
           </form>
         </div>
       </div>
+      {/* Atribución que pide la licencia gratuita de Flaticon por los íconos animados de Inicio. */}
+      <div
+        style={{
+          textAlign: "center",
+          fontSize: 11.5,
+          color: "var(--violet-150)",
+          padding: "0 22px calc(14px + env(safe-area-inset-bottom))",
+        }}
+      >
+        Íconos animados creados por{" "}
+        <a
+          href="https://www.flaticon.com/free-animated-icons"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: "inherit", textDecoration: "underline" }}
+        >
+          Magnific - Flaticon
+        </a>
+      </div>
     </div>
   );
 }
