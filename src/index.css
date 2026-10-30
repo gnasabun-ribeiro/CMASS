@@ -64,7 +64,7 @@
   /* Adorno de fondo de ModuleCard: relleno tenue, líneas/puntos y resplandor. */
   --card-decor: rgba(112, 28, 147, 0.09);
   --card-decor-linea: rgba(112, 28, 147, 0.2);
-  --card-decor-glow: rgba(154, 63, 191, 0.24);
+  --card-decor-glow: rgba(154, 63, 191, 0.38);
 
   --app-gradient: linear-gradient(
     165deg,
@@ -124,7 +124,7 @@
   --card-accent: #f4cf47;
   --card-decor: rgba(244, 207, 71, 0.1);
   --card-decor-linea: rgba(244, 207, 71, 0.2);
-  --card-decor-glow: rgba(244, 207, 71, 0.2);
+  --card-decor-glow: rgba(244, 207, 71, 0.32);
 
   --app-gradient: linear-gradient(
     165deg,
@@ -176,7 +176,7 @@
 
   --card-decor: rgba(20, 145, 141, 0.1);
   --card-decor-linea: rgba(20, 145, 141, 0.22);
-  --card-decor-glow: rgba(69, 196, 192, 0.32);
+  --card-decor-glow: rgba(69, 196, 192, 0.48);
 
   /* Arranca en 700 (no en 600 como Default): con el turquesa más claro el texto blanco del
      encabezado y de los CTA no llegaba al contraste mínimo. */
@@ -370,12 +370,12 @@ button:active {
 /* Resplandor: luz difusa de color en la esquina. */
 [data-fondo="resplandor"] .card-decor::before {
   content: "";
-  right: -160px;
-  top: -160px;
-  width: 320px;
-  height: 320px;
+  right: -230px;
+  top: -230px;
+  width: 460px;
+  height: 460px;
   border-radius: 50%;
-  background: radial-gradient(circle closest-side, var(--card-decor-glow), transparent);
+  background: radial-gradient(circle closest-side, var(--card-decor-glow) 15%, transparent);
 }
 
 /* Puntos: grilla técnica (tipo plano) que se desvanece desde la esquina. */
