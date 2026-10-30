@@ -1,12 +1,12 @@
 import { useEffect, useMemo } from "react";
 import Icon from "../../components/Icon.jsx";
 import logoRibeiro from "../../assets/logo-ribeiro.png";
-import pictoBotiquin from "../../assets/top/botiquin.png";
-import pictoCalificador from "../../assets/top/calificador.png";
-import pictoCasco from "../../assets/top/casco.png";
-import pictoCuaderno from "../../assets/top/cuaderno.png";
-import pictoHerramientas from "../../assets/top/herramientas.png";
-import pictoPersonas from "../../assets/top/personas.png";
+import pictoHerramientas from "../../assets/iconos/top/caja-de-herramientas.png";
+import pictoCalificador from "../../assets/iconos/top/calificador.png";
+import pictoCasco from "../../assets/iconos/top/casco.png";
+import pictoCuaderno from "../../assets/iconos/top/cuaderno.png";
+import pictoBotiquin from "../../assets/iconos/top/kit-medico.png";
+import pictoPersonas from "../../assets/iconos/top/personas.png";
 import { ICONOS_TOP, MARCAS_TOP, agruparPorCategoria, marcaTop, respuestaTop, valorTop } from "../../data/checklist.js";
 import { useCelular } from "../../lib/useCelular.js";
 import { SelectorCliente } from "./PasoGenerales.jsx";
@@ -23,8 +23,9 @@ const RENGLON = 30; // alto de cada renglón de los textos largos
 
 const tarjetaStyle = { border: LINEA, borderRadius: 10, overflow: "hidden", background: "#fff", color: TINTA };
 
-// Pictograma de cada categoría (PNG negros con fondo transparente, 160 px, elegidos por la
-// usuaria). La que no tiene imagen usa el ícono de Icon.jsx (`icono` en CATEGORIAS_TOP).
+// Pictograma de cada categoría (PNG negros de Flaticon con fondo transparente, elegidos por la
+// usuaria; achicados a 160 px de los de 512 px de originales/iconos/top/, con el mismo nombre).
+// La que no tiene imagen usa el ícono de Icon.jsx (`icono` en CATEGORIAS_TOP).
 const PICTOGRAMAS = {
   "Comportamiento de las personas": pictoPersonas,
   "Elementos de Protección Personal": pictoCasco,
