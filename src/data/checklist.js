@@ -432,8 +432,84 @@ const CATEGORIAS_AMBIENTE = [
 
 export const CHECKLIST_AMBIENTE = buildChecklist(CATEGORIAS_AMBIENTE);
 
+// Tarjeta de Observación Preventiva (TOP), RG 28-01 Rev. 0 — frente de la tarjeta impresa.
+// Cada categoría termina en "Otros", que se describe con texto libre (va en el comentario de
+// la respuesta). `icono` es el de Icon.jsx que la acompaña en pantalla, como el pictograma
+// de la tarjeta. En "Comportamiento de las personas" los ítems son desvíos: ahí marcar SI es
+// lo inseguro (`siEsDesvio`, ver valorTop/marcaTop).
+const CATEGORIAS_TOP = [
+  {
+    nombre: "Comportamiento de las personas",
+    icono: "users",
+    siEsDesvio: true,
+    items: ["Posición insegura de trabajo", "Exceso de confianza", "Comportamiento agresivo"],
+  },
+  {
+    nombre: "Elementos de Protección Personal",
+    icono: "hardhat",
+    items: ["Adecuados para la tarea", "En buen estado de uso", "Utilizados correctamente"],
+  },
+  {
+    nombre: "Procedimientos de Trabajo",
+    icono: "doc",
+    items: ["De acuerdo a la tarea", "Conocidos por todos", "Dispone y conocen Matriz de Riesgos y/o Permisos de Trabajo"],
+  },
+  {
+    nombre: "Herramientas",
+    icono: "wrench",
+    items: ["Adecuadas para la tarea", "En condiciones seguras de uso", "Empleadas en forma correcta"],
+  },
+  {
+    nombre: "Infraestructura y Equipamiento",
+    icono: "botiquin",
+    items: ["Protecciones eléctricas", "Protección contra incendios", "Elementos de 1° Auxilios", "Andamios y/o Escaleras"],
+  },
+  {
+    nombre: "Entorno de Trabajo",
+    icono: "tacho",
+    items: ["Orden y limpieza", "Señalizaciones", "Clasificación de Residuos"],
+  },
+  {
+    nombre: "Equipos Viales, Pesados y Livianos",
+    icono: "truck",
+    items: ["Estado General", "Equipo acorde a la tarea", "Utilizados correctamente", "Certificaciones (equipo y operario)"],
+  },
+];
+
+export const ICONOS_TOP = Object.fromEntries(CATEGORIAS_TOP.map((c) => [c.nombre, c.icono]));
+
+export const CHECKLIST_TOP = buildChecklist(CATEGORIAS_TOP.map((c) => ({ ...c, items: [...c.items, "Otros"] }))).map((item) => {
+  const cat = CATEGORIAS_TOP.find((c) => c.nombre === item.categoria);
+  return { ...item, ...(item.texto === "Otros" && { otros: true }), ...(cat.siEsDesvio && { siEsDesvio: true }) };
+});
+
+// La TOP se marca SI / NO / N/A como en papel, pero se guarda igual que los demás checklists
+// (ok = seguro, no = desvío), así los conteos de desvíos valen para todos los módulos.
+export const MARCAS_TOP = [
+  { value: "si", label: "SI" },
+  { value: "no", label: "NO" },
+  { value: "na", label: "N/A" },
+];
+
+export function valorTop(item, marca) {
+  if (marca === "na") return "na";
+  return (marca === "si") !== Boolean(item.siEsDesvio) ? "ok" : "no";
+}
+
+export function marcaTop(item, valor) {
+  if (!valor || valor === "na") return valor || null;
+  return (valor === "ok") !== Boolean(item.siEsDesvio) ? "si" : "no";
+}
+
+// Cómo se muestra una respuesta de la TOP: la marca de la tarjeta, con el color de si es seguro o desvío.
+export function respuestaTop(item, valor) {
+  const marca = MARCAS_TOP.find((m) => m.value === marcaTop(item, valor));
+  const opcion = OPCIONES.find((o) => o.value === valor);
+  return marca && opcion ? { ...opcion, label: marca.label } : null;
+}
+
 // Checklist de referencia para módulos que todavía no tienen su propia
-// lista definitiva (simulacro, visita, top).
+// lista definitiva (simulacro, visita).
 export const CHECKLIST_GENERICO = buildChecklist([
   {
     nombre: "General",
@@ -453,6 +529,7 @@ const CHECKLISTS_POR_MODULO = {
   servicio: CHECKLIST_SERVICIO,
   trailers: CHECKLIST_TRAILERS,
   ambiente: CHECKLIST_AMBIENTE,
+  top: CHECKLIST_TOP,
 };
 
 // Checklists que varían por sub-módulo (ej. cada una de las Reglas de Oro

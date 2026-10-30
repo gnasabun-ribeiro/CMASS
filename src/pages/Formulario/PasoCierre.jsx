@@ -22,6 +22,9 @@ const panelTituloStyle = {
   marginBottom: 11,
 };
 
+// Cómo se muestra una respuesta (la TOP pasa la suya: SI / NO / N/A).
+const respuestaComun = (_item, valor) => OPCIONES.find((o) => o.value === valor) || null;
+
 const ROLES_FIRMA = [
   { rol: "inspector", titulo: "Inspector CMASS" },
 ];
@@ -47,6 +50,10 @@ export default function PasoCierre({
   onGuardarFirma,
   guardandoFirma = {},
   soloLectura = false,
+  formato, // "top": el PDF sale con el formato de la tarjeta impresa
+  respuestaVisible = respuestaComun,
+  conHallazgos = true,
+  secciones = [], // [{ titulo, filas: [[etiqueta, valor]] } | { titulo, texto }]: datos propios del módulo
 }) {
   const bloques = useMemo(() => agruparPorCategoria(checklist), [checklist]);
   const [generandoPDF, setGenerandoPDF] = useState(false);
@@ -64,7 +71,7 @@ export default function PasoCierre({
           if (f?.url) firmasPdf[rol] = { nombre: f.nombre, dataUrl: await urlADataUrl(f.url).catch(() => null) };
         })
       );
-      generarInformePDF({ titulo, generales, resumen, checklist, respuestas, comentarios, hallazgos, fotos: fotosPdf, firmas: firmasPdf });
+      await generarInformePDF({ formato, titulo, generales, resumen, checklist, respuestas, comentarios, hallazgos, fotos: fotosPdf, firmas: firmasPdf });
     } finally {
       setGenerandoPDF(false);
     }
@@ -108,7 +115,25 @@ export default function PasoCierre({
         ))}
       </div>
 
-      {hallazgos.length === 0 ? (
+      {secciones.map((sec) => (
+        <div key={sec.titulo} style={panelStyle}>
+          <div style={panelTituloStyle}>{sec.titulo}</div>
+          {sec.filas ? (
+            sec.filas.map(([etiqueta, valor]) => (
+              <div key={etiqueta} style={{ display: "flex", justifyContent: "space-between", gap: 10, fontSize: 13.5, padding: "4px 0" }}>
+                <span style={{ color: "var(--muted-3)" }}>{etiqueta}</span>
+                <strong style={{ textAlign: "right", overflowWrap: "anywhere" }}>{valor?.trim() || "—"}</strong>
+              </div>
+            ))
+          ) : (
+            <div style={{ fontSize: 13.5, lineHeight: 1.5, whiteSpace: "pre-wrap", overflowWrap: "anywhere", color: sec.texto?.trim() ? "var(--ink)" : "var(--muted)" }}>
+              {sec.texto?.trim() || "Sin completar."}
+            </div>
+          )}
+        </div>
+      ))}
+
+      {!conHallazgos ? null : hallazgos.length === 0 ? (
         <div style={panelStyle}>
           <div style={panelTituloStyle}>Hallazgos (0)</div>
           <div style={{ fontSize: 12.5, color: "var(--muted)" }}>No se cargaron hallazgos en el paso 3. El informe saldrá sin esa sección.</div>
@@ -150,12 +175,14 @@ export default function PasoCierre({
               <div style={{ fontSize: 12.5, fontWeight: 700, color: "var(--violet-800)", marginBottom: 7 }}>{b.categoria}</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
                 {b.items.map((item) => {
-                  const opcion = OPCIONES.find((o) => o.value === respuestas[item.codigo]);
+                  // Un "Otros" sin marcar ni escribir no es una respuesta pendiente: se omite.
+                  if (item.otros && !respuestas[item.codigo] && !comentarios[item.codigo]?.trim()) return null;
+                  const opcion = respuestaVisible(item, respuestas[item.codigo]);
                   return (
                     <div key={item.codigo} style={{ display: "flex", gap: 9, alignItems: "flex-start", fontSize: 12.5 }}>
                       <span style={{ flex: "0 0 auto", fontWeight: 700, color: "var(--violet-700)", minWidth: 26 }}>{item.codigo}</span>
                       <span style={{ flex: 1, color: "var(--ink)", lineHeight: 1.4 }}>
-                        {item.texto}
+                        {item.otros ? `Otros: ${comentarios[item.codigo]?.trim() || "—"}` : item.texto}
                         {respuestas[item.codigo] === "parcial" ? (
                           <span style={{ display: "block", marginTop: 3, color: comentarios[item.codigo]?.trim() ? "var(--warn-fg)" : "var(--danger-fg)", fontWeight: 600 }}>
                             Detalle: {comentarios[item.codigo]?.trim() || "falta completarlo"}

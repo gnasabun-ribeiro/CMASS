@@ -22,7 +22,8 @@ const labelStyle = {
   marginBottom: 5,
 };
 
-export default function PasoGenerales({ valores, onCambiar }) {
+// Cliente = centro de costos del DW (también lo usa la Tarjeta TOP, en PasoTop.jsx).
+export function SelectorCliente({ value, onChange, style, id }) {
   const [centros, setCentros] = useState([]);
   const [estado, setEstado] = useState("cargando"); // cargando | ok | error
 
@@ -41,27 +42,33 @@ export default function PasoGenerales({ valores, onCambiar }) {
   }, []);
 
   // Si el valor guardado ya no está en la lista (centro dado de baja), se sigue mostrando.
-  const valorFueraDeLista = valores.cliente && !centros.some((c) => c.etiqueta === valores.cliente);
+  const valorFueraDeLista = value && !centros.some((c) => c.etiqueta === value);
 
+  return (
+    <select id={id} value={value} onChange={(e) => onChange(e.target.value)} style={style}>
+      <option value="" disabled>
+        {estado === "cargando"
+          ? "Cargando centros de costo…"
+          : estado === "error"
+            ? "No se pudieron cargar los centros de costo"
+            : "Seleccioná un cliente"}
+      </option>
+      {valorFueraDeLista && <option value={value}>{value}</option>}
+      {centros.map((c) => (
+        <option key={c.id ?? c.codigo} value={c.etiqueta}>
+          {c.etiqueta}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+export default function PasoGenerales({ valores, onCambiar }) {
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(230px,100%),1fr))", gap: 13 }}>
       <label>
         <span style={labelStyle}>Cliente</span>
-        <select value={valores.cliente} onChange={(e) => onCambiar("cliente", e.target.value)} style={fieldStyle}>
-          <option value="" disabled>
-            {estado === "cargando"
-              ? "Cargando centros de costo…"
-              : estado === "error"
-                ? "No se pudieron cargar los centros de costo"
-                : "Seleccioná un cliente"}
-          </option>
-          {valorFueraDeLista && <option value={valores.cliente}>{valores.cliente}</option>}
-          {centros.map((c) => (
-            <option key={c.id ?? c.codigo} value={c.etiqueta}>
-              {c.etiqueta}
-            </option>
-          ))}
-        </select>
+        <SelectorCliente value={valores.cliente} onChange={(v) => onCambiar("cliente", v)} style={fieldStyle} />
       </label>
       <label>
         <span style={labelStyle}>Ubicación / Zona</span>

@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import AppShell from "../../components/AppShell.jsx";
-import { findModulo, findSub, PASOS, rutaVolver } from "../../data/modulos.js";
+import { findModulo, findSub, pasosDe, rutaVolver } from "../../data/modulos.js";
 import PasoGenerales from "./PasoGenerales.jsx";
 import PasoChecklist from "./PasoChecklist.jsx";
 import PasoHallazgos from "./PasoHallazgos.jsx";
 import PasoCierre from "./PasoCierre.jsx";
-import { getChecklist } from "../../data/checklist.js";
+import { TopDatos, TopDetalle, TopObservacion } from "./PasoTop.jsx";
+import { getChecklist, respuestaTop } from "../../data/checklist.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { supabaseConfigured } from "../../lib/supabaseClient.js";
 import { armarHallazgo } from "../../data/severidades.js";
@@ -30,6 +31,9 @@ import { correoDe, useColaboradores } from "../../lib/colaboradores.js";
 import { useConfirmacion } from "../../components/Confirmacion.jsx";
 
 const GENERALES_INICIALES = { cliente: "", ubicacion: "", grupoAuditado: "", fechaHora: "", tareaObservada: "" };
+// Campos de la Tarjeta TOP que no están en Generales (columna `datos` de la cabecera). Detalle
+// observación va en tareaObservada y Área de trabajo en ubicacion.
+const DATOS_TOP = { observador: "", funcion: "", accionInmediata: "", accionReiteracion: "" };
 
 function textoGuardado({ error, guardadoEn, sync }) {
   if (error) return "Error al guardar";
@@ -54,6 +58,8 @@ export default function Formulario() {
   const modulo = findModulo(moduloId);
   const sub = isNested ? findSub(moduloId, subId) : null;
   const checklist = useMemo(() => getChecklist(moduloId, subId), [moduloId, subId]);
+  const esTop = moduloId === "top";
+  const PASOS = pasosDe(moduloId);
   // Todos los módulos guardan (en el dispositivo primero, y de ahí a Supabase); ver lib/sync.js.
   const persisteEnSupabase = Boolean(modulo) && supabaseConfigured;
 
@@ -103,8 +109,9 @@ export default function Formulario() {
   // Vuelca la copia local al formulario (y pide URLs firmadas para lo que solo está en el servidor).
   const hidratar = (rec) => {
     setDatosInsp({ estado: rec.estado, inspectorId: rec.inspectorId ?? null });
-    generalesRef.current = rec.generales;
-    setGenerales(rec.generales);
+    const g = esTop ? { ...rec.generales, datos: { ...DATOS_TOP, ...rec.generales.datos } } : rec.generales;
+    generalesRef.current = g;
+    setGenerales(g);
     setRespuestas(Object.fromEntries(Object.entries(rec.respuestas).map(([codigo, r]) => [codigo, r.valor])));
     setComentarios(Object.fromEntries(Object.entries(rec.respuestas).filter(([, r]) => r.comentario).map(([codigo, r]) => [codigo, r.comentario])));
     setHallazgos(rec.hallazgos.map(armarHallazgo));
@@ -148,7 +155,8 @@ export default function Formulario() {
     let cancelado = false;
     let promesa;
     if (idParam) promesa = cargarInspeccion(idParam, moduloId);
-    else promesa = nuevaRef.current ??= nuevaInspeccion(userId, moduloId, isNested ? subId : null);
+    // La TOP arranca con el nombre de quien la completa (se puede cambiar: puede pasar una tarjeta de papel de otra persona).
+    else promesa = nuevaRef.current ??= nuevaInspeccion(userId, moduloId, isNested ? subId : null, esTop ? { datos: { ...DATOS_TOP, observador: nombreInspector || "" } } : {});
     promesa
       .then((rec) => {
         if (cancelado) return;
@@ -199,19 +207,24 @@ export default function Formulario() {
     clearTimeout(timerGeneralesRef.current);
     timerGeneralesRef.current = setTimeout(() => volcarGeneralesRef.current(), 400);
   };
+  const cambiarDato = (campo, valor) => cambiarGeneral("datos", { ...generalesRef.current.datos, [campo]: valor });
+
+  // Llevan texto además de la respuesta: "Cumple parcialmente" (el detalle) y los "Otros" de la TOP.
+  const conDetalle = (codigo, valor) => valor === "parcial" || Boolean(checklist.find((i) => i.codigo === codigo)?.otros);
 
   const guardarRespuestaConDetalle = (item, valor, detalle) =>
     guardarRespuesta(inspeccionId, userId, item, valor, detalle)
       .then(marcarGuardado)
       .catch((err) => setErrorGuardado(err.message));
 
-  // Los detalles se guardan 500 ms después de dejar de escribir (o al salir del campo).
+  // Los detalles se guardan 500 ms después de dejar de escribir (o al salir del campo). Un "Otros"
+  // todavía sin marcar no tiene respuesta donde guardarse: se guarda junto con la marca.
   const detallesPendientes = useRef({}); // codigo -> { item, texto, timer }
   const volcarDetalles = () => {
     for (const [codigo, p] of Object.entries(detallesPendientes.current)) {
       clearTimeout(p.timer);
       delete detallesPendientes.current[codigo];
-      if (persisteEnSupabase && inspeccionId) guardarRespuestaConDetalle(p.item, "parcial", p.texto);
+      if (persisteEnSupabase && inspeccionId && respuestas[codigo]) guardarRespuestaConDetalle(p.item, respuestas[codigo], p.texto);
     }
   };
   const volcarDetallesRef = useRef(volcarDetalles);
@@ -225,12 +238,12 @@ export default function Formulario() {
   const title = sub ? sub.title : modulo.title;
 
   const responderChecklist = (item, valor) => {
-    // Cambiar a otra respuesta descarta el detalle: solo "Cumple parcialmente" lo lleva.
-    const detalle = valor === "parcial" ? comentarios[item.codigo] || "" : "";
+    // Cambiar a otra respuesta descarta el detalle: solo "Cumple parcialmente" (y "Otros") lo lleva.
+    const detalle = conDetalle(item.codigo, valor) ? comentarios[item.codigo] || "" : "";
     clearTimeout(detallesPendientes.current[item.codigo]?.timer);
     delete detallesPendientes.current[item.codigo];
     setRespuestas((r) => ({ ...r, [item.codigo]: valor }));
-    if (valor !== "parcial") setComentarios(({ [item.codigo]: _quitado, ...resto }) => resto);
+    if (!conDetalle(item.codigo, valor)) setComentarios(({ [item.codigo]: _quitado, ...resto }) => resto);
     if (!persisteEnSupabase || !inspeccionId) return;
     guardarRespuestaConDetalle(item, valor, detalle);
   };
@@ -243,10 +256,19 @@ export default function Formulario() {
     detallesPendientes.current[item.codigo] = { item, texto, timer };
   };
 
-  // Ítems "Cumple parcialmente" sin detalle: no se puede avanzar ni cerrar con ellos.
-  const sinDetalle = checklist.filter((i) => respuestas[i.codigo] === "parcial" && !comentarios[i.codigo]?.trim());
-  const avisoSinDetalle = () =>
-    `Falta el detalle en ${sinDetalle.length === 1 ? "el ítem" : "los ítems"} ${sinDetalle.map((i) => i.codigo).join(", ")} ("Cumple parcialmente").`;
+  // Ítems "Cumple parcialmente" sin detalle, y "Otros" de la TOP marcados SI/NO sin decir qué (o
+  // escritos sin marcar): no se puede avanzar ni cerrar con ellos.
+  const sinDetalle = checklist.filter((i) => {
+    const valor = respuestas[i.codigo];
+    const texto = comentarios[i.codigo]?.trim();
+    if (i.otros) return valor ? valor !== "na" && !texto : Boolean(texto);
+    return valor === "parcial" && !texto;
+  });
+  const avisoSinDetalle = () => {
+    const [primero] = sinDetalle;
+    if (primero.otros) return `"Otros" de ${primero.categoria}: ${respuestas[primero.codigo] ? "escribí qué se observó" : "marcá SI, NO o N/A"}.`;
+    return `Falta el detalle en ${sinDetalle.length === 1 ? "el ítem" : "los ítems"} ${sinDetalle.map((i) => i.codigo).join(", ")} ("Cumple parcialmente").`;
+  };
   const irAlItem = (codigo) => {
     setPaso(1);
     setIrAItem({ codigo });
@@ -254,13 +276,15 @@ export default function Formulario() {
 
   const noCumple = Object.values(respuestas).filter((v) => v === "no").length;
   const cumpleParcial = Object.values(respuestas).filter((v) => v === "parcial").length;
-  const contestadas = Object.keys(respuestas).length;
+  const contestadas = checklist.filter((i) => respuestas[i.codigo] != null).length;
+  // Los "Otros" de la TOP son optativos: cuentan solo si se marcaron.
+  const totalItems = checklist.filter((i) => !i.otros || respuestas[i.codigo] != null).length;
 
   const resumen = [
-    { label: "Ítems respondidos", value: `${contestadas} / ${checklist.length}`, color: "var(--violet-700)" },
-    { label: "Cumple parcialmente", value: String(cumpleParcial), color: cumpleParcial ? "var(--warn-fg)" : "var(--success-fg)" },
-    { label: "No cumple", value: String(noCumple), color: noCumple ? "var(--danger-fg)" : "var(--success-fg)" },
-    { label: "Hallazgos cargados", value: String(hallazgos.length), color: hallazgos.length ? "var(--warn-fg)" : "var(--ink)" },
+    { label: "Ítems respondidos", value: `${contestadas} / ${totalItems}`, color: "var(--violet-700)" },
+    esTop ? null : { label: "Cumple parcialmente", value: String(cumpleParcial), color: cumpleParcial ? "var(--warn-fg)" : "var(--success-fg)" },
+    { label: esTop ? "Desvíos observados" : "No cumple", value: String(noCumple), color: noCumple ? "var(--danger-fg)" : "var(--success-fg)" },
+    esTop ? null : { label: "Hallazgos cargados", value: String(hallazgos.length), color: hallazgos.length ? "var(--warn-fg)" : "var(--ink)" },
     { label: "Fotos adjuntas", value: String(fotos.length), color: "var(--ink)" },
     {
       label: "Guardado",
@@ -268,7 +292,7 @@ export default function Formulario() {
       color: errorGuardado ? "var(--danger-fg)" : "var(--muted-4)",
       soloPantalla: true, // estado de la app, no va en el PDF
     },
-  ];
+  ].filter(Boolean);
 
   // Se puede mirar pero no tocar: inspección de otra persona (si no sos administrador),
   // inspección ya enviada (solo el administrador la corrige) o rol de solo lectura.
@@ -279,10 +303,10 @@ export default function Formulario() {
     !puede("editarEnviadas") &&
     (datosInsp.estado === "enviado" || (datosInsp.inspectorId && datosInsp.inspectorId !== userId) || !puede("crearInspecciones"));
   // Lo que mide la barra es el checklist respondido, no el paso (antes marcaba 100 % en Cierre con 3 de 35).
-  const avance = checklist.length ? Math.round((contestadas / checklist.length) * 100) : 0;
+  const avance = totalItems ? Math.round((contestadas / totalItems) * 100) : 0;
   const esUltimo = paso === 3;
-  // En el paso Checklist, "Siguiente" recién aparece al llegar a la última categoría.
-  const mostrarSiguiente = paso !== 1 || checklistUltimaPagina;
+  // En el paso Checklist, "Siguiente" recién aparece al llegar a la última categoría (la TOP va en una sola página).
+  const mostrarSiguiente = paso !== 1 || esTop || checklistUltimaPagina;
 
   const siguiente = async () => {
     volcarDetalles();
@@ -455,7 +479,7 @@ export default function Formulario() {
         on: paso === i,
         done: i < paso,
       })),
-    [paso]
+    [paso, PASOS]
   );
 
   return (
@@ -493,7 +517,7 @@ export default function Formulario() {
             onClick={() => irAlItem(sinDetalle[0].codigo)}
             style={{ border: 0, background: "var(--warn-fg)", color: "#fff", fontWeight: 700, fontSize: 12.5, padding: "8px 12px", borderRadius: 12, cursor: "pointer", minHeight: 38 }}
           >
-            Ir al ítem {sinDetalle[0].codigo}
+            {sinDetalle[0].otros ? "Ir a “Otros”" : `Ir al ítem ${sinDetalle[0].codigo}`}
           </button>
         </div>
       ) : null}
@@ -508,7 +532,7 @@ export default function Formulario() {
             Paso {paso + 1} de 4 · {PASOS[paso]}
           </span>
           <span style={{ fontSize: 12.5, color: "var(--muted)" }}>
-            {contestadas}/{checklist.length} ítems
+            {contestadas}/{totalItems} ítems
           </span>
         </div>
         <div style={{ height: 9, background: "var(--border)", borderRadius: 20, overflow: "hidden", marginBottom: 11 }}>
@@ -567,10 +591,23 @@ export default function Formulario() {
       <div className="app-screen" style={{ background: "#fff", borderRadius: 22, padding: celular ? 12 : 16, boxShadow: "0 12px 30px -24px rgba(36,18,70,.5)" }}>
         {/* fieldset disabled apaga todos los campos y botones de los pasos de una sola vez */}
         <fieldset disabled={soloLectura && paso !== 3} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
-        {paso === 0 ? (
+        {paso === 0 && esTop ? <TopDatos valores={generales} onCambiar={cambiarGeneral} onCambiarDato={cambiarDato} /> : null}
+        {paso === 1 && esTop ? (
+          <TopObservacion
+            items={checklist}
+            respuestas={respuestas}
+            comentarios={comentarios}
+            onResponder={responderChecklist}
+            onComentar={comentarChecklist}
+            onComentarioListo={volcarDetalles}
+            irA={irAItem}
+          />
+        ) : null}
+        {paso === 2 && esTop ? <TopDetalle valores={generales} onCambiar={cambiarGeneral} onCambiarDato={cambiarDato} /> : null}
+        {paso === 0 && !esTop ? (
           <PasoGenerales valores={generales} onCambiar={cambiarGeneral} />
         ) : null}
-        {paso === 1 ? <PasoChecklist
+        {paso === 1 && !esTop ? <PasoChecklist
             items={checklist}
             respuestas={respuestas}
             comentarios={comentarios}
@@ -580,9 +617,28 @@ export default function Formulario() {
             onPaginaChange={setChecklistUltimaPagina}
             irA={irAItem}
           /> : null}
-        {paso === 2 ? <PasoHallazgos hallazgos={hallazgos} onAgregar={agregarHallazgo} onEliminar={eliminarHallazgo} colaboradores={colaboradores} /> : null}
+        {paso === 2 && !esTop ? <PasoHallazgos hallazgos={hallazgos} onAgregar={agregarHallazgo} onEliminar={eliminarHallazgo} colaboradores={colaboradores} /> : null}
         {paso === 3 ? (
           <PasoCierre resumen={resumen} titulo={title} generales={generales} checklist={checklist} respuestas={respuestas} comentarios={comentarios} hallazgos={hallazgos}
+            {...(esTop && {
+              formato: "top",
+              respuestaVisible: respuestaTop,
+              conHallazgos: false,
+              secciones: [
+                {
+                  titulo: "Datos de quien completa la TOP",
+                  filas: [
+                    ["Apellido y nombre", generales.datos?.observador],
+                    ["Función", generales.datos?.funcion],
+                    ["Área de trabajo", generales.ubicacion],
+                    ["Cliente / obra", generales.cliente],
+                  ],
+                },
+                { titulo: "Detalle observación", texto: generales.tareaObservada },
+                { titulo: "Acción inmediata", texto: generales.datos?.accionInmediata },
+                { titulo: "Acción para evitar la reiteración", texto: generales.datos?.accionReiteracion },
+              ],
+            })}
             fotos={fotos}
             subiendoFotos={subiendoFotos}
             onAgregarFotos={agregarFotos}

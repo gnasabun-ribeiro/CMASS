@@ -13,10 +13,15 @@ import { uuid } from "./uuid.js";
 const GENERALES_VACIOS = { cliente: "", ubicacion: "", grupoAuditado: "", fechaHora: "", tareaObservada: "" };
 
 // Guarda la copia local y encola las operaciones. Si la inspección todavía no
-// existe en el servidor, antepone "crear" (solo se sube cuando hay algo que subir).
+// existe en el servidor, antepone "crear" (solo se sube cuando hay algo que subir) y
+// sube también Generales, que pueden venir completados desde que se creó (en la TOP,
+// el nombre de quien la completa).
 async function confirmar(rec, autor, ops) {
   await guardarInspeccion(rec);
-  if (ops.length && !rec.enServidor) await encolar({ inspeccionId: rec.id, tipo: "crear", autor });
+  if (ops.length && !rec.enServidor) {
+    await encolar({ inspeccionId: rec.id, tipo: "crear", autor });
+    await encolar({ inspeccionId: rec.id, tipo: "generales", autor });
+  }
   for (const op of ops) await encolar({ inspeccionId: rec.id, autor, ...op });
   agendarSync();
 }
@@ -32,7 +37,8 @@ function modificar(id, autor, fn) {
   });
 }
 
-export async function nuevaInspeccion(inspectorId, moduloId, subId = null) {
+// `generales`: valores con los que arranca (ej. los `datos` propios de la TOP).
+export async function nuevaInspeccion(inspectorId, moduloId, subId = null, generales = {}) {
   const rec = {
     id: uuid(),
     inspectorId,
@@ -40,7 +46,7 @@ export async function nuevaInspeccion(inspectorId, moduloId, subId = null) {
     subId,
     enServidor: false,
     estado: "borrador",
-    generales: { ...GENERALES_VACIOS },
+    generales: { ...GENERALES_VACIOS, ...generales },
     respuestas: {}, // codigo -> { valor, categoria, texto }
     hallazgos: [], // { id, titulo, severidad, detalle, responsable, correo, vence }
     galeria: [], // fotos generales: { id, blob?, ruta, subida }
@@ -94,14 +100,15 @@ export const guardarGenerales = (id, autor, generales) =>
     return [{ tipo: "generales" }];
   });
 
-// El comentario solo se conserva si la respuesta es "Cumple parcialmente" (ahí es obligatorio).
+// El comentario lo decide el formulario: el detalle de "Cumple parcialmente" o lo escrito en
+// un "Otros" de la TOP; con cualquier otra respuesta llega vacío.
 export const guardarRespuesta = (id, autor, item, valor, comentario = "") =>
   modificar(id, autor, (rec) => {
     rec.respuestas[item.codigo] = {
       valor,
       categoria: item.categoria,
       texto: item.texto,
-      comentario: valor === "parcial" ? comentario : "",
+      comentario,
     };
     return [{ tipo: "respuesta", clave: item.codigo }];
   });

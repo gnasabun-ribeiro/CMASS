@@ -16,16 +16,19 @@ export async function crearBorrador(t, { id, inspectorId, moduloId, subId }) {
 const limpio = (s) => s?.trim() || null;
 
 export async function guardarGenerales(t, inspeccionId, generales) {
-  const { error } = await supabase
-    .from(t.cab)
-    .update({
-      cliente: limpio(generales.cliente),
-      ubicacion: limpio(generales.ubicacion),
-      grupo_auditado: limpio(generales.grupoAuditado),
-      fecha_hora: generales.fechaHora ? new Date(generales.fechaHora).toISOString() : null,
-      tarea_observada: limpio(generales.tareaObservada),
-    })
-    .eq("id", inspeccionId);
+  const fila = {
+    cliente: limpio(generales.cliente),
+    ubicacion: limpio(generales.ubicacion),
+    grupo_auditado: limpio(generales.grupoAuditado),
+    fecha_hora: generales.fechaHora ? new Date(generales.fechaHora).toISOString() : null,
+    tarea_observada: limpio(generales.tareaObservada),
+  };
+  // Campos propios de un módulo (hoy, la Tarjeta TOP) en la columna `datos` (supabase/inspecciones_datos.sql).
+  // Solo se mandan si el módulo los tiene: los demás no dependen de esa columna.
+  if (t.generico && generales.datos) {
+    fila.datos = Object.fromEntries(Object.entries(generales.datos).map(([k, v]) => [k, limpio(v)]).filter(([, v]) => v));
+  }
+  const { error } = await supabase.from(t.cab).update(fila).eq("id", inspeccionId);
   if (error) throw error;
 }
 
@@ -156,6 +159,7 @@ export async function cargarInspeccionRemota(t, inspeccionId) {
       grupoAuditado: c.grupo_auditado || "",
       fechaHora,
       tareaObservada: c.tarea_observada || "",
+      ...(c.datos && { datos: c.datos }),
     },
     respuestas: Object.fromEntries(resp.data.map((r) => [r.codigo, r.valor])),
     comentarios: Object.fromEntries(resp.data.filter((r) => r.comentario).map((r) => [r.codigo, r.comentario])),

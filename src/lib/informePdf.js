@@ -1,7 +1,9 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import { OPCIONES } from "../data/checklist.js";
+import { MARCAS_TOP, OPCIONES, agruparPorCategoria, marcaTop } from "../data/checklist.js";
 import { hoyLocal } from "./fechas.js";
+import { urlADataUrl } from "./fotos.js";
+import logoRibeiro from "../assets/logo-ribeiro.png";
 
 const ETIQUETA_RESPUESTA = Object.fromEntries(OPCIONES.map((o) => [o.value, o.label]));
 
@@ -248,7 +250,118 @@ export function construirInformePDF({ titulo, generales, resumen, checklist, res
   return doc;
 }
 
-export function generarInformePDF(datos) {
+// --- Tarjeta TOP: mismo formato que la tarjeta impresa (RG 28-01) -------------------------
+
+const TINTA = [27, 27, 27];
+const AMARILLO = [255, 229, 0];
+const BANDA = { fillColor: AMARILLO, fontStyle: "bold", halign: "center", fontSize: 10 };
+
+function encabezadoTarjeta(doc, logo, y) {
+  const ancho = doc.internal.pageSize.getWidth() - 80;
+  const [x1, x2] = [104, 40 + ancho - 110]; // columnas: logo | título | código
+  doc.setDrawColor(...TINTA);
+  doc.setLineWidth(1.2);
+  doc.rect(40, y, ancho, 56);
+  doc.line(x1, y, x1, y + 56);
+  doc.line(x2, y, x2, y + 56);
+  doc.setLineWidth(0.6);
+  doc.line(x2, y + 28, 40 + ancho, y + 28);
+  if (logo) doc.addImage(logo, "PNG", 50, y + 6, 44, 44);
+  doc.setTextColor(...TINTA);
+  doc.setFont(undefined, "bold");
+  doc.setFontSize(15);
+  doc.text(["TARJETA DE OBSERVACIÓN", "PREVENTIVA"], (x1 + x2) / 2, y + 24, { align: "center" });
+  doc.setFont(undefined, "normal");
+  doc.setFontSize(7.5);
+  doc.text(["Descripción:", "Emisión APROBADO"], x2 + 6, y + 11);
+  doc.text(["RG 28-01", "Rev: 0"], x2 + 6, y + 39);
+  return y + 56;
+}
+
+const estiloTarjeta = {
+  theme: "grid",
+  margin: { left: 40, right: 40 },
+  styles: { fontSize: 9, cellPadding: 4, lineColor: TINTA, lineWidth: 0.6, textColor: TINTA, valign: "middle" },
+};
+
+// Frente: "Tipo de observación", con una X en SI / NO / N/A (verde si es seguro, roja si es desvío).
+function frenteTarjeta(doc, checklist, respuestas, comentarios, y) {
+  const filas = [[{ content: "TIPO DE OBSERVACIÓN", colSpan: 4, styles: BANDA }]];
+  const items = [null]; // ítem de cada fila (null = banda o título de categoría)
+  agruparPorCategoria(checklist).forEach((b, i) => {
+    filas.push([{ content: textoPdf(`${i + 1}) ${b.categoria}`), styles: { fontStyle: "bold" } }, ...MARCAS_TOP.map((m) => ({ content: m.label, styles: { fontStyle: "bold", fontSize: 8 } }))]);
+    items.push(null);
+    for (const item of b.items) {
+      const marca = marcaTop(item, respuestas[item.codigo]);
+      const texto = item.otros ? `Otros: ${comentarios[item.codigo]?.trim() || ""}` : item.texto;
+      filas.push([textoPdf(texto), ...MARCAS_TOP.map((m) => (m.value === marca ? "X" : ""))]);
+      items.push(item);
+    }
+  });
+  autoTable(doc, {
+    ...estiloTarjeta,
+    // Filas más bajas para que el frente entre en una hoja, como la tarjeta.
+    margin: { left: 40, right: 40, top: 40, bottom: 30 },
+    styles: { ...estiloTarjeta.styles, cellPadding: { top: 3, bottom: 3, left: 4, right: 4 } },
+    startY: y,
+    body: filas,
+    columnStyles: { 1: { cellWidth: 34, halign: "center" }, 2: { cellWidth: 34, halign: "center" }, 3: { cellWidth: 34, halign: "center" } },
+    didParseCell(data) {
+      const item = items[data.row.index];
+      if (data.section !== "body" || !item || data.column.index === 0 || data.cell.raw !== "X") return;
+      data.cell.styles.textColor = COLOR_RESPUESTA[respuestas[item.codigo]];
+      data.cell.styles.fontStyle = "bold";
+      data.cell.styles.fontSize = 10;
+    },
+  });
+  return doc.lastAutoTable.finalY;
+}
+
+// Dorso: datos de quien la completa, detalle y acciones, y la frase del pie.
+function dorsoTarjeta(doc, generales, y) {
+  const datos = generales.datos || {};
+  const dato = (etiqueta, valor) => [{ content: etiqueta, styles: { fontStyle: "bold" } }, textoPdf(valor?.trim() || "")];
+  const texto = (titulo, valor) => [
+    [{ content: titulo, colSpan: 2, styles: BANDA }],
+    [{ content: textoPdf(valor?.trim() || ""), colSpan: 2, styles: { minCellHeight: 90, valign: "top", fontSize: 10 } }],
+  ];
+  autoTable(doc, {
+    ...estiloTarjeta,
+    startY: y,
+    columnStyles: { 0: { cellWidth: 150 } },
+    body: [
+      [{ content: "DATOS DE QUIEN COMPLETA LA TOP", colSpan: 2, styles: BANDA }],
+      dato("APELLIDO Y NOMBRE:", datos.observador),
+      dato("FUNCIÓN:", datos.funcion),
+      dato("ÁREA DE TRABAJO:", generales.ubicacion),
+      dato("FECHA DE OBSERVACIÓN:", generales.fechaHora ? formatearFechaHora(generales.fechaHora) : ""),
+      dato("CLIENTE / OBRA:", generales.cliente),
+      ...texto("DETALLE OBSERVACIÓN", generales.tareaObservada),
+      ...texto("ACCIÓN INMEDIATA", datos.accionInmediata),
+      ...texto("ACCIÓN PARA EVITAR LA REITERACIÓN", datos.accionReiteracion),
+      [{ content: "LA PREVENCIÓN QUE HAGAMOS HOY, MARCARÁ EL CAMINO DEL MAÑANA", colSpan: 2, styles: { ...BANDA, fontSize: 9 } }],
+    ],
+  });
+  return doc.lastAutoTable.finalY;
+}
+
+// `logo`: dataUrl PNG (sin conexión puede faltar: sale sin logo).
+export function construirTarjetaTopPDF({ generales, checklist, respuestas, comentarios = {}, fotos = [], firmas = {}, logo }) {
+  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  frenteTarjeta(doc, checklist, respuestas, comentarios, encabezadoTarjeta(doc, logo, 40));
+  doc.addPage();
+  let y = dorsoTarjeta(doc, generales, encabezadoTarjeta(doc, logo, 40)) + 24;
+  y = agregarFotos(doc, fotos, y);
+  agregarFirmas(doc, firmas, y);
+  return doc;
+}
+
+export async function generarInformePDF(datos) {
+  if (datos.formato === "top") {
+    const logo = await urlADataUrl(logoRibeiro).catch(() => null);
+    construirTarjetaTopPDF({ ...datos, logo }).save(`tarjeta-top-${hoyLocal()}.pdf`);
+    return;
+  }
   const doc = construirInformePDF(datos);
   const nombreArchivo = `informe-inspeccion-${hoyLocal()}.pdf`;
   doc.save(nombreArchivo);

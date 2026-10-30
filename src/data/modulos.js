@@ -169,6 +169,11 @@ export function findSub(moduloId, subId) {
 
 export const PASOS = ["Generales", "Checklist", "Hallazgos", "Cierre"];
 
+// La Tarjeta TOP sigue la tarjeta impresa: datos de quien la completa, tipo de observación,
+// detalle y acciones (en lugar de hallazgos) y cierre.
+export const PASOS_TOP = ["Datos", "Observación", "Detalle", "Cierre"];
+export const pasosDe = (moduloId) => (moduloId === "top" ? PASOS_TOP : PASOS);
+
 // Ruta del formulario de un módulo (nuevo, o retomando la inspección `id`).
 export function rutaFormulario(moduloId, subId, id) {
   const base = subId ? `/modulos/${moduloId}/form/${subId}` : `/form/${moduloId}`;
