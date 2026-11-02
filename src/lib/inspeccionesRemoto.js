@@ -105,6 +105,24 @@ export async function registrarDestinatarios(t, rec) {
   if (error) throw error;
 }
 
+// Corrección de un hallazgo ya cargado (solo los datos; el seguimiento lo maneja el panel).
+// Si el alta todavía no llegó, no actualiza ninguna fila y no es error: el alta sube los datos
+// nuevos. La base solo deja corregirlo al dueño mientras es borrador o al administrador
+// (trigger proteger_datos_hallazgo, supabase/permisos_correcciones.sql).
+export async function editarHallazgo(t, h) {
+  const fila = {
+    titulo: h.titulo.trim(),
+    severidad: h.severidad,
+    detalle: limpio(h.detalle),
+    responsable: limpio(h.responsable),
+    vence: h.vence || null,
+  };
+  const guardar = (f) => supabase.from(t.hallazgos).update(f).eq("id", h.id);
+  let { error } = await guardar({ ...fila, responsable_correo: h.correo || null });
+  if (faltaColumna(error, "responsable_correo")) ({ error } = await guardar(fila));
+  if (error) throw error;
+}
+
 export async function borrarHallazgo(t, hallazgoId) {
   const { error } = await supabase.from(t.hallazgos).delete().eq("id", hallazgoId);
   if (error) throw error;

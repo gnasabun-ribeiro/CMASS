@@ -16,6 +16,7 @@ import { uuid } from "../../lib/uuid.js";
 import {
   agregarHallazgo as agregarHallazgoLocal,
   borrarHallazgo as borrarHallazgoLocal,
+  editarHallazgo as editarHallazgoLocal,
   cargarInspeccion,
   guardarFirma as guardarFirmaLocal,
   agregarFoto as agregarFotoLocal,
@@ -519,6 +520,24 @@ export default function Formulario() {
     }
   };
 
+  // Corrige un hallazgo ya cargado. Igual que agregar: false si falló (se conserva lo escrito).
+  const editarHallazgo = async (h, datos) => {
+    if (!persisteEnSupabase || !h.id) {
+      setHallazgos((list) => list.map((x) => (x === h ? armarHallazgo({ ...datos, id: h.id }) : x)));
+      return true;
+    }
+    if (!inspeccionId) return false;
+    try {
+      const guardado = await editarHallazgoLocal(inspeccionId, userId, h.id, { ...datos, correo: correoDe(colaboradores, datos.responsable) });
+      setHallazgos((list) => list.map((x) => (x.id === h.id ? armarHallazgo(guardado) : x)));
+      marcarGuardado();
+      return true;
+    } catch (err) {
+      setErrorGuardado(err.message);
+      return false;
+    }
+  };
+
   const eliminarHallazgo = (h) => {
     const indice = hallazgos.indexOf(h);
     borrarConDeshacer({
@@ -699,7 +718,7 @@ export default function Formulario() {
             onPaginaChange={setChecklistUltimaPagina}
             irA={irAItem}
           /> : null}
-        {paso === 2 && !esTop ? <PasoHallazgos hallazgos={hallazgos} onAgregar={agregarHallazgo} onEliminar={eliminarHallazgo} colaboradores={colaboradores} /> : null}
+        {paso === 2 && !esTop ? <PasoHallazgos hallazgos={hallazgos} onAgregar={agregarHallazgo} onEditar={editarHallazgo} onEliminar={eliminarHallazgo} colaboradores={colaboradores} /> : null}
         {paso === 3 ? (
           <PasoCierre resumen={resumen} titulo={title} generales={generales} checklist={checklist} respuestas={respuestas} comentarios={comentarios} hallazgos={hallazgos}
             {...(esTop && {

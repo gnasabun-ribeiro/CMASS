@@ -12,6 +12,7 @@ import {
   agregarHallazgo,
   borrarHallazgo,
   crearBorrador,
+  editarHallazgo,
   guardarGenerales,
   guardarRespuestaChecklist,
   marcarEnviada,
@@ -25,7 +26,8 @@ import { guardarFirmaObra, guardarNombreFirmaObra } from "./firmasObra.js";
 // se ejecutan ordenadas (crear → datos → fotos/firmas → enviar) y son
 // repetibles: si se corta la conexión a mitad, se reintenta sin duplicar nada.
 
-const PRIORIDAD = { crear: 0, generales: 1, respuesta: 1, hallazgo: 1, hallazgoDel: 1, foto: 2, firma: 2, enviar: 3 };
+// La corrección de un hallazgo va después del alta (hallazgo) aunque se hayan encolado en otro orden.
+const PRIORIDAD = { crear: 0, generales: 1, respuesta: 1, hallazgo: 1, hallazgoEdit: 1.5, hallazgoDel: 1, foto: 2, firma: 2, enviar: 3 };
 const INTERVALO_REINTENTO_MS = 30000;
 
 const estado = {
@@ -115,6 +117,11 @@ async function ejecutar(op, rec) {
       const h = rec.hallazgos.find((x) => x.id === op.clave);
       if (!h) return;
       return agregarHallazgo(t, id, h);
+    }
+    case "hallazgoEdit": {
+      const h = rec.hallazgos.find((x) => x.id === op.clave);
+      if (!h) return; // se borró después de editarlo
+      return editarHallazgo(t, h);
     }
     case "hallazgoDel":
       return borrarHallazgo(t, op.clave);

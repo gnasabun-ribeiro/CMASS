@@ -35,6 +35,7 @@ export const ICONS = {
   logout: "M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9",
   botiquin: "M4 8h16v12H4zM9 8V5h6v3M12 11v6M9 14h6",
   tacho: "M4 7h16M10 7V4h4v3M6 7l1 14h10l1-14M10 11v6M14 11v6",
+  lapiz: "M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4zM14.5 5.5l4 4",
   check: "M5 12l5 5L20 7",
   // Interfaz (toasts, selectores, notificaciones)
   bell: "M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 003.4 0",

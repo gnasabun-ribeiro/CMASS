@@ -8,6 +8,8 @@ export const SEVERIDADES = [
 
 // Arma el hallazgo tal como lo usan las pantallas y el PDF (con colores de severidad y
 // el vencimiento como dd/mm/aaaa) a partir de los campos crudos (formulario o fila de la base).
+// `crudo` guarda los valores tal como se cargaron, para editarlo ("Sin asignar" y la fecha
+// formateada son solo para mostrar).
 export function armarHallazgo({ id, titulo, severidad, detalle, responsable, vence }) {
   const sev = SEVERIDADES.find((s) => s.value === severidad) || SEVERIDADES[1];
   return {
@@ -19,5 +21,6 @@ export function armarHallazgo({ id, titulo, severidad, detalle, responsable, ven
     detalle: detalle || "",
     responsable: responsable || "Sin asignar",
     vence: formatearFecha(vence),
+    crudo: { titulo: titulo || "", severidad: sev.value, detalle: detalle || "", responsable: responsable || "", vence: vence || "" },
   };
 }

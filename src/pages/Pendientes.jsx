@@ -16,6 +16,7 @@ const ETIQUETA_TIPO = {
   generales: "datos generales",
   respuesta: "respuestas del checklist",
   hallazgo: "hallazgos",
+  hallazgoEdit: "hallazgos corregidos",
   hallazgoDel: "hallazgos eliminados",
   foto: "fotos",
   firma: "firmas",

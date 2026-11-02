@@ -37,14 +37,16 @@ begin
   end loop;
 end $$;
 
--- 2) Hallazgos: fuera del administrador, solo se toca el seguimiento ------------------------
+-- 2) Hallazgos: los datos los cambia el dueño (en borrador) o el administrador ---------------
 -- "Quien inspecciona gestiona el seguimiento de hallazgos" deja hacer update sobre cualquier
--- hallazgo, y una policy no puede limitar columnas: eso lo hace este trigger. La app nunca
--- edita los datos de un hallazgo (se borra y se vuelve a cargar), así que nadie más que el
--- administrador los cambia, tampoco el dueño. Quién lo cerró sale de la sesión, no de lo
--- que mande la app; al reabrir se conserva (fecha, nota y quién quedan como "último cierre",
--- actualizado el 2026-10-26). auth.uid() es null en el SQL Editor y en las Edge Functions:
--- ahí se puede.
+-- hallazgo, y una policy no puede limitar columnas: eso lo hace este trigger. Los datos
+-- (título, severidad, detalle, responsable, vencimiento) los corrige el dueño mientras la
+-- inspección es borrador (botón "Editar" del paso Hallazgos, agregado el 2026-11-02; antes
+-- había que borrarlo y cargarlo de nuevo) y el administrador siempre. Nadie más, y nadie
+-- (fuera del administrador) cambia el id, la inspección ni la fecha de carga. Quién lo cerró
+-- sale de la sesión, no de lo que mande la app; al reabrir se conserva (fecha, nota y quién
+-- quedan como "último cierre", actualizado el 2026-10-26). auth.uid() es null en el SQL Editor
+-- y en las Edge Functions: ahí se puede.
 
 create or replace function public.proteger_datos_hallazgo()
 returns trigger
@@ -52,13 +54,29 @@ language plpgsql set search_path = public
 as $$
 declare
   seguimiento constant text[] := array['estado', 'cerrado_at', 'cerrado_por', 'nota_cierre'];
+  editables constant text[] := array['titulo', 'severidad', 'detalle', 'responsable', 'responsable_correo', 'vence'];
+  duenio_de_borrador boolean;
 begin
   if auth.uid() is null or public.es_admin() then
     return new;
   end if;
   if (to_jsonb(new) - seguimiento) is distinct from (to_jsonb(old) - seguimiento) then
-    raise exception 'Solo un administrador puede modificar los datos de un hallazgo'
-      using errcode = '42501';
+    if tg_table_name = 'inspecciones_obra_hallazgos' then
+      select exists (
+        select 1 from public.inspecciones_obra i
+        where i.id = old.inspeccion_id and i.inspector_id = auth.uid() and i.estado = 'borrador'
+      ) into duenio_de_borrador;
+    else
+      select exists (
+        select 1 from public.inspecciones i
+        where i.id = old.inspeccion_id and i.inspector_id = auth.uid() and i.estado = 'borrador'
+      ) into duenio_de_borrador;
+    end if;
+    if not duenio_de_borrador
+       or (to_jsonb(new) - seguimiento - editables) is distinct from (to_jsonb(old) - seguimiento - editables) then
+      raise exception 'Solo un administrador puede modificar los datos de un hallazgo'
+        using errcode = '42501';
+    end if;
   end if;
   if new.estado is distinct from old.estado or new.cerrado_por is distinct from old.cerrado_por then
     new.cerrado_por := case when new.estado = 'cerrado' then auth.uid() else old.cerrado_por end;

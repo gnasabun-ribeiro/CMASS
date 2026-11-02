@@ -121,10 +121,34 @@ export const agregarHallazgo = (id, autor, datos) => {
   }).then(() => hallazgo);
 };
 
+// Corrige un hallazgo ya cargado (mismo id). Se encola siempre la actualización, aunque el alta
+// todavía no haya subido: el alta sube lo que haya en la copia local al momento de enviarse y,
+// si ya había salido con los datos viejos, la actualización la corrige. El correo solo cambia
+// si cambió el responsable (sin conexión puede no estar la lista de colaboradores).
+export const editarHallazgo = (id, autor, hallazgoId, datos) => {
+  let editado;
+  return modificar(id, autor, (rec) => {
+    const i = rec.hallazgos.findIndex((h) => h.id === hallazgoId);
+    if (i < 0) throw new Error("El hallazgo ya no está en esta inspección");
+    const antes = rec.hallazgos[i];
+    const mismoResponsable = (antes.responsable || "").trim() === (datos.responsable || "").trim();
+    editado = {
+      ...antes,
+      ...datos,
+      id: hallazgoId,
+      correo: datos.correo || (mismoResponsable ? antes.correo || "" : ""),
+      vence: datos.vence || null,
+    };
+    rec.hallazgos[i] = editado;
+    return [{ tipo: "hallazgoEdit", clave: hallazgoId }];
+  }).then(() => editado);
+};
+
 export const borrarHallazgo = (id, autor, hallazgoId) =>
   modificar(id, autor, async (rec) => {
     rec.hallazgos = rec.hallazgos.filter((h) => h.id !== hallazgoId);
     await borrarOpsDe(rec.id, "hallazgo", hallazgoId); // si nunca se subió, no hay nada que subir
+    await borrarOpsDe(rec.id, "hallazgoEdit", hallazgoId);
     return [{ tipo: "hallazgoDel", clave: hallazgoId }];
   });
 
